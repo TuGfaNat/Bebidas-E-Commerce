@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    categoria VARCHAR(255) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     marca VARCHAR(255) NOT NULL,
     sabor VARCHAR(255),

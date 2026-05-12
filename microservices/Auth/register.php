@@ -45,10 +45,21 @@ try {
         throw new Exception("Error al subir la imagen del C.I.");
     }
 
-    $allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (!in_array($ci_image['type'], $allowedMimeTypes)) {
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $realMime = finfo_file($finfo, $ci_image['tmp_name']);
+    finfo_close($finfo);
+
+    $allowedMimeTypes = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'application/pdf' => 'pdf'
+    ];
+
+    if (!array_key_exists($realMime, $allowedMimeTypes)) {
         throw new Exception("El formato del archivo C.I. no es válido (solo JPG, PNG, PDF).");
     }
+
+    $ext = $allowedMimeTypes[$realMime];
 
     $uploadDir = __DIR__ . '/uploads/ci/';
     if (!is_dir($uploadDir)) {
@@ -56,7 +67,6 @@ try {
         file_put_contents($uploadDir . '.htaccess', "Require all denied\n");
     }
 
-    $ext = pathinfo($ci_image['name'], PATHINFO_EXTENSION);
     $filename = uniqid('ci_') . '.' . $ext;
     $destination = $uploadDir . $filename;
 

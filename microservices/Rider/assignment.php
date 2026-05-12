@@ -50,7 +50,8 @@ try {
             $lonTienda = -68.1193;
 
             // Ejecutamos el motor de logística (sincrónico para el prototipo)
-            $cmd = escapeshellcmd("python3 ../Logistics/calculator.py $riderId $latCliente $lonCliente $latTienda $lonTienda");
+            $safeRiderId = escapeshellarg($riderId);
+            $cmd = escapeshellcmd("python3 ../Logistics/calculator.py $safeRiderId $latCliente $lonCliente $latTienda $lonTienda");
             $pythonOutput = shell_exec($cmd);
             $logisticsData = json_decode($pythonOutput, true);
 

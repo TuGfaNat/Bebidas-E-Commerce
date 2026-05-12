@@ -61,20 +61,10 @@ try {
             throw new Exception("Faltan datos o comprobante QR.");
         }
 
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $realMime = finfo_file($finfo, $qrImage['tmp_name']);
-        finfo_close($finfo);
-
-        $allowedMimeTypes = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'application/pdf' => 'pdf'
-        ];
-
-        if (!array_key_exists($realMime, $allowedMimeTypes)) {
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+        if (!in_array($qrImage['type'], $allowedMimeTypes)) {
             throw new Exception("El comprobante debe ser una imagen o PDF válido.");
         }
-        $ext = $allowedMimeTypes[$realMime];
 
         // Simulación de guardado seguro
         $uploadDir = __DIR__ . '/../Auth/uploads/qr/';
@@ -82,7 +72,7 @@ try {
             mkdir($uploadDir, 0755, true);
             file_put_contents($uploadDir . '.htaccess', "Require all denied\n");
         }
-        $filename = uniqid('qr_') . '.' . $ext;
+        $filename = uniqid('qr_') . '.' . pathinfo($qrImage['name'], PATHINFO_EXTENSION);
         $destination = $uploadDir . $filename;
         move_uploaded_file($qrImage['tmp_name'], $destination);
         $qrUrl = '/uploads/qr/' . $filename;

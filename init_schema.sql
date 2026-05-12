@@ -1,6 +1,9 @@
 CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
+<<<<<<< HEAD
+=======
     categoria VARCHAR(255) NOT NULL,
+>>>>>>> a6ffe8e (Resolve conflict on init_schema.sql by restoring to origin/main and reapplying changes)
     nombre VARCHAR(255) NOT NULL,
     marca VARCHAR(255) NOT NULL,
     sabor VARCHAR(255),

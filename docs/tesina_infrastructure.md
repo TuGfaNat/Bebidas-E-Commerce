@@ -11,7 +11,11 @@ Este módulo implementa la estructura base de bases de datos para el ecosistema 
 3. **Subida de Documentación Extra:** El Rider envía su expediente digital (licencia, seguro, CV), el cual se guarda en `documentacion_rider` con estado de aprobación `pendiente`.
 4. **Registro de Auditoría:** Todas las inserciones o actualizaciones generan una entrada automática (vía triggers o lógica de negocio) en la tabla `auditoria_logs`.
 5. **Revisión (Super Usuario):** El Super Usuario consulta los registros en estado `pending` o `pendiente`. Visualiza el C.I. y el expediente.
+<<<<<<< HEAD
 6. **Decisión:**
+=======
+6. **Decisión:**
+>>>>>>> a6ffe8e (Resolve conflict on init_schema.sql by restoring to origin/main and reapplying changes)
    - *Aprobado:* El estado de `ci_status` en `users` y `estado_aprobacion` en `documentacion_rider` cambia a `verified`/`aprobado`. El Rider es notificado.
    - *Rechazado:* Se rechaza la solicitud cambiando a `rejected`/`rechazado`.
 7. **Fin del Flujo.**
@@ -68,7 +72,11 @@ Este módulo implementa la estructura base de bases de datos para el ecosistema 
 
 ### Manual de Pruebas y Prevención (Auditoría de Logs)
 **¿Cómo previene `auditoria_logs` el fraude o errores de inventario?**
+<<<<<<< HEAD
 La tabla de `auditoria_logs` funciona como un ledger inmutable que captura quién, cuándo y cómo alteró la información crítica de la plataforma.
+=======
+La tabla de `auditoria_logs` funciona como un ledger inmutable que captura quién, cuándo y cómo alteró la información crítica de la plataforma.
+>>>>>>> a6ffe8e (Resolve conflict on init_schema.sql by restoring to origin/main and reapplying changes)
 1. **Prevención de Fraude de Inventario:** Si el `stock` de la tabla `productos` baja de manera sospechosa o irregular sin estar correlacionado con una venta en `pedidos`, el log captura inmediatamente el `datos_anteriores` y `datos_nuevos` del producto, junto con la IP y el ID (`updated_by`) del empleado o super usuario que realizó la alteración, lo que permite rastrear el robo hormiga o ajustes ilícitos de mercancía.
 2. **Prevención en Recaudación (Caja del Rider):** Si un Rider o administrador altera maliciosamente el `estado_pago` de un pedido (por ejemplo, pasándolo de 'contraentrega' a 'cancelado' después de haber cobrado en efectivo para quedarse el dinero), la tabla de auditoría guarda el cambio (la acción 'UPDATE' sobre `pedidos`), evidenciando el intento de desfalco.
 3. **Casos de Manejo de Errores (Ej: C.I. Ilegible):** Si el C.I. de un Rider es ilegible o falso, y el Super Usuario rechaza el registro, el sistema guarda este intento fallido en los logs. Si luego, por error humano, el registro se aprueba, la trazabilidad del `updated_by` permite deslindar responsabilidades directas en la auditoría.

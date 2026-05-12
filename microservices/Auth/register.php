@@ -66,7 +66,11 @@ try {
 
     // Guardar en la base de datos
     $db = DatabaseConnection::getInstance()->getConnection();
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> a6ffe8e (Resolve conflict on init_schema.sql by restoring to origin/main and reapplying changes)
     // Validar si el correo ya existe
     $stmtCheck = $db->prepare("SELECT id FROM users WHERE email = ?");
     $stmtCheck->execute([$correo]);
@@ -77,13 +81,20 @@ try {
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
     $role = 'cliente'; // Por defecto registramos como cliente
     $ciUrl = '/uploads/ci/' . $filename;
+<<<<<<< HEAD
 
     $db->beginTransaction();
 
+=======
+
+    $db->beginTransaction();
+
+>>>>>>> a6ffe8e (Resolve conflict on init_schema.sql by restoring to origin/main and reapplying changes)
     $stmt = $db->prepare("
         INSERT INTO users (role, nombre, email, password_hash, fecha_nacimiento, ci_url, ci_status)
         VALUES (?, ?, ?, ?, ?, ?, 'pending')
     ");
+<<<<<<< HEAD
 
     $stmt->execute([$role, $nombre, $correo, $passwordHash, $fecha_nacimiento, $ciUrl]);
     $newUserId = $db->lastInsertId();
@@ -92,6 +103,16 @@ try {
     $stmtUpdateAudit = $db->prepare("UPDATE users SET created_by = ?, updated_by = ? WHERE id = ?");
     $stmtUpdateAudit->execute([$newUserId, $newUserId, $newUserId]);
 
+=======
+
+    $stmt->execute([$role, $nombre, $correo, $passwordHash, $fecha_nacimiento, $ciUrl]);
+    $newUserId = $db->lastInsertId();
+
+    // Actualizar campos de auditoría (created_by) con el propio ID
+    $stmtUpdateAudit = $db->prepare("UPDATE users SET created_by = ?, updated_by = ? WHERE id = ?");
+    $stmtUpdateAudit->execute([$newUserId, $newUserId, $newUserId]);
+
+>>>>>>> a6ffe8e (Resolve conflict on init_schema.sql by restoring to origin/main and reapplying changes)
     // Registro de logs (simulado, asumiendo tabla auditoria_logs si existe)
     $stmtLog = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_nuevos, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)");
     $stmtLog->execute(['users', $newUserId, 'INSERT', json_encode(['email' => $correo, 'ci_url' => $ciUrl]), $newUserId, $newUserId]);

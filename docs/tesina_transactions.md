@@ -20,7 +20,7 @@ El principal reto de un E-commerce 24/7 descentralizado es evitar el fraude en l
 
 ### Diccionario de Datos Suplementario
 
-**Tabla: `pedido_detalles` (NUEVO)**
+**Tabla: `pedido_detalles`**
 | Campo | Tipo | Restricción | Descripción |
 |-------|------|-------------|-------------|
 | id | INT | PRIMARY KEY, AUTO_INCREMENT | Identificador de fila |
@@ -29,3 +29,25 @@ El principal reto de un E-commerce 24/7 descentralizado es evitar el fraude en l
 | cantidad | INT | NOT NULL | Cantidad de unidades |
 | precio_unitario | DECIMAL(10,2) | NOT NULL | Precio de venta al momento de comprar |
 | Auditoría | - | NOT NULL | `created_at, updated_at, created_by, updated_by` |
+
+**Tabla: `pedidos` (Modificación de Columnas)**
+| Campo | Tipo | Restricción | Descripción |
+|-------|------|-------------|-------------|
+| latitud | DECIMAL(10, 8) | NULL | **[NUEVO]** Coordenada de latitud GPS del cliente |
+| longitud | DECIMAL(11, 8) | NULL | **[NUEVO]** Coordenada de longitud GPS del cliente |
+| estado_pago | ENUM | NOT NULL | Modificado para soportar el estado `'liquidado'` en conciliación de cajas. |
+
+---
+
+## 3. Nuevos Módulos Operativos y Financieros (Fin de Sprint)
+
+### A. Liquidación de Caja del Rider
+* **Módulo:** [settle_cash.php](file:///F:/Bebidas-E-Commerce/microservices/Rider/settle_cash.php)
+* **Objetivo:** Permite al Super Usuario recibir el dinero recaudado en efectivo por un Rider y conciliar su cuenta.
+* **Lógica:** Busca todas las entregas del conductor en estado `pagado_efectivo` (contraentrega), calcula la sumatoria acumulada, actualiza el estado de las órdenes a `liquidado` de forma atómica y genera bitácoras de auditoría individualizadas para evitar desvíos o fraudes de caja.
+
+### B. Monitoreo Geográfico en Vivo
+* **Módulo:** [live_monitoring.php](file:///F:/Bebidas-E-Commerce/microservices/Transactions/live_monitoring.php)
+* **Objetivo:** Proveer información en tiempo real al Super Usuario sobre el tránsito de mercancías.
+* **Lógica:** Filtra pedidos en estados de tránsito (`asignado`, `en_camino`), calcula dinámicamente la distancia de ruta (Haversine), el tiempo estimado de entrega (ETA), y aproxima la posición geográfica del Rider en tránsito, permitiendo al centro de control velar por la seguridad y la puntualidad del servicio.
+

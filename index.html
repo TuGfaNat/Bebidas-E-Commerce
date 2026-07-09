@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bebidas 24/7 - Sistema de Distribución y Venta</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Leaflet.js Map Assets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+    <!-- Dynamic Login/Registration Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card glass-card">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="zap"></i></div>
+                <h2 style="font-weight: 700; font-size: 1.6rem;">Bebidas 24/7</h2>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">Acceso Seguro al E-Commerce</p>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="formAuthLogin">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="loginEmail" placeholder="correo@mail.com" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Contraseña</label>
+                    <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar</button>
+            </form>
+
+            <div style="text-align: center; font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 1.25rem; padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <span style="color:var(--text-secondary);">¿No tienes cuenta?</span>
+                <div style="display:flex; justify-content:center; gap:1rem;">
+                    <a href="#" id="linkGoRegisterClient" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Registrarme Cliente</a>
+                    <span style="color:var(--border-color);">|</span>
+                    <a href="#" id="linkGoRegisterRider" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Postularme Repartidor</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Dev Tools account quick-switcher -->
+    <div class="login-quick-switch" id="devQuickSwitch">
+        <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent-purple); letter-spacing: 0.05em; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.25rem;"><i data-lucide="terminal" style="width:12px;height:12px;"></i> Acceso Rápido (Tesina)</h4>
+        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('carlos@mail.com', 'carlos')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">👤 Cliente (Carlos)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('pedro@mail.com', 'pedro')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">🛵 Repartidor Aprobado (Pedro)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('admin@mail.com', 'admin')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">🔑 Administrador (Central)</button>
+        </div>
+    </div>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="nav-container">
+            <div class="logo" id="btnLogo">
+                <i data-lucide="wine"></i>
+                <span>Bebidas 24/7</span>
+            </div>
+
+            <!-- Header Active User Info -->
+            <div class="header-user-status" id="headerUserStatus" style="display: none; align-items: center; gap: 1rem;">
+                <span id="lblHeaderUserName" style="font-weight: 600; font-size: 0.85rem; color: var(--accent-purple);"></span>
+                <button class="btn btn-secondary btn-sm" id="btnHeaderLogout" style="padding: 0.35rem 0.65rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <i data-lucide="log-out" style="width: 12px; height: 12px;"></i> Salir
+                </button>
+            </div>
+
+            <!-- API Status & Connection Toggle -->
+            <div class="status-badge-container">
+                <div class="api-toggle-container">
+                    <span>API PHP Backend</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggleConnectedMode">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="api-status-banner">
+                    <span class="status-dot active" id="apiDot"></span>
+                    <span id="apiStatusText">Modo Simulado (Local)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main>
+
+        <!-- PANEL CLIENTE -->
+        <section class="panel active" id="panelCliente">
+            <div class="cliente-grid">
+                
+                <!-- Sidebar: Categories & Auth Info -->
+                <aside class="catalog-sidebar">
+                    <!-- Auth State Card -->
+                    <div class="glass-card mb-4" style="margin-bottom: 1.5rem;">
+                        <h3 id="clienteAuthTitle">Mi Cuenta</h3>
+                        <div id="clienteAuthContent">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Categories list -->
+                    <div class="glass-card">
+                        <h3>Categorías</h3>
+                        <ul class="nav-category-list" id="categoryList">
+                            <li class="category-item active" data-category="todos">
+                                <span>Todos</span>
+                                <i data-lucide="chevron-right"></i>
+                            </li>
+                            <li class="category-item" data-category="Cervezas">
+                                <span>Cervezas</span>
+                                <i data-lucide="chevron-right"></i>
+                            </li>
+                            <li class="category-item" data-category="Vinos">
+                                <span>Vinos</span>
+                                <i data-lucide="chevron-right"></i>
+                            </li>
+                            <li class="category-item" data-category="Licores">
+                                <span>Licores</span>
+                                <i data-lucide="chevron-right"></i>
+                            </li>
+                            <li class="category-item" data-category="No Alcohólicas">
+                                <span>Refrescos</span>
+                                <i data-lucide="chevron-right"></i>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+
+                <!-- Catalog and Products Section -->
+                <div class="catalog-main">
+                    
+                    <!-- Client active order tracker if exists -->
+                    <div class="glass-card active-order-container" id="clienteActiveOrderBox" style="display: none;">
+                        <h2><i data-lucide="truck" style="color: var(--accent-purple);"></i> Seguimiento de Pedido en Tiempo Real</h2>
+                        <div class="order-status-steps">
+                            <div class="step-node" id="stepClientePendiente">
+                                <div class="step-circle">1</div>
+                                <div class="step-label">Pendiente</div>
+                            </div>
+                            <div class="step-node" id="stepClienteAsignado">
+                                <div class="step-circle">2</div>
+                                <div class="step-label">Asignado</div>
+                            </div>
+                            <div class="step-node" id="stepClienteEnCamino">
+                                <div class="step-circle">3</div>
+                                <div class="step-label">En Camino</div>
+                            </div>
+                            <div class="step-node" id="stepClienteEntregado">
+                                <div class="step-circle">4</div>
+                                <div class="step-label">Entregado</div>
+                            </div>
+                        </div>
+
+                        <div class="checkout-grid" style="margin-top: 1.5rem;">
+                            <div>
+                                <h3 id="clientActiveOrderTitle">Pedido #00</h3>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="clientActiveOrderItems"></p>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="clientActiveOrderPayment"></p>
+                                <p style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);" id="clientActiveOrderTotal"></p>
+                            </div>
+                            <div>
+                                <h3>Ubicación de Reparto</h3>
+                                <div class="gps-selector-box" style="height: 180px;">
+                                    <div id="activeOrderMap" style="width: 100%; height: 100%;"></div>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; text-align: right;" id="clientActiveOrderEta"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and filters -->
+                    <div class="catalog-header">
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" class="form-control" placeholder="Buscar bebidas o marcas..." id="txtSearch">
+                        </div>
+                        <div id="catalogVerifiedAlert">
+                            <!-- Message about C.I. verification status -->
+                        </div>
+                    </div>
+
+                    <!-- Products List Grid -->
+                    <div class="products-grid" id="productsGrid">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PANEL RIDER -->
+        <section class="panel" id="panelRider">
+            <div class="rider-grid">
+                
+                <!-- Left: Rider Profile & Docs Status -->
+                <aside class="rider-card-profile">
+                    <div class="glass-card">
+                        <h2><i data-lucide="user"></i> Perfil del Rider</h2>
+                        <div id="riderAuthContent">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <div class="rider-docs-list" id="riderDocsContainer">
+                            <!-- Rider document uploads -->
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Right: Active Jobs and Queues -->
+                <div class="rider-main-jobs">
+                    
+                    <!-- Active Delivery Management -->
+                    <div class="glass-card active-order-container" id="riderActiveOrderBox" style="display: none; margin-bottom: 2rem;">
+                        <h2><i data-lucide="route" style="color: var(--accent-purple);"></i> Ruta de Entrega Activa</h2>
+                        
+                        <div class="order-status-steps">
+                            <div class="step-node" id="stepRiderAsignado">
+                                <div class="step-circle">1</div>
+                                <div class="step-label">Aceptado</div>
+                            </div>
+                            <div class="step-node" id="stepRiderEnCamino">
+                                <div class="step-circle">2</div>
+                                <div class="step-label">En Camino</div>
+                            </div>
+                            <div class="step-node" id="stepRiderEntregado">
+                                <div class="step-circle">3</div>
+                                <div class="step-label">Entregado</div>
+                            </div>
+                        </div>
+
+                        <div class="checkout-grid" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <h3 id="riderActiveOrderTitle">Pedido #00</h3>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="riderActiveOrderClient"></p>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="riderActiveOrderAddress"></p>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="riderActiveOrderItems"></p>
+                                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="riderActiveOrderPayment"></p>
+                            </div>
+                            <div>
+                                <h3>Navegación GPS</h3>
+                                <div class="gps-selector-box" style="height: 180px;">
+                                    <div id="riderOrderMap" style="width: 100%; height: 100%;"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                                    <span id="riderOrderDistance"></span>
+                                    <span id="riderOrderEta"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                            <button class="btn btn-secondary" id="btnRiderCancel" style="display:none;">Cancelar Pedido</button>
+                            <button class="btn btn-primary" id="btnRiderAction">Iniciar Entrega (En Camino)</button>
+                        </div>
+                    </div>
+
+                    <!-- Available orders queue -->
+                    <div class="glass-card">
+                        <h2><i data-lucide="list-todo"></i> Pedidos Pendientes de Despacho</h2>
+                        <div class="order-queue-list" id="orderQueueList">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PANEL SUPER USUARIO / ADMIN -->
+        <section class="panel" id="panelAdmin">
+            <!-- Navigation Sub-tabs -->
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" data-tab="approvals" id="tabBtnApprovals">Aprobación C.I. & Expedientes</button>
+                <button class="admin-tab-btn" data-tab="catalog" id="tabBtnCatalog">Control de Catálogo (CRUD)</button>
+                <button class="admin-tab-btn" data-tab="monitoring" id="tabBtnMonitoring">Monitoreo & Caja Central</button>
+                <button class="admin-tab-btn" data-tab="audit" id="tabBtnAudit">Ledger de Auditoría (BMAD)</button>
+                <button class="admin-tab-btn" data-tab="reports" id="tabBtnReports">Reporte de Ventas & Riders</button>
+            </div>
+
+            <!-- TAB 1: Approvals Panel -->
+            <div class="admin-subpanel active" id="subpanelApprovals">
+                <div class="approval-grid">
+                    <div>
+                        <h3>Verificación de Clientes (Mayores de Edad)</h3>
+                        <div class="approval-list" id="pendingCustomersList">
+                            <!-- Customers verifying CI -->
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Aprobación de Expedientes (Riders)</h3>
+                        <div class="approval-list" id="pendingRidersList">
+                            <!-- Riders verifying insurance/license/cv -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Catalog Control (CRUD) -->
+            <div class="admin-subpanel" id="subpanelCatalog">
+                <div class="admin-catalog-grid">
+                    <div class="glass-card" style="overflow-x: auto;">
+                        <h3>Lista de Productos en Catálogo</h3>
+                        <table class="admin-products-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Categoría</th>
+                                    <th>Nombre</th>
+                                    <th>Marca</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminProductsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="glass-card">
+                        <h3 id="adminProductFormTitle">Agregar Nuevo Producto</h3>
+                        <form id="adminProductForm">
+                            <input type="hidden" id="txtProdId">
+                            <div class="form-group">
+                                <label for="txtProdCategory">Categoría</label>
+                                <select class="form-control" id="txtProdCategory" required>
+                                    <option value="Cervezas">Cervezas</option>
+                                    <option value="Vinos">Vinos</option>
+                                    <option value="Licores">Licores</option>
+                                    <option value="No Alcohólicas">Bebidas No Alcohólicas</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtProdName">Nombre</label>
+                                <input type="text" class="form-control" id="txtProdName" placeholder="Ej. Paceña Pilsen Lata" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtProdBrand">Marca</label>
+                                <input type="text" class="form-control" id="txtProdBrand" placeholder="Ej. Paceña" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="txtProdFlavor">Sabor / Presentación</label>
+                                <input type="text" class="form-control" id="txtProdFlavor" placeholder="Ej. Lata 355ml o Tinto Dulce">
+                            </div>
+                            <div class="checkout-grid">
+                                <div class="form-group">
+                                    <label for="txtProdPrice">Precio (Bs)</label>
+                                    <input type="number" step="0.1" class="form-control" id="txtProdPrice" placeholder="0.00" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtProdStock">Stock Inicial</label>
+                                    <input type="number" class="form-control" id="txtProdStock" placeholder="0" required>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+                                <button type="button" class="btn btn-secondary" id="btnCancelEdit" style="display: none;">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="btnSubmitProduct">Guardar Producto</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: Live Monitoring & Cash Settlements -->
+            <div class="admin-subpanel" id="subpanelMonitoring">
+                <div class="approval-grid">
+                    <!-- Live Deliveries -->
+                    <div class="glass-card">
+                        <h3>Monitoreo de Envíos en Tiempo Real</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                            Monitorea las entregas activas. Selecciona un pedido para visualizar su ruta en el mapa central.
+                        </p>
+                        <div class="order-queue-list" id="adminLiveOrdersList">
+                            <!-- Active orders list -->
+                        </div>
+                    </div>
+                    <!-- Right: Interactive map and Cash Settlements -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="glass-card">
+                            <h3>Mapa Operativo del Centro de Control</h3>
+                            <div class="gps-selector-box" style="height: 220px; margin-bottom: 1rem;">
+                                <div id="adminMonitoringMap" style="width: 100%; height: 100%;"></div>
+                            </div>
+                        </div>
+                        <div class="glass-card">
+                            <h3>Liquidación y Cierre de Cajas (Riders)</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                                Recibe la recaudación física de efectivo y concilia las cuentas de los repartidores.
+                            </p>
+                            <div class="rider-leaderboard" id="adminRiderSettlementsList">
+                                <!-- Riders cash settlement status -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: Audit Ledger (BMAD) -->
+            <div class="admin-subpanel" id="subpanelAudit">
+                <div class="glass-card mb-4" style="margin-bottom: 1.5rem;">
+                    <h3>Ledger Inmutable de Auditoría</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        Trazabilidad obligatoria (Regla de Oro). Muestra todos los cambios del sistema en tiempo real. 
+                        Cualquier ajuste de stock, aprobación o actualización financiera queda capturado de manera inalterable.
+                    </p>
+                    <div class="audit-log-container" style="overflow-x: auto;">
+                        <table class="audit-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>IP / Marca de Tiempo</th>
+                                    <th>Operador</th>
+                                    <th>Tabla Afectada</th>
+                                    <th>Acción</th>
+                                    <th>Registro ID</th>
+                                    <th>Datos Anteriores (JSON)</th>
+                                    <th>Datos Nuevos (JSON)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: Reports Dashboard -->
+            <div class="admin-subpanel" id="subpanelReports">
+                <!-- Stat Cards -->
+                <div class="reports-stats-grid">
+                    <div class="glass-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Ventas Totales</p>
+                                <h2 style="font-size: 2.25rem; font-weight: 800; margin-top: 0.5rem; margin-bottom: 0;" id="reportTotalSales">0.00 Bs</h2>
+                            </div>
+                            <div style="background: rgba(16, 185, 129, 0.15); color: var(--accent-green); width: 48px; height: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="circle-dollar-sign"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Pedidos Entregados</p>
+                                <h2 style="font-size: 2.25rem; font-weight: 800; margin-top: 0.5rem; margin-bottom: 0;" id="reportTotalOrders">0</h2>
+                            </div>
+                            <div style="background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); width: 48px; height: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="package-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Riders Activos</p>
+                                <h2 style="font-size: 2.25rem; font-weight: 800; margin-top: 0.5rem; margin-bottom: 0;" id="reportActiveRiders">0</h2>
+                            </div>
+                            <div style="background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); width: 48px; height: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="bike"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-chart-container">
+                    <!-- Payments Chart -->
+                    <div class="glass-card">
+                        <h3>Desglose de Métodos de Pago</h3>
+                        <div class="payment-chart-visual" style="height: 200px;">
+                            <div class="chart-bar-row">
+                                <div class="chart-bar-info">
+                                    <span>Comprobante QR Bancario</span>
+                                    <span id="chartQrVal">0.00 Bs (0%)</span>
+                                </div>
+                                <div class="chart-bar-outer">
+                                    <div class="chart-bar-inner bar-qr" id="chartQrBar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            <div class="chart-bar-row">
+                                <div class="chart-bar-info">
+                                    <span>Efectivo (Contraentrega)</span>
+                                    <span id="chartCashVal">0.00 Bs (0%)</span>
+                                </div>
+                                <div class="chart-bar-outer">
+                                    <div class="chart-bar-inner bar-cash" id="chartCashBar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rider Leaderboard -->
+                    <div class="glass-card">
+                        <h3>Ranking de Riders (Rendimiento)</h3>
+                        <ul class="rider-leaderboard" id="riderLeaderboard">
+                            <!-- Populated dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING CART BUTTON -->
+    <div class="floating-cart-btn" id="btnFloatingCart" style="display: none;">
+        <i data-lucide="shopping-cart"></i>
+        <span class="floating-cart-count" id="cartCount">0</span>
+    </div>
+
+    <!-- CART & CHECKOUT DRAWER -->
+    <div class="drawer" id="cartDrawer">
+        <div class="drawer-header">
+            <h3><i data-lucide="shopping-basket"></i> Mi Carrito</h3>
+            <button class="close-drawer" id="btnCloseDrawer">&times;</button>
+        </div>
+        <div class="drawer-body" id="cartDrawerBody">
+            <!-- Populated dynamically via JS -->
+        </div>
+        <div class="drawer-footer">
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span id="cartSubtotal">0.00 Bs</span>
+            </div>
+            <div class="summary-row">
+                <span>Descuentos</span>
+                <span>0.00 Bs</span>
+            </div>
+            <div class="summary-row total">
+                <span>Total Estimado</span>
+                <span id="cartTotal">0.00 Bs</span>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="btnCheckout">Proceder al Checkout</button>
+        </div>
+    </div>
+
+    <!-- MODAL: CHECKOUT & LOGISTICS -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i data-lucide="credit-card"></i> Completar Pedido</h3>
+                <button class="close-drawer" id="btnCancelCheckout" style="font-size: 1.5rem; background:none; border:none; color:var(--text-secondary); cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="checkout-grid">
+                    <!-- Left: GPS and location -->
+                    <div>
+                        <h3>1. Ubicación de Entrega</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Haz clic en el mapa para simular tu dirección de entrega. Se calculará la distancia desde la tienda central (punto morado) en tiempo real.
+                        </p>
+                        <div class="gps-selector-box" style="height: 220px;">
+                            <div id="gpsSelectorMap" style="width: 100%; height: 100%;"></div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-top: 0.75rem; font-size: 0.85rem;" id="logisticsResults">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span class="text-secondary">Distancia:</span>
+                                <span class="font-bold" id="lblDistance">Elige en el mapa</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                <span class="text-secondary">Envío:</span>
+                                <span class="font-bold" id="lblShippingCost">-</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span class="text-secondary">Tiempo Estimado:</span>
+                                <span class="font-bold" id="lblEta">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Payment & Confirmation -->
+                    <div>
+                        <h3>2. Método de Pago</h3>
+                        <div class="payment-method-selector">
+                            <div class="payment-option-card active" id="payOptQr">
+                                <i data-lucide="qr-code"></i>
+                                <span>Pago QR</span>
+                            </div>
+                            <div class="payment-option-card" id="payOptCash">
+                                <i data-lucide="hand-coins"></i>
+                                <span>Contraentrega</span>
+                            </div>
+                        </div>
+
+                        <!-- QR Image Upload Block -->
+                        <div id="qrUploadBlock">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Escanea el QR o sube el Comprobante:</label>
+                            
+                            <!-- Fake QR display to look good -->
+                            <div style="text-align: center; margin-bottom: 1rem; background: #fff; padding: 0.5rem; border-radius: var(--radius-md); width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 0 15px rgba(255,255,255,0.1);">
+                                <!-- Standard generic QR mock -->
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Bebidas247Checkout" alt="QR Code" style="display: block; width: 100px; height:100px;">
+                            </div>
+
+                            <div class="file-upload-styled">
+                                <i data-lucide="upload-cloud"></i>
+                                <p>Sube tu comprobante bancario (JPG, PNG, PDF)</p>
+                                <input type="file" id="fileQrComprobante" accept="image/*,application/pdf">
+                            </div>
+                            <div class="file-upload-preview" id="qrUploadPreview" style="display: none;">
+                                <span id="qrFileName">comprobante.png</span>
+                                <button type="button" style="background:none; border:none; color:var(--accent-red); cursor:pointer;" id="btnRemoveQrFile">&times;</button>
+                            </div>
+                        </div>
+
+                        <!-- Cash on Delivery Details block -->
+                        <div id="cashDetailsBlock" style="display: none; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); padding: 1rem; border-radius: var(--radius-md); font-size: 0.85rem;">
+                            <p style="color: var(--accent-amber); font-weight: 600; margin-bottom: 0.5rem;"><i data-lucide="info" style="width: 14px; height:14px; vertical-align: middle;"></i> Pago en Efectivo</p>
+                            <p class="text-secondary">Pagarás al Rider en efectivo una vez recibas tus bebidas. Por favor ten el monto exacto listo si es posible.</p>
+                        </div>
+
+                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                            <div class="summary-row total" style="margin-top: 0; padding-top: 0; border: none; margin-bottom: 1rem;">
+                                <span>Total Final:</span>
+                                <span id="lblCheckoutTotal">0.00 Bs</span>
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%;" id="btnPlaceOrder" disabled>Confirmar y Enviar Pedido</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCUMENT / PHOTO VIEWER MODAL (For C.I. & QR verification) -->
+    <div class="file-view-modal" id="fileViewerModal">
+        <div class="file-view-body">
+            <button class="file-view-close" id="btnFileViewerClose">&times;</button>
+            <img src="" alt="Vista Previa de Documento" id="imgFileViewer">
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div>
+                <p>&copy; 2026 Bebidas 24/7 E-commerce. Trabajo de Investigación - Tesina.</p>
+                <p style="font-size: 0.75rem; margin-top: 0.25rem;">Cumplimiento obligatorio de auditoría, control de trazabilidad relacional de inventario y no repudio.</p>
+            </div>
+            <div>
+                <p>Tecnologías: PHP, Python, MySQL, HTML5, CSS3, JavaScript ES6.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- App JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>

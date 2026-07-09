@@ -108,7 +108,17 @@ try {
 
     $db->commit();
 
-    echo formatResponse("success", ["mensaje" => "Usuario registrado correctamente y C.I. guardado."], $newUserId);
+    require_once 'jwt.php';
+    $token = JWTHelper::generate([
+        'user_id' => $newUserId,
+        'role' => $role,
+        'email' => $correo
+    ]);
+
+    echo formatResponse("success", [
+        "mensaje" => "Usuario registrado correctamente y C.I. guardado.",
+        "token" => $token
+    ], $newUserId);
 
 } catch (Exception $e) {
     if (isset($db) && $db->inTransaction()) {

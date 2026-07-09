@@ -17,21 +17,15 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
 }
 
 try {
-    $adminId = $_GET['admin_id'] ?? null;
+    require_once '../Auth/jwt.php';
+    $payload = JWTHelper::authenticate();
+    $adminId = $payload['user_id'];
 
-    if (!$adminId) {
-        throw new Exception("Se requiere admin_id.");
+    if ($payload['role'] !== 'super_usuario') {
+        throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
     }
 
     $db = DatabaseConnection::getInstance()->getConnection();
-
-    // Auth Check
-    $stmtAdmin = $db->prepare("SELECT role FROM users WHERE id = ?");
-    $stmtAdmin->execute([$adminId]);
-    $admin = $stmtAdmin->fetch();
-    if (!$admin || $admin['role'] !== 'super_usuario') {
-        throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
-    }
 
     // 1. Total de Ventas Exitosas
     $stmtTotal = $db->query("SELECT SUM(total) as ventas_totales FROM pedidos WHERE estado_pedido = 'entregado'");

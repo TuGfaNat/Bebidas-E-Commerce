@@ -30,20 +30,27 @@ class UserRegistration {
      */
     public function procesarSubidaCI($userId, $fileData) {
         try {
-            // Lógica simulada de validación de archivo y almacenamiento en S3/local
             if (empty($fileData['tmp_name'])) {
                 return $this->formatResponse("error", null, $userId, "No se proporcionó ningún archivo de C.I.");
             }
 
-            $rutaDestino = '/uploads/ci/' . basename($fileData['name']);
-            // move_uploaded_file($fileData['tmp_name'], $rutaDestino);
+            $uploadDir = __DIR__ . '/uploads/ci/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+                file_put_contents($uploadDir . '.htaccess', "Require all denied\n");
+            }
+
+            $filename = uniqid('ci_') . '_' . basename($fileData['name']);
+            $destination = $uploadDir . $filename;
+            // move_uploaded_file($fileData['tmp_name'], $destination);
+            $dbPath = '/uploads/ci/' . $filename;
             $ciStatus = 'pending';
 
             $stmt = $this->db->prepare("UPDATE users SET ci_url = ?, ci_status = ?, updated_by = ? WHERE id = ?");
-            $stmt->execute([$rutaDestino, $ciStatus, $userId, $userId]);
+            $stmt->execute([$dbPath, $ciStatus, $userId, $userId]);
 
-            // Auditoría lógica de la base de datos (se debe hacer por trigger, o explícitamente en el código si es necesario)
-            $this->logAuditoria('users', $userId, 'UPDATE', null, json_encode(['ci_url' => $rutaDestino, 'ci_status' => $ciStatus]), $userId);
+            // Auditoría lógica de la base de datos
+            $this->logAuditoria('users', $userId, 'UPDATE', null, json_encode(['ci_url' => $dbPath, 'ci_status' => $ciStatus]), $userId);
 
             return $this->formatResponse("success", ["mensaje" => "C.I. subido correctamente y en estado pendiente de verificación."], $userId);
 

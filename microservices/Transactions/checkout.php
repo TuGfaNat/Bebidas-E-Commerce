@@ -17,12 +17,15 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
 }
 
 try {
+    require_once '../Auth/jwt.php';
     $action = $_GET['action'] ?? null;
-    $userId = $_POST['user_id'] ?? null;
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$userId || !$action) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$action) {
         throw new Exception("Faltan parámetros básicos o método incorrecto.");
     }
+
+    $payload = JWTHelper::authenticate();
+    $userId = $payload['user_id'];
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
@@ -38,12 +41,15 @@ try {
         // En un caso real, esto iteraría un carrito de compras y sumaría el total,
         // pero simularemos un total y la creación inicial en 'esperando_pago'
         $total = $_POST['total'] ?? 0;
+        $latitud = $_POST['latitud'] ?? null;
+        $longitud = $_POST['longitud'] ?? null;
+
         if ($total <= 0) throw new Exception("Total inválido.");
 
         $db->beginTransaction();
 
-        $stmt = $db->prepare("INSERT INTO pedidos (cliente_id, estado_pago, estado_pedido, total, created_by, updated_by) VALUES (?, 'esperando_pago', 'pendiente', ?, ?, ?)");
-        $stmt->execute([$userId, $total, $userId, $userId]);
+        $stmt = $db->prepare("INSERT INTO pedidos (cliente_id, estado_pago, estado_pedido, total, latitud, longitud, created_by, updated_by) VALUES (?, 'esperando_pago', 'pendiente', ?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $total, $latitud, $longitud, $userId, $userId]);
         $orderId = $db->lastInsertId();
 
         // Log the creation

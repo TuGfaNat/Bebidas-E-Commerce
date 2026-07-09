@@ -16,13 +16,30 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
     ]);
 }
 
-try {
-    $action = $_GET['action'] ?? null;
-    $riderId = $_POST['rider_id'] ?? $_GET['rider_id'] ?? null;
+function haversinePHP($lat1, $lon1, $lat2, $lon2) {
+    $R = 6371.0;
+    $lat1_rad = deg2rad($lat1);
+    $lon1_rad = deg2rad($lon1);
+    $lat2_rad = deg2rad($lat2);
+    $lon2_rad = deg2rad($lon2);
+    $dlon = $lon2_rad - $lon1_rad;
+    $dlat = $lat2_rad - $lat1_rad;
+    $a = sin($dlat / 2)**2 + cos($lat1_rad) * cos($lat2_rad) * sin($dlon / 2)**2;
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+    return $R * $c;
+}
 
-    if (!$riderId || !$action) {
-        throw new Exception("Falta rider_id o action.");
+try {
+    require_once '../Auth/jwt.php';
+    $action = $_GET['action'] ?? null;
+
+    if (!$action) {
+        throw new Exception("Falta action.");
     }
+
+    $payload = JWTHelper::authenticate();
+    $riderId = $payload['user_id'];
+    $riderRole = $payload['role'];
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
@@ -35,32 +52,49 @@ try {
     }
 
     if ($action === 'list_pending') {
-        // En listar, hipotéticamente pediríamos coordenadas del rider y cruzaríamos con las del cliente.
-        // Como no tenemos lat/lon en tabla, simularemos llamando al script de python con coordenadas fijas.
-
-        $stmt = $db->query("SELECT id, cliente_id, total, estado_pago FROM pedidos WHERE estado_pedido = 'pendiente' AND estado_pago IN ('pagado_qr', 'contraentrega')");
+        // Consultar coordenadas del cliente dinámicamente de pedidos
+        $stmt = $db->query("SELECT id, cliente_id, total, estado_pago, latitud, longitud FROM pedidos WHERE estado_pedido = 'pendiente' AND estado_pago IN ('pagado_qr', 'contraentrega')");
         $pedidos = $stmt->fetchAll();
 
         $disponibles = [];
         foreach ($pedidos as $p) {
-            // Simulamos llamada al motor logístico en Python
-            $latCliente = -16.5000;
-            $lonCliente = -68.1193;
+            $latCliente = $p['latitud'] ?? -16.5000;
+            $lonCliente = $p['longitud'] ?? -68.1193;
             $latTienda = -16.4897;
             $lonTienda = -68.1193;
 
-            // Ejecutamos el motor de logística (sincrónico para el prototipo)
+            // Intentar ejecutar el motor de Python primero (compatibilidad obligatoria stack)
             $safeRiderId = escapeshellarg($riderId);
-            $cmd = escapeshellcmd("python3 ../Logistics/calculator.py $safeRiderId $latCliente $lonCliente $latTienda $lonTienda");
+            $pythonExec = 'python3';
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                $pythonExec = 'python';
+            }
+            
+            $cmd = escapeshellcmd("$pythonExec ../Logistics/calculator.py $safeRiderId $latCliente $lonCliente $latTienda $lonTienda");
             $pythonOutput = shell_exec($cmd);
             $logisticsData = json_decode($pythonOutput, true);
+
+            // Fallback en PHP nativo si falla la ejecución del CLI de Python
+            if (!$logisticsData || $logisticsData['status'] !== 'success') {
+                $distancia_km = haversinePHP($latCliente, $lonCliente, $latTienda, $lonTienda);
+                $tiempo_estimado_min = ($distancia_km / 30.0) * 60.0;
+                $costo_envio_bs = 5.0 + ($distancia_km * 2.0);
+                
+                $logData = [
+                    "distancia_km" => round($distancia_km, 2),
+                    "tiempo_estimado" => round($tiempo_estimado_min) . " min",
+                    "costo_envio_bs" => round($costo_envio_bs, 2)
+                ];
+            } else {
+                $logData = $logisticsData['data'];
+            }
 
             $disponibles[] = [
                 'pedido_id' => $p['id'],
                 'cliente_id' => $p['cliente_id'],
                 'total_factura' => $p['total'],
                 'estado_pago' => $p['estado_pago'],
-                'logistica' => $logisticsData['data'] ?? null
+                'logistica' => $logData
             ];
         }
 

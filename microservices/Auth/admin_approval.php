@@ -21,24 +21,24 @@ try {
         throw new Exception("Solo se permite método POST.");
     }
 
-    $adminId = $_POST['admin_id'] ?? null;
+    require_once 'jwt.php';
+    $payload = JWTHelper::authenticate();
+    $adminId = $payload['user_id'];
+    $adminRole = $payload['role'];
+
+    if ($adminRole !== 'super_usuario') {
+        throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
+    }
+
     $targetId = $_POST['target_id'] ?? null;
     $tipo = $_POST['tipo'] ?? null; // 'user', 'rider', 'view_user', 'view_rider'
     $nuevoEstado = $_POST['estado'] ?? null; // 'aprobado' o 'rechazado'
 
-    if (!$adminId || !$targetId || !$tipo) {
+    if (!$targetId || !$tipo) {
         throw new Exception("Faltan parámetros básicos.");
     }
 
     $db = DatabaseConnection::getInstance()->getConnection();
-
-    // Validar que el admin sea Super Usuario
-    $stmtAdmin = $db->prepare("SELECT role FROM users WHERE id = ?");
-    $stmtAdmin->execute([$adminId]);
-    $admin = $stmtAdmin->fetch();
-    if (!$admin || $admin['role'] !== 'super_usuario') {
-        throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
-    }
 
     $db->beginTransaction();
 

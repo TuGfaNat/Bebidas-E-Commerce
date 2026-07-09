@@ -17,12 +17,20 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
 }
 
 try {
+    require_once '../Auth/jwt.php';
+    $payload = JWTHelper::authenticate();
+    $riderId = $payload['user_id'];
+    $riderRole = $payload['role'];
+
+    if ($riderRole !== 'rider') {
+        throw new Exception("Permiso denegado. Se requiere rol de rider.");
+    }
+
     $action = $_POST['action'] ?? null;
-    $riderId = $_POST['rider_id'] ?? null;
     $pedidoId = $_POST['pedido_id'] ?? null;
 
-    if (!$riderId || !$action || !$pedidoId) {
-        throw new Exception("Faltan parámetros básicos (action, rider_id, pedido_id).");
+    if (!$action || !$pedidoId) {
+        throw new Exception("Faltan parámetros básicos (action, pedido_id).");
     }
 
     $db = DatabaseConnection::getInstance()->getConnection();

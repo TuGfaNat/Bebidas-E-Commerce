@@ -17,19 +17,35 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
 }
 
 try {
+    require_once '../Auth/jwt.php';
     $action = $_GET['action'] ?? null;
-    $userId = $_GET['user_id'] ?? null;
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
     if ($action === 'list') {
         $mostrarPrecio = false;
-        if ($userId) {
-            $stmtUser = $db->prepare("SELECT ci_status FROM users WHERE id = ?");
-            $stmtUser->execute([$userId]);
-            $user = $stmtUser->fetch();
-            if ($user && $user['ci_status'] === 'verified') {
-                $mostrarPrecio = true;
+        
+        // Extract token safely
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        $token = '';
+        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            $token = $matches[1];
+        } elseif (isset($_GET['token'])) {
+            $token = $_GET['token'];
+        }
+
+        $userId = null;
+        if (!empty($token)) {
+            $payload = JWTHelper::verify($token);
+            if ($payload) {
+                $userId = $payload['user_id'];
+                $stmtUser = $db->prepare("SELECT ci_status FROM users WHERE id = ?");
+                $stmtUser->execute([$userId]);
+                $user = $stmtUser->fetch();
+                if ($user && $user['ci_status'] === 'verified') {
+                    $mostrarPrecio = true;
+                }
             }
         }
 
@@ -65,10 +81,11 @@ try {
         echo formatResponse("success", ["catalogo" => $catalogo], $userId);
 
     } elseif ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $stmtAdmin = $db->prepare("SELECT role FROM users WHERE id = ?");
-        $stmtAdmin->execute([$userId]);
-        $admin = $stmtAdmin->fetch();
-        if (!$admin || $admin['role'] !== 'super_usuario') throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
+        $payload = JWTHelper::authenticate();
+        $userId = $payload['user_id'];
+        if ($payload['role'] !== 'super_usuario') {
+            throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
+        }
 
         $cat = $_POST['categoria'] ?? '';
         $nom = $_POST['nombre'] ?? '';
@@ -88,10 +105,11 @@ try {
         echo formatResponse("success", ["mensaje" => "Producto creado", "id" => $newId], $userId);
 
     } elseif ($action === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $stmtAdmin = $db->prepare("SELECT role FROM users WHERE id = ?");
-        $stmtAdmin->execute([$userId]);
-        $admin = $stmtAdmin->fetch();
-        if (!$admin || $admin['role'] !== 'super_usuario') throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
+        $payload = JWTHelper::authenticate();
+        $userId = $payload['user_id'];
+        if ($payload['role'] !== 'super_usuario') {
+            throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
+        }
 
         $id = $_POST['id'] ?? null;
         $stk = $_POST['stock'] ?? null;
@@ -104,10 +122,11 @@ try {
         echo formatResponse("success", ["mensaje" => "Producto actualizado"], $userId);
 
     } elseif ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $stmtAdmin = $db->prepare("SELECT role FROM users WHERE id = ?");
-        $stmtAdmin->execute([$userId]);
-        $admin = $stmtAdmin->fetch();
-        if (!$admin || $admin['role'] !== 'super_usuario') throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
+        $payload = JWTHelper::authenticate();
+        $userId = $payload['user_id'];
+        if ($payload['role'] !== 'super_usuario') {
+            throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
+        }
 
         $id = $_POST['id'] ?? null;
         if (!$id) throw new Exception("Falta ID para eliminar.");

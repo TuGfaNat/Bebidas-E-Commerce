@@ -1,0 +1,13 @@
+{
+  "name": "burger-e-commerce",
+  "version": "1.0.0",
+  "description": "Sistema E-commerce Burger 24/7 con arquitectura de pedidos, despacho y entrega de hamburguesas en tiempo real",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py 8000",
+    "serve": "python server.py 8000"
+  },
+  "keywords": ["ecommerce", "microservices", "python", "php", "javascript", "leaflet"],
+  "author": "TuGfaNat",
+  "license": "ISC"
+}

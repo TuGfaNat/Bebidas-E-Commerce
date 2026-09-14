@@ -1,0 +1,212 @@
+// ============================================================================
+// Proyecto: Sistema E-commerce Bebidas 24/7 (Tesina de Grado)
+// Archivo para dbdiagram.io (DBML - Database Markup Language)
+// Generado conforme a SPEC.md e init_schema.sql / init_users.sql
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// ENUMS (Tipos Enumerados del Negocio)
+// ----------------------------------------------------------------------------
+
+enum user_role {
+  cliente
+  rider
+  super_usuario
+}
+
+enum ci_status_enum {
+  pending
+  verified
+  rejected
+}
+
+enum estado_pago_enum {
+  esperando_pago
+  qr
+  contraentrega
+  pagado_qr
+  pagado_efectivo
+  cancelado
+  liquidado
+}
+
+enum estado_pedido_enum {
+  pendiente
+  asignado
+  en_camino
+  entregado
+  cancelado
+}
+
+enum estado_aprobacion_enum {
+  pendiente
+  aprobado
+  rechazado
+}
+
+enum audit_action {
+  INSERT
+  UPDATE
+  DELETE
+}
+
+// ----------------------------------------------------------------------------
+// TABLAS PRINCIPALES
+// ----------------------------------------------------------------------------
+
+Table users {
+  id int [pk, increment, note: 'Identificador único del usuario']
+  role user_role [not null, note: 'Rol en el sistema: cliente, rider o super_usuario']
+  nombre varchar(255) [not null, note: 'Nombre completo']
+  email varchar(255) [unique, not null, note: 'Correo electrónico']
+  password_hash varchar(255) [not null, note: 'Hash criptográfico (bcrypt/argon2)']
+  fecha_nacimiento date [not null, note: 'Validación legal de mayoría de edad (>18)']
+  ci_url varchar(255) [note: 'Ruta a imagen del C.I.']
+  ci_status ci_status_enum [default: 'pending', note: 'Estado de verificación']
+  
+  // Auditoría obligatoria (Regla de Oro - SPEC.md)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+  created_by int
+  updated_by int
+
+  Note: 'Usuarios del sistema: Clientes, Riders y Super Usuarios'
+}
+
+Table productos {
+  id int [pk, increment, note: 'Identificador único del producto']
+  categoria varchar(255) [not null, note: 'Hamburguesas, Combos, Acompañamientos, Bebidas']
+  nombre varchar(255) [not null, note: 'Nombre del producto']
+  marca varchar(255) [not null, note: 'Línea / Variedad']
+  sabor varchar(255) [note: 'Presentación, ingredientes o descripción']
+  precio decimal(10,2) [not null, note: 'Precio unitario de venta en Bs.']
+  stock int [not null, default: 0, note: 'Inventario en tiempo real (control ACID)']
+  
+  // Auditoría obligatoria (Regla de Oro - SPEC.md)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+  created_by int
+  updated_by int
+
+  Note: 'Catálogo de hamburguesas, combos, acompañamientos y bebidas'
+}
+
+Table pedidos {
+  id int [pk, increment, note: 'Número de pedido']
+  cliente_id int [not null, note: 'Cliente que emite la orden']
+  rider_id int [note: 'Rider asignado para el despacho']
+  estado_pago estado_pago_enum [not null, default: 'esperando_pago']
+  estado_pedido estado_pedido_enum [not null, default: 'pendiente']
+  total decimal(10,2) [not null, note: 'Monto total facturado en Bs.']
+  latitud decimal(10,8) [note: 'Coordenada GPS de entrega (Latitud)']
+  longitud decimal(11,8) [note: 'Coordenada GPS de entrega (Longitud)']
+  qr_comprobante_url varchar(255) [note: 'Comprobante de pago QR']
+  
+  // Auditoría obligatoria (Regla de Oro - SPEC.md)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+  created_by int
+  updated_by int
+
+  Note: 'Cabecera de pedidos y seguimiento de logística'
+}
+
+Table pedido_detalles {
+  id int [pk, increment, note: 'Identificador del ítem']
+  pedido_id int [not null, note: 'Pedido asociado']
+  producto_id int [not null, note: 'Bebida adquirida']
+  cantidad int [not null, note: 'Unidades solicitadas']
+  precio_unitario decimal(10,2) [not null, note: 'Precio unitario en el checkout']
+  
+  // Auditoría obligatoria (Regla de Oro - SPEC.md)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+  created_by int
+  updated_by int
+
+  Note: 'Detalle N:M de productos y cantidades de cada orden'
+}
+
+Table documentacion_rider {
+  id int [pk, increment, note: 'Identificador del expediente']
+  rider_id int [unique, not null, note: 'Relación 1:1 con el usuario Rider']
+  licencia_url varchar(255) [not null, note: 'Licencia de conducir vigente']
+  seguro_url varchar(255) [not null, note: 'Póliza de seguro']
+  cv_url varchar(255) [not null, note: 'Curriculum Vitae']
+  estado_aprobacion estado_aprobacion_enum [default: 'pendiente', note: 'Aprobación del Super Usuario']
+  
+  // Auditoría obligatoria (Regla de Oro - SPEC.md)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+  created_by int
+  updated_by int
+
+  Note: 'Expediente de conducción para validación de repartidores'
+}
+
+Table auditoria_logs {
+  id int [pk, increment, note: 'Correlativo inmutable del log']
+  tabla_afectada varchar(255) [not null, note: 'Tabla modificada']
+  registro_id int [not null, note: 'ID de la fila alterada']
+  accion audit_action [not null, note: 'INSERT, UPDATE o DELETE']
+  datos_anteriores json [note: 'Snapshot previo']
+  datos_nuevos json [note: 'Snapshot posterior']
+  ip_address varchar(45) [note: 'Dirección IP origen']
+  
+  // Auditoría obligatoria (Regla de Oro - SPEC.md)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+  created_by int [note: 'Responsable directo de la acción']
+  updated_by int
+
+  Note: 'Ledger inmutable de auditoría para no repudio y trazabilidad'
+}
+
+// ----------------------------------------------------------------------------
+// RELACIONES DEL MODELO (Foreign Keys)
+// ----------------------------------------------------------------------------
+
+// Relaciones Comerciales y Logísticas
+Ref: pedidos.cliente_id > users.id
+Ref: pedidos.rider_id > users.id
+
+Ref: pedido_detalles.pedido_id > pedidos.id
+Ref: pedido_detalles.producto_id > productos.id
+
+// Expediente digital del Rider (1 a 1)
+Ref: documentacion_rider.rider_id - users.id
+
+// Trazabilidad y Auditoría Universal (Regla de Oro)
+Ref: productos.created_by > users.id
+Ref: productos.updated_by > users.id
+
+Ref: pedidos.created_by > users.id
+Ref: pedidos.updated_by > users.id
+
+Ref: pedido_detalles.created_by > users.id
+Ref: pedido_detalles.updated_by > users.id
+
+Ref: documentacion_rider.created_by > users.id
+Ref: documentacion_rider.updated_by > users.id
+
+Ref: auditoria_logs.created_by > users.id
+Ref: auditoria_logs.updated_by > users.id
+
+// ----------------------------------------------------------------------------
+// AGRUPACIONES LÓGICAS (dbdiagram.io TableGroups)
+// ----------------------------------------------------------------------------
+
+TableGroup Gestion_Comercial {
+  users
+  productos
+  pedidos
+  pedido_detalles
+}
+
+TableGroup Logistica_y_Riders {
+  documentacion_rider
+}
+
+TableGroup Seguridad_y_Auditoria {
+  auditoria_logs
+}

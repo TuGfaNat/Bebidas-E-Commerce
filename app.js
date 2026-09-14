@@ -21,7 +21,9 @@ let currentSession = {
 // Configuration & Connectivity State
 let config = {
     connectedMode: false,
-    apiUrl: 'http://localhost/Bebidas-E-Commerce/microservices'
+    apiUrl: (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:'))
+        ? `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, '')}/microservices`
+        : 'http://localhost/Bebidas-E-Commerce/microservices'
 };
 
 // Cart State
@@ -80,9 +82,43 @@ function initLucide() {
 // ----------------------------------------------------
 function initDatabase() {
     // Check if localStorage has database, otherwise seed
-    const localDb = localStorage.getItem('bebidas_247_db');
+    const localDb = localStorage.getItem('burger_247_db') || localStorage.getItem('bebidas_247_db');
     if (localDb) {
         DB = JSON.parse(localDb);
+        // Automatic upgrade to Burger Shop if old beverage database is detected
+        if (DB.productos && (DB.productos.some(p => p.categoria === 'Cervezas' || p.categoria === 'Vinos' || p.categoria === 'Licores' || p.nombre === 'Cerveza Huari 620ml') || !DB.productos.some(p => p.categoria === 'Hamburguesas'))) {
+            DB.productos = getBurgerProducts();
+            saveDatabase();
+        }
+        // Upgrade legacy audit logs if they refer to old beer items
+        if (DB.auditoria_logs && DB.auditoria_logs.some(l => l.datos_nuevos && (l.datos_nuevos.includes('Paceña') || l.datos_nuevos.includes('Pilsen')))) {
+            DB.auditoria_logs.forEach(l => {
+                if (l.datos_nuevos && (l.datos_nuevos.includes('Paceña') || l.datos_nuevos.includes('Pilsen'))) {
+                    l.datos_nuevos = JSON.stringify({ nombre: 'Hamburguesa Clásica Simple', stock: 85, precio: 22.00 });
+                }
+            });
+            saveDatabase();
+        }
+        // Upgrade legacy password hashes to real bcrypt hashes
+        if (DB.users && Array.isArray(DB.users)) {
+            const realHashes = {
+                1: '$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', // carlos
+                2: '$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', // pedro
+                3: '$2a$10$yvebu1TvWJgj7wE7L1QCDuroqNwHJaELe4E.R3UNDIzwG06EFIJOq', // admin
+                4: '$2b$12$TYK.4OXjw6rT6CvUeIUH3O6CawYZp4qyouHv1Urv5p9Gws9kkr8Ym', // maria
+                5: '$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6'  // juan
+            };
+            let updated = false;
+            DB.users.forEach(u => {
+                if (realHashes[u.id] && (!u.password_hash || u.password_hash.includes('...'))) {
+                    u.password_hash = realHashes[u.id];
+                    updated = true;
+                }
+            });
+            if (updated) {
+                saveDatabase();
+            }
+        }
     } else {
         seedDatabase();
         saveDatabase();
@@ -92,7 +128,7 @@ function initDatabase() {
     renderAuthCard('login');
 
     // Restore session if exists
-    const savedUser = localStorage.getItem('bebidas_user_session');
+    const savedUser = localStorage.getItem('burger_user_session') || localStorage.getItem('bebidas_user_session');
     if (savedUser) {
         const u = JSON.parse(savedUser);
         const match = DB.users.find(usr => usr.id === u.id);
@@ -108,18 +144,19 @@ function initDatabase() {
 }
 
 function saveDatabase() {
+    localStorage.setItem('burger_247_db', JSON.stringify(DB));
     localStorage.setItem('bebidas_247_db', JSON.stringify(DB));
 }
 
 function seedDatabase() {
-    // 1. Seed Users
+    // 1. Seed Users (with secure bcrypt hashes for demo accounts)
     DB.users = [
         {
             id: 1,
             role: 'cliente',
             nombre: 'Carlos Pérez',
             email: 'carlos@mail.com',
-            password_hash: '$2y$10$xyz...', // Carlos
+            password_hash: '$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', // carlos
             fecha_nacimiento: '1992-05-15',
             ci_url: '/uploads/ci/ci_carlos.png',
             ci_status: 'verified',
@@ -133,7 +170,7 @@ function seedDatabase() {
             role: 'rider',
             nombre: 'Pedro Gómez',
             email: 'pedro@mail.com',
-            password_hash: '$2y$10$abc...', // Pedro
+            password_hash: '$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', // pedro
             fecha_nacimiento: '1995-10-22',
             ci_url: '/uploads/ci/ci_pedro.png',
             ci_status: 'verified',
@@ -147,7 +184,7 @@ function seedDatabase() {
             role: 'super_usuario',
             nombre: 'Admin Central',
             email: 'admin@mail.com',
-            password_hash: '$2y$10$admin...', // Admin
+            password_hash: '$2a$10$yvebu1TvWJgj7wE7L1QCDuroqNwHJaELe4E.R3UNDIzwG06EFIJOq', // admin
             fecha_nacimiento: '1988-01-01',
             ci_url: null,
             ci_status: 'verified',
@@ -161,7 +198,7 @@ function seedDatabase() {
             role: 'cliente',
             nombre: 'María López (Pendiente)',
             email: 'maria@mail.com',
-            password_hash: '$2y$10$maria...',
+            password_hash: '$2b$12$TYK.4OXjw6rT6CvUeIUH3O6CawYZp4qyouHv1Urv5p9Gws9kkr8Ym', // maria
             fecha_nacimiento: '2000-09-12',
             ci_url: '/uploads/ci/ci_maria.jpg',
             ci_status: 'pending',
@@ -175,7 +212,7 @@ function seedDatabase() {
             role: 'rider',
             nombre: 'Juan Rodríguez (Pendiente)',
             email: 'juan@mail.com',
-            password_hash: '$2y$10$juan...',
+            password_hash: '$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6', // juan
             fecha_nacimiento: '1996-03-08',
             ci_url: '/uploads/ci/ci_juan.jpg',
             ci_status: 'pending',
@@ -214,16 +251,24 @@ function seedDatabase() {
         }
     ];
 
-    // 3. Seed Products
-    DB.productos = [
-        { id: 1, categoria: 'Cervezas', nombre: 'Paceña Pilsen Lata 355ml', marca: 'Paceña', sabor: 'Clásica', precio: 12.00, stock: 120, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 2, categoria: 'Cervezas', nombre: 'Huari Trigo Botella 620ml', marca: 'Huari', sabor: 'Trigo Miel', precio: 18.00, stock: 80, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 3, categoria: 'Vinos', nombre: 'Aranjuez Terruño Blend 750ml', marca: 'Aranjuez', sabor: 'Tinto Semi-Dulce', precio: 38.00, stock: 45, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 4, categoria: 'Vinos', nombre: 'Kohlberg Tinto Clásico 750ml', marca: 'Kohlberg', sabor: 'Tinto Oporto', precio: 32.00, stock: 60, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 5, categoria: 'Licores', nombre: 'Singani San Pedro de Oro', marca: 'San Pedro', sabor: 'Reserva 3 Estrellas', precio: 85.00, stock: 35, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 6, categoria: 'Licores', nombre: 'Fernet Branca 750ml', marca: 'Branca', sabor: 'Original Mentolado', precio: 110.00, stock: 40, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 7, categoria: 'No Alcohólicas', nombre: 'Coca-Cola Original 2L', marca: 'Coca-Cola', sabor: 'Original Cola', precio: 11.00, stock: 250, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 8, categoria: 'No Alcohólicas', nombre: 'Agua Vital Sin Gas 2L', marca: 'Vital', sabor: 'Natural', precio: 7.00, stock: 180, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+    // 3. Seed Products (Burger Shop)
+    DB.productos = getBurgerProducts();
+}
+
+function getBurgerProducts() {
+    return [
+        { id: 1, categoria: 'Hamburguesas', nombre: 'Hamburguesa Clásica Simple', marca: 'Burger 24/7', sabor: 'Carne 150g, lechuga, tomate y salsa especial', precio: 22.00, stock: 85, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 2, categoria: 'Hamburguesas', nombre: 'Doble Queso Smash Burger', marca: 'Gourmet', sabor: 'Doble medallón smash, queso cheddar x2 y cebolla grillada', precio: 32.00, stock: 70, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 3, categoria: 'Hamburguesas', nombre: 'Bacon BBQ Crunch', marca: 'Especial', sabor: 'Tocino ahumado crocante, salsa BBQ dulce y queso americano', precio: 36.00, stock: 65, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 4, categoria: 'Hamburguesas', nombre: 'Monster Triple Burger', marca: 'Extrema', sabor: 'Triple carne, huevo frito, tocino, queso y pepinillos', precio: 45.00, stock: 40, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 5, categoria: 'Combos', nombre: 'Combo Clásico con Papas y Soda', marca: 'Combos', sabor: 'Hamburguesa Clásica + Papas Medianas + Coca-Cola 500ml', precio: 34.00, stock: 50, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 6, categoria: 'Combos', nombre: 'Combo Doble Smash + Papas Grandes', marca: 'Combos', sabor: 'Doble Smash Cheddar + Papas Rústicas + Bebida 500ml', precio: 44.00, stock: 45, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 7, categoria: 'Acompañamientos', nombre: 'Papas Fritas Rústicas', marca: 'Sides', sabor: 'Papas crocantes con sal marina y salsa tártara de la casa', precio: 14.00, stock: 120, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 8, categoria: 'Acompañamientos', nombre: 'Aros de Cebolla Crocantes', marca: 'Sides', sabor: '8 aros crujientes empanizados con dip BBQ', precio: 16.00, stock: 80, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 9, categoria: 'Acompañamientos', nombre: 'Nuggets de Pollo Crispy (6 uds)', marca: 'Sides', sabor: 'Pechuga crocante con salsa de mostaza miel', precio: 18.00, stock: 90, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 10, categoria: 'Bebidas', nombre: 'Coca-Cola Original 500ml', marca: 'Coca-Cola', sabor: 'Original Fría', precio: 6.00, stock: 200, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 11, categoria: 'Bebidas', nombre: 'Sprite Lima-Limón 500ml', marca: 'Sprite', sabor: 'Refrescante Fría', precio: 6.00, stock: 150, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { id: 12, categoria: 'Bebidas', nombre: 'Limonada Frozen con Menta', marca: 'Burger 24/7', sabor: 'Refrescante, limón natural y menta fresca', precio: 12.00, stock: 100, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
     ];
 
     // 4. Seed Audit Logs
@@ -234,7 +279,7 @@ function seedDatabase() {
             registro_id: 1,
             accion: 'INSERT',
             datos_anteriores: null,
-            datos_nuevos: JSON.stringify({ nombre: 'Paceña Pilsen Lata 355ml', stock: 120, precio: 12.00 }),
+            datos_nuevos: JSON.stringify({ nombre: 'Hamburguesa Clásica Simple', stock: 85, precio: 22.00 }),
             ip_address: '127.0.0.1',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -276,8 +321,8 @@ function seedDatabase() {
     ];
 
     DB.pedido_detalles = [
-        { id: 1, pedido_id: 1, producto_id: 1, cantidad: 2, precio_unitario: 12.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
-        { id: 2, pedido_id: 1, producto_id: 3, cantidad: 1, precio_unitario: 38.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 }
+        { id: 1, pedido_id: 1, producto_id: 1, cantidad: 1, precio_unitario: 22.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
+        { id: 2, pedido_id: 1, producto_id: 3, cantidad: 1, precio_unitario: 36.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 }
     ];
 }
 
@@ -493,9 +538,9 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card">
                 <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="zap"></i></div>
-                    <h2 style="font-weight: 700; font-size: 1.6rem;">Bebidas 24/7</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Acceso Seguro al E-Commerce</p>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                    <h2 style="font-weight: 700; font-size: 1.6rem;">Burger 24/7</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Hamburguesería Gourmet & Delivery Rápido</p>
                 </div>
                 
                 <form id="formAuthLogin">
@@ -507,15 +552,15 @@ function renderAuthCard(view = 'login') {
                         <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Contraseña</label>
                         <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar a Burger 24/7</button>
                 </form>
 
                 <div style="text-align: center; font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 1.25rem; padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
                     <span style="color:var(--text-secondary);">¿No tienes cuenta?</span>
                     <div style="display:flex; justify-content:center; gap:1rem;">
-                        <a href="#" id="linkGoRegisterClient" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Registrarme Cliente</a>
+                        <a href="#" id="linkGoRegisterClient" style="color: #f97316; text-decoration: none; font-weight: 600;">Registrarme Cliente</a>
                         <span style="color:var(--border-color);">|</span>
-                        <a href="#" id="linkGoRegisterRider" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Postularme Repartidor</a>
+                        <a href="#" id="linkGoRegisterRider" style="color: #f97316; text-decoration: none; font-weight: 600;">Postularme Repartidor</a>
                     </div>
                 </div>
             </div>
@@ -525,8 +570,9 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card" style="max-width: 480px;">
                 <div style="text-align: center; margin-bottom: 1.25rem;">
-                    <h2>Registro de Cliente</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Sube tu C.I. para desbloquear el catálogo</p>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                    <h2>Registro de Cliente - Burger 24/7</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Sube tu C.I. para desbloquear el menú de hamburguesas gourmet</p>
                 </div>
                 <form id="formAuthRegisterClient" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div class="form-group">
@@ -561,8 +607,9 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card" style="max-width: 500px;">
                 <div style="text-align: center; margin-bottom: 1.25rem;">
-                    <h2>Postulación de Repartidor</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Carga tu expediente digital de conducción</p>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="bike"></i></div>
+                    <h2>Postulación de Repartidor - Burger 24/7</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Carga tu expediente digital para entregas de pedidos de hamburguesas</p>
                 </div>
                 <form id="formAuthRegisterRider" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div class="form-group">
@@ -664,7 +711,7 @@ function setupAuthFormListeners(view) {
                 role: 'cliente',
                 nombre: name,
                 email: email,
-                password_hash: '$2y$10$clientmock...',
+                password_hash: hashPassword(pass),
                 fecha_nacimiento: dob,
                 ci_url: `/uploads/ci/ci_${newId}_${file.name}`,
                 ci_status: 'pending',
@@ -720,7 +767,7 @@ function setupAuthFormListeners(view) {
                 role: 'rider',
                 nombre: name,
                 email: email,
-                password_hash: '$2y$10$ridermock...',
+                password_hash: hashPassword(pass),
                 fecha_nacimiento: dob,
                 ci_url: `/uploads/ci/ci_${newId}_rider.jpg`,
                 ci_status: 'pending',
@@ -756,6 +803,59 @@ function setupAuthFormListeners(view) {
             onLoginSuccess(newRider);
         });
     }
+}
+
+// ----------------------------------------------------
+// PASSWORD HASHING & BCRYPT VERIFICATION
+// ----------------------------------------------------
+function verifyPassword(password, hash) {
+    if (!password || !hash) return false;
+
+    const bcryptLib = (typeof dcodeIO !== 'undefined' && dcodeIO.bcrypt) 
+        ? dcodeIO.bcrypt 
+        : (typeof bcrypt !== 'undefined' ? bcrypt : null);
+
+    if (bcryptLib && typeof bcryptLib.compareSync === 'function') {
+        try {
+            // PHP password_hash uses $2y$, bcryptjs supports $2a$ and $2b$
+            const normalizedHash = hash.replace(/^\$2y\$/, '$2a$');
+            if (bcryptLib.compareSync(password, normalizedHash)) {
+                return true;
+            }
+        } catch (e) {
+            console.warn('Bcrypt compareSync error:', e);
+        }
+    }
+
+    // Direct fallback for demo accounts if bcrypt library fails to load
+    const demoHashes = {
+        'carlos': ['$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', '$2y$10$xyz...'],
+        'pedro': ['$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', '$2y$10$abc...'],
+        'admin': ['$2a$10$yvebu1TvWJgj7wE7L1QCDuroqNwHJaELe4E.R3UNDIzwG06EFIJOq', '$2y$10$admin...'],
+        'maria': ['$2b$12$TYK.4OXjw6rT6CvUeIUH3O6CawYZp4qyouHv1Urv5p9Gws9kkr8Ym', '$2y$10$maria...'],
+        'juan': ['$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6', '$2y$10$juan...']
+    };
+
+    if (demoHashes[password] && demoHashes[password].includes(hash)) {
+        return true;
+    }
+
+    return false;
+}
+
+function hashPassword(password) {
+    const bcryptLib = (typeof dcodeIO !== 'undefined' && dcodeIO.bcrypt) 
+        ? dcodeIO.bcrypt 
+        : (typeof bcrypt !== 'undefined' ? bcrypt : null);
+
+    if (bcryptLib && typeof bcryptLib.hashSync === 'function') {
+        try {
+            return bcryptLib.hashSync(password, 10);
+        } catch (e) {
+            console.warn('Bcrypt hashSync error:', e);
+        }
+    }
+    return `$2a$10$sim_${Date.now()}_${btoa(password).replace(/=/g, '')}`;
 }
 
 function handleLogin(email, password) {
@@ -798,12 +898,18 @@ function handleLogin(email, password) {
     } else {
         // Simulated local login
         const found = DB.users.find(usr => usr.email.toLowerCase() === email.toLowerCase());
-        // Simple password check (accepting standard logins)
-        if (found) {
-            onLoginSuccess(found);
-        } else {
+        if (!found) {
             showToast('Usuario no registrado.', 'error');
+            return;
         }
+
+        // Real password validation in simulated mode
+        if (!verifyPassword(password, found.password_hash)) {
+            showToast('Contraseña incorrecta. Acceso denegado.', 'error');
+            return;
+        }
+
+        onLoginSuccess(found);
     }
 }
 
@@ -976,10 +1082,10 @@ function renderProducts(category = 'todos', searchQuery = '') {
             ? `${p.precio.toFixed(2)} Bs` 
             : `<span class="price-hidden" title="Debes verificar tu C.I. primero">Oculto</span>`;
 
-        let iconName = 'beer';
-        if (p.categoria === 'Vinos') iconName = 'glass-water';
-        else if (p.categoria === 'Licores') iconName = 'wine';
-        else if (p.categoria === 'No Alcohólicas') iconName = 'cup-soda';
+        let iconName = 'flame';
+        if (p.categoria === 'Combos') iconName = 'sparkles';
+        else if (p.categoria === 'Acompañamientos') iconName = 'drumstick';
+        else if (p.categoria === 'Bebidas') iconName = 'cup-soda';
 
         return `
             <div class="product-card">
@@ -1132,11 +1238,11 @@ function initCheckoutMap() {
             checkoutMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: L.divIcon({
                     className: 'node-store-wrap',
-                    html: '<div style="background:#8b5cf6; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #8b5cf6;"></div>',
+                    html: '<div style="background:#f97316; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f97316;"></div>',
                     iconSize: [14, 14],
                     iconAnchor: [7, 7]
                 })
-            }).addTo(checkoutMapInstance).bindPopup("Tienda Central Bebidas 24/7").openPopup();
+            }).addTo(checkoutMapInstance).bindPopup("Burger 24/7 - Central Sopocachi (Cocina & Despacho)").openPopup();
 
             checkoutMapInstance.on('click', (e) => {
                 const { lat, lng } = e.latlng;
@@ -1848,7 +1954,7 @@ function renderAdminPendingApprovals() {
     const pendingCustomers = DB.users.filter(u => u.role === 'cliente' && u.ci_status === 'pending');
 
     if (pendingCustomers.length === 0) {
-        custContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem;">No hay clientes pendientes de verificación de edad.</div>`;
+        custContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem;">No hay clientes pendientes de verificación de C.I.</div>`;
     } else {
         custContainer.innerHTML = pendingCustomers.map(u => `
             <div class="approval-card">
@@ -2089,30 +2195,102 @@ function resetProductForm() {
 
 function renderAdminAuditLogs() {
     const tbody = document.getElementById('auditTableBody');
-    tbody.innerHTML = DB.auditoria_logs.map(log => {
+    tbody.innerHTML = '';
+
+    DB.auditoria_logs.forEach(log => {
+        const tr = document.createElement('tr');
+
         const opUser = DB.users.find(u => u.id === log.created_by);
         const nameUser = opUser ? `${opUser.nombre} (${opUser.role.replace('_', ' ')})` : 'SYSTEM';
 
-        const preData = log.datos_anteriores ? JSON.stringify(JSON.parse(log.datos_anteriores), null, 2) : '-';
-        const postData = log.datos_nuevos ? JSON.stringify(JSON.parse(log.datos_nuevos), null, 2) : '-';
+        let preData = '-';
+        if (log.datos_anteriores) {
+            try {
+                preData = JSON.stringify(typeof log.datos_anteriores === 'string' ? JSON.parse(log.datos_anteriores) : log.datos_anteriores, null, 2);
+            } catch (e) {
+                preData = String(log.datos_anteriores);
+            }
+        }
+
+        let postData = '-';
+        if (log.datos_nuevos) {
+            try {
+                postData = JSON.stringify(typeof log.datos_nuevos === 'string' ? JSON.parse(log.datos_nuevos) : log.datos_nuevos, null, 2);
+            } catch (e) {
+                postData = String(log.datos_nuevos);
+            }
+        }
 
         let badgeClass = 'badge-verified'; 
         if (log.accion === 'UPDATE') badgeClass = 'badge-pending'; 
         else if (log.accion === 'DELETE') badgeClass = 'badge-rejected'; 
 
-        return `
-            <tr>
-                <td><strong>#${log.id}</strong></td>
-                <td style="font-size:0.75rem; color:var(--text-secondary);">${new Date(log.created_at).toLocaleString()}<br><span style="color:var(--text-muted);">IP: ${log.ip_address}</span></td>
-                <td>${nameUser}</td>
-                <td><span style="font-family:monospace; color:var(--accent-purple);">${log.tabla_afectada}</span></td>
-                <td><span class="badge ${badgeClass}">${log.accion}</span></td>
-                <td><strong>#${log.registro_id}</strong></td>
-                <td><pre class="json-render">${preData}</pre></td>
-                <td><pre class="json-render">${postData}</pre></td>
-            </tr>
-        `;
-    }).join('');
+        // Col 1: ID
+        const tdId = document.createElement('td');
+        const strongId = document.createElement('strong');
+        strongId.textContent = `#${log.id}`;
+        tdId.appendChild(strongId);
+        tr.appendChild(tdId);
+
+        // Col 2: Fecha e IP
+        const tdDate = document.createElement('td');
+        tdDate.style.fontSize = '0.75rem';
+        tdDate.style.color = 'var(--text-secondary)';
+        tdDate.appendChild(document.createTextNode(new Date(log.created_at).toLocaleString()));
+        tdDate.appendChild(document.createElement('br'));
+        const spanIp = document.createElement('span');
+        spanIp.style.color = 'var(--text-muted)';
+        spanIp.textContent = `IP: ${log.ip_address || '127.0.0.1'}`;
+        tdDate.appendChild(spanIp);
+        tr.appendChild(tdDate);
+
+        // Col 3: Usuario
+        const tdUser = document.createElement('td');
+        tdUser.textContent = nameUser;
+        tr.appendChild(tdUser);
+
+        // Col 4: Tabla afectada
+        const tdTable = document.createElement('td');
+        const spanTable = document.createElement('span');
+        spanTable.style.fontFamily = 'monospace';
+        spanTable.style.color = 'var(--accent-purple)';
+        spanTable.textContent = log.tabla_afectada;
+        tdTable.appendChild(spanTable);
+        tr.appendChild(tdTable);
+
+        // Col 5: Acción
+        const tdAction = document.createElement('td');
+        const spanAction = document.createElement('span');
+        spanAction.className = `badge ${badgeClass}`;
+        spanAction.textContent = log.accion;
+        tdAction.appendChild(spanAction);
+        tr.appendChild(tdAction);
+
+        // Col 6: ID de registro
+        const tdRecId = document.createElement('td');
+        const strongRecId = document.createElement('strong');
+        strongRecId.textContent = `#${log.registro_id}`;
+        tdRecId.appendChild(strongRecId);
+        tr.appendChild(tdRecId);
+
+        // Col 7: Datos anteriores (Seguro contra XSS)
+        const tdPre = document.createElement('td');
+        const preElem = document.createElement('pre');
+        preElem.className = 'json-render';
+        preElem.textContent = preData;
+        tdPre.appendChild(preElem);
+        tr.appendChild(tdPre);
+
+        // Col 8: Datos nuevos (Seguro contra XSS)
+        const tdPost = document.createElement('td');
+        const postElem = document.createElement('pre');
+        postElem.className = 'json-render';
+        postElem.textContent = postData;
+        tdPost.appendChild(postElem);
+        tr.appendChild(tdPost);
+
+        tbody.appendChild(tr);
+    });
 }
 
 function renderAdminReports() {

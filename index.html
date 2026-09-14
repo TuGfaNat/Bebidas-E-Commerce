@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bebidas 24/7 - Sistema de Distribución y Venta</title>
+    <title>Burger 24/7 - Hamburguesería & Delivery</title>
     <link rel="stylesheet" href="style.css">
     <!-- Leaflet.js Map Assets -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <!-- Bcrypt.js for Secure Password Verification -->
+    <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
 </head>
 <body>
 
@@ -17,9 +19,9 @@
     <div id="loginScreen" class="login-screen">
         <div class="login-card glass-card">
             <div style="text-align: center; margin-bottom: 1.5rem;">
-                <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="zap"></i></div>
-                <h2 style="font-weight: 700; font-size: 1.6rem;">Bebidas 24/7</h2>
-                <p style="font-size: 0.85rem; color: var(--text-secondary);">Acceso Seguro al E-Commerce</p>
+                <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                <h2 style="font-weight: 700; font-size: 1.6rem;">Burger 24/7</h2>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">Hamburguesería Gourmet & Delivery Rápido</p>
             </div>
             
             <!-- Login Form -->
@@ -32,15 +34,15 @@
                     <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Contraseña</label>
                     <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar a Burger 24/7</button>
             </form>
 
             <div style="text-align: center; font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 1.25rem; padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
                 <span style="color:var(--text-secondary);">¿No tienes cuenta?</span>
                 <div style="display:flex; justify-content:center; gap:1rem;">
-                    <a href="#" id="linkGoRegisterClient" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Registrarme Cliente</a>
+                    <a href="#" id="linkGoRegisterClient" style="color: #f97316; text-decoration: none; font-weight: 600;">Registrarme Cliente</a>
                     <span style="color:var(--border-color);">|</span>
-                    <a href="#" id="linkGoRegisterRider" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Postularme Repartidor</a>
+                    <a href="#" id="linkGoRegisterRider" style="color: #f97316; text-decoration: none; font-weight: 600;">Postularme Repartidor</a>
                 </div>
             </div>
         </div>
@@ -60,8 +62,8 @@
     <header>
         <div class="nav-container">
             <div class="logo" id="btnLogo">
-                <i data-lucide="wine"></i>
-                <span>Bebidas 24/7</span>
+                <i data-lucide="flame" style="color: #f97316;"></i>
+                <span>Burger 24/7</span>
             </div>
 
             <!-- Header Active User Info -->
@@ -114,20 +116,20 @@
                                 <span>Todos</span>
                                 <i data-lucide="chevron-right"></i>
                             </li>
-                            <li class="category-item" data-category="Cervezas">
-                                <span>Cervezas</span>
+                            <li class="category-item" data-category="Hamburguesas">
+                                <span>Hamburguesas</span>
                                 <i data-lucide="chevron-right"></i>
                             </li>
-                            <li class="category-item" data-category="Vinos">
-                                <span>Vinos</span>
+                            <li class="category-item" data-category="Combos">
+                                <span>Combos</span>
                                 <i data-lucide="chevron-right"></i>
                             </li>
-                            <li class="category-item" data-category="Licores">
-                                <span>Licores</span>
+                            <li class="category-item" data-category="Acompañamientos">
+                                <span>Acompañamientos</span>
                                 <i data-lucide="chevron-right"></i>
                             </li>
-                            <li class="category-item" data-category="No Alcohólicas">
-                                <span>Refrescos</span>
+                            <li class="category-item" data-category="Bebidas">
+                                <span>Bebidas</span>
                                 <i data-lucide="chevron-right"></i>
                             </li>
                         </ul>
@@ -180,7 +182,7 @@
                     <div class="catalog-header">
                         <div class="search-box">
                             <i data-lucide="search"></i>
-                            <input type="text" class="form-control" placeholder="Buscar bebidas o marcas..." id="txtSearch">
+                            <input type="text" class="form-control" placeholder="Buscar hamburguesas, combos, papas..." id="txtSearch">
                         </div>
                         <div id="catalogVerifiedAlert">
                             <!-- Message about C.I. verification status -->
@@ -289,7 +291,7 @@
             <div class="admin-subpanel active" id="subpanelApprovals">
                 <div class="approval-grid">
                     <div>
-                        <h3>Verificación de Clientes (Mayores de Edad)</h3>
+                        <h3>Verificación de Identidad de Clientes (C.I.)</h3>
                         <div class="approval-list" id="pendingCustomersList">
                             <!-- Customers verifying CI -->
                         </div>
@@ -333,23 +335,23 @@
                             <div class="form-group">
                                 <label for="txtProdCategory">Categoría</label>
                                 <select class="form-control" id="txtProdCategory" required>
-                                    <option value="Cervezas">Cervezas</option>
-                                    <option value="Vinos">Vinos</option>
-                                    <option value="Licores">Licores</option>
-                                    <option value="No Alcohólicas">Bebidas No Alcohólicas</option>
+                                    <option value="Hamburguesas">Hamburguesas</option>
+                                    <option value="Combos">Combos</option>
+                                    <option value="Acompañamientos">Acompañamientos</option>
+                                    <option value="Bebidas">Bebidas</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="txtProdName">Nombre</label>
-                                <input type="text" class="form-control" id="txtProdName" placeholder="Ej. Paceña Pilsen Lata" required>
+                                <input type="text" class="form-control" id="txtProdName" placeholder="Ej. Doble Queso Smash Burger" required>
                             </div>
                             <div class="form-group">
-                                <label for="txtProdBrand">Marca</label>
-                                <input type="text" class="form-control" id="txtProdBrand" placeholder="Ej. Paceña" required>
+                                <label for="txtProdBrand">Línea / Marca</label>
+                                <input type="text" class="form-control" id="txtProdBrand" placeholder="Ej. Gourmet o Artesanal" required>
                             </div>
                             <div class="form-group">
-                                <label for="txtProdFlavor">Sabor / Presentación</label>
-                                <input type="text" class="form-control" id="txtProdFlavor" placeholder="Ej. Lata 355ml o Tinto Dulce">
+                                <label for="txtProdFlavor">Descripción / Presentación</label>
+                                <input type="text" class="form-control" id="txtProdFlavor" placeholder="Ej. Doble carne smash, cheddar y cebolla grillada">
                             </div>
                             <div class="checkout-grid">
                                 <div class="form-group">
@@ -599,7 +601,7 @@
                             <!-- Fake QR display to look good -->
                             <div style="text-align: center; margin-bottom: 1rem; background: #fff; padding: 0.5rem; border-radius: var(--radius-md); width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 0 15px rgba(255,255,255,0.1);">
                                 <!-- Standard generic QR mock -->
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Bebidas247Checkout" alt="QR Code" style="display: block; width: 100px; height:100px;">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Burger247Checkout" alt="QR Code" style="display: block; width: 100px; height:100px;">
                             </div>
 
                             <div class="file-upload-styled">
@@ -616,7 +618,7 @@
                         <!-- Cash on Delivery Details block -->
                         <div id="cashDetailsBlock" style="display: none; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); padding: 1rem; border-radius: var(--radius-md); font-size: 0.85rem;">
                             <p style="color: var(--accent-amber); font-weight: 600; margin-bottom: 0.5rem;"><i data-lucide="info" style="width: 14px; height:14px; vertical-align: middle;"></i> Pago en Efectivo</p>
-                            <p class="text-secondary">Pagarás al Rider en efectivo una vez recibas tus bebidas. Por favor ten el monto exacto listo si es posible.</p>
+                            <p class="text-secondary">Pagarás al Rider en efectivo una vez recibas tu pedido de hamburguesas. Por favor ten el monto exacto listo si es posible.</p>
                         </div>
 
                         <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
@@ -644,7 +646,7 @@
     <footer>
         <div class="footer-content">
             <div>
-                <p>&copy; 2026 Bebidas 24/7 E-commerce. Trabajo de Investigación - Tesina.</p>
+                <p>&copy; 2026 Burger 24/7 E-commerce. Sistema de Pedidos y Delivery de Hamburguesas.</p>
                 <p style="font-size: 0.75rem; margin-top: 0.25rem;">Cumplimiento obligatorio de auditoría, control de trazabilidad relacional de inventario y no repudio.</p>
             </div>
             <div>

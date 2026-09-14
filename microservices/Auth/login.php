@@ -2,6 +2,10 @@
 // microservices/Auth/login.php
 require_once 'connection.php';
 require_once 'jwt.php';
+require_once 'security.php';
+
+// Aplicar CORS restringido
+applyCorsMiddleware();
 
 header('Content-Type: application/json');
 
@@ -22,6 +26,9 @@ try {
         throw new Exception("Método no permitido. Use POST.");
     }
 
+    // Comprobar rate limit por IP antes de procesar
+    checkLoginRateLimit(5, 300);
+
     $correo = $_POST['correo'] ?? '';
     $password = $_POST['password'] ?? '';
 
@@ -36,8 +43,13 @@ try {
     $user = $stmt->fetch();
 
     if (!$user || !password_verify($password, $user['password_hash'])) {
+        recordLoginFailure(300);
+        http_response_code(401);
         throw new Exception("Credenciales incorrectas.");
     }
+
+    // Login exitoso: restablecer intentos fallidos
+    recordLoginSuccess();
 
     $token = JWTHelper::generate([
         'user_id' => $user['id'],
@@ -57,5 +69,8 @@ try {
     ], $user['id']);
 
 } catch (Exception $e) {
+    if (http_response_code() === 200) {
+        http_response_code(400);
+    }
     echo formatResponse("error", null, null, $e->getMessage());
 }

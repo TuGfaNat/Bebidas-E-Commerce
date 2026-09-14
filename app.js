@@ -82,12 +82,21 @@ function initLucide() {
 // ----------------------------------------------------
 function initDatabase() {
     // Check if localStorage has database, otherwise seed
-    const localDb = localStorage.getItem('bebidas_247_db');
+    const localDb = localStorage.getItem('burger_247_db') || localStorage.getItem('bebidas_247_db');
     if (localDb) {
         DB = JSON.parse(localDb);
         // Automatic upgrade to Burger Shop if old beverage database is detected
-        if (DB.productos && DB.productos.some(p => p.categoria === 'Cervezas' || p.categoria === 'Vinos' || p.categoria === 'Licores')) {
+        if (DB.productos && (DB.productos.some(p => p.categoria === 'Cervezas' || p.categoria === 'Vinos' || p.categoria === 'Licores' || p.nombre === 'Cerveza Huari 620ml') || !DB.productos.some(p => p.categoria === 'Hamburguesas'))) {
             DB.productos = getBurgerProducts();
+            saveDatabase();
+        }
+        // Upgrade legacy audit logs if they refer to old beer items
+        if (DB.auditoria_logs && DB.auditoria_logs.some(l => l.datos_nuevos && (l.datos_nuevos.includes('Paceña') || l.datos_nuevos.includes('Pilsen')))) {
+            DB.auditoria_logs.forEach(l => {
+                if (l.datos_nuevos && (l.datos_nuevos.includes('Paceña') || l.datos_nuevos.includes('Pilsen'))) {
+                    l.datos_nuevos = JSON.stringify({ nombre: 'Hamburguesa Clásica Simple', stock: 85, precio: 22.00 });
+                }
+            });
             saveDatabase();
         }
         // Upgrade legacy password hashes to real bcrypt hashes
@@ -119,7 +128,7 @@ function initDatabase() {
     renderAuthCard('login');
 
     // Restore session if exists
-    const savedUser = localStorage.getItem('bebidas_user_session');
+    const savedUser = localStorage.getItem('burger_user_session') || localStorage.getItem('bebidas_user_session');
     if (savedUser) {
         const u = JSON.parse(savedUser);
         const match = DB.users.find(usr => usr.id === u.id);
@@ -135,6 +144,7 @@ function initDatabase() {
 }
 
 function saveDatabase() {
+    localStorage.setItem('burger_247_db', JSON.stringify(DB));
     localStorage.setItem('bebidas_247_db', JSON.stringify(DB));
 }
 
@@ -258,7 +268,7 @@ function getBurgerProducts() {
         { id: 9, categoria: 'Acompañamientos', nombre: 'Nuggets de Pollo Crispy (6 uds)', marca: 'Sides', sabor: 'Pechuga crocante con salsa de mostaza miel', precio: 18.00, stock: 90, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
         { id: 10, categoria: 'Bebidas', nombre: 'Coca-Cola Original 500ml', marca: 'Coca-Cola', sabor: 'Original Fría', precio: 6.00, stock: 200, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
         { id: 11, categoria: 'Bebidas', nombre: 'Sprite Lima-Limón 500ml', marca: 'Sprite', sabor: 'Refrescante Fría', precio: 6.00, stock: 150, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 12, categoria: 'Bebidas', nombre: 'Cerveza Huari 620ml', marca: 'Huari', sabor: 'Tradicional Helada', precio: 18.00, stock: 100, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+        { id: 12, categoria: 'Bebidas', nombre: 'Limonada Frozen con Menta', marca: 'Burger 24/7', sabor: 'Refrescante, limón natural y menta fresca', precio: 12.00, stock: 100, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
     ];
 
     // 4. Seed Audit Logs
@@ -269,7 +279,7 @@ function getBurgerProducts() {
             registro_id: 1,
             accion: 'INSERT',
             datos_anteriores: null,
-            datos_nuevos: JSON.stringify({ nombre: 'Paceña Pilsen Lata 355ml', stock: 120, precio: 12.00 }),
+            datos_nuevos: JSON.stringify({ nombre: 'Hamburguesa Clásica Simple', stock: 85, precio: 22.00 }),
             ip_address: '127.0.0.1',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -311,8 +321,8 @@ function getBurgerProducts() {
     ];
 
     DB.pedido_detalles = [
-        { id: 1, pedido_id: 1, producto_id: 1, cantidad: 2, precio_unitario: 12.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
-        { id: 2, pedido_id: 1, producto_id: 3, cantidad: 1, precio_unitario: 38.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 }
+        { id: 1, pedido_id: 1, producto_id: 1, cantidad: 1, precio_unitario: 22.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
+        { id: 2, pedido_id: 1, producto_id: 3, cantidad: 1, precio_unitario: 36.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 }
     ];
 }
 
@@ -528,9 +538,9 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card">
                 <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="zap"></i></div>
-                    <h2 style="font-weight: 700; font-size: 1.6rem;">Bebidas 24/7</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Acceso Seguro al E-Commerce</p>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                    <h2 style="font-weight: 700; font-size: 1.6rem;">Burger 24/7</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Hamburguesería Gourmet & Delivery Rápido</p>
                 </div>
                 
                 <form id="formAuthLogin">
@@ -542,15 +552,15 @@ function renderAuthCard(view = 'login') {
                         <label style="font-size: 0.8rem; margin-bottom: 0.25rem; display: block;">Contraseña</label>
                         <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Ingresar a Burger 24/7</button>
                 </form>
 
                 <div style="text-align: center; font-size: 0.8rem; border-top: 1px solid var(--border-color); margin-top: 1.25rem; padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
                     <span style="color:var(--text-secondary);">¿No tienes cuenta?</span>
                     <div style="display:flex; justify-content:center; gap:1rem;">
-                        <a href="#" id="linkGoRegisterClient" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Registrarme Cliente</a>
+                        <a href="#" id="linkGoRegisterClient" style="color: #f97316; text-decoration: none; font-weight: 600;">Registrarme Cliente</a>
                         <span style="color:var(--border-color);">|</span>
-                        <a href="#" id="linkGoRegisterRider" style="color: var(--accent-purple); text-decoration: none; font-weight: 600;">Postularme Repartidor</a>
+                        <a href="#" id="linkGoRegisterRider" style="color: #f97316; text-decoration: none; font-weight: 600;">Postularme Repartidor</a>
                     </div>
                 </div>
             </div>
@@ -560,8 +570,9 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card" style="max-width: 480px;">
                 <div style="text-align: center; margin-bottom: 1.25rem;">
-                    <h2>Registro de Cliente</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Sube tu C.I. para desbloquear el catálogo</p>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                    <h2>Registro de Cliente - Burger 24/7</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Sube tu C.I. para desbloquear el menú de hamburguesas gourmet</p>
                 </div>
                 <form id="formAuthRegisterClient" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div class="form-group">
@@ -596,8 +607,9 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card" style="max-width: 500px;">
                 <div style="text-align: center; margin-bottom: 1.25rem;">
-                    <h2>Postulación de Repartidor</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Carga tu expediente digital de conducción</p>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="bike"></i></div>
+                    <h2>Postulación de Repartidor - Burger 24/7</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Carga tu expediente digital para entregas de pedidos de hamburguesas</p>
                 </div>
                 <form id="formAuthRegisterRider" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div class="form-group">
@@ -1226,11 +1238,11 @@ function initCheckoutMap() {
             checkoutMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: L.divIcon({
                     className: 'node-store-wrap',
-                    html: '<div style="background:#8b5cf6; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #8b5cf6;"></div>',
+                    html: '<div style="background:#f97316; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f97316;"></div>',
                     iconSize: [14, 14],
                     iconAnchor: [7, 7]
                 })
-            }).addTo(checkoutMapInstance).bindPopup("Tienda Central Bebidas 24/7").openPopup();
+            }).addTo(checkoutMapInstance).bindPopup("Burger 24/7 - Central Sopocachi (Cocina & Despacho)").openPopup();
 
             checkoutMapInstance.on('click', (e) => {
                 const { lat, lng } = e.latlng;
@@ -1942,7 +1954,7 @@ function renderAdminPendingApprovals() {
     const pendingCustomers = DB.users.filter(u => u.role === 'cliente' && u.ci_status === 'pending');
 
     if (pendingCustomers.length === 0) {
-        custContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem;">No hay clientes pendientes de verificación de edad.</div>`;
+        custContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem;">No hay clientes pendientes de verificación de C.I.</div>`;
     } else {
         custContainer.innerHTML = pendingCustomers.map(u => `
             <div class="approval-card">

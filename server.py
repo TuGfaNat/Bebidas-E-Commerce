@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Servidor HTTP y Microservicios Centrales para Bebidas 24/7
+Servidor HTTP y Microservicios Centrales para Burger 24/7
 Sirve el Frontend (HTML5/CSS3/JS), gestiona CORS y expone los microservicios
 conforme a la especificación de SPEC.md.
 """
@@ -108,7 +108,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 "database": "bebidas_247",
                 "connected": True,
                 "engine": "MySQL/Local",
-                "message": "Conexión exitosa a la base de datos de Bebidas 24/7"
+                "message": "Conexión exitosa a la base de datos de Burger 24/7"
             }))
             return
 
@@ -255,7 +255,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 "database": "bebidas_247",
                 "connected": True,
                 "engine": "MySQL/Local",
-                "message": "Conexión exitosa a la base de datos de Bebidas 24/7"
+                "message": "Conexión exitosa a la base de datos de Burger 24/7"
             }))
             return
 

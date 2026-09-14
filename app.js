@@ -127,15 +127,70 @@ function initDatabase() {
     // Initialize Auth view
     renderAuthCard('login');
 
-    // Restore session if exists
+    // Restore connected mode preference if saved
+    const isConnected = localStorage.getItem('connected_mode') === 'true';
+    if (isConnected) {
+        config.connectedMode = true;
+        const toggle = document.getElementById('toggleConnectedMode');
+        if (toggle) toggle.checked = true;
+        updateApiStatusUI(true);
+    }
+
+    // Restore session: check for JWT in connected mode first
+    const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+    if (config.connectedMode && token) {
+        fetch(`${config.apiUrl}/Auth/session.php`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === 'success' && res.data && res.data.user) {
+                onLoginSuccess(res.data.user, false);
+            } else {
+                console.warn('Sesión JWT expirada o inválida:', res.error_details);
+                handleLogout(false);
+            }
+        })
+        .catch(err => {
+            console.warn('Error validando sesión remota, restaurando local:', err);
+            restoreLocalSavedSession();
+        });
+        return;
+    }
+
+    restoreLocalSavedSession();
+}
+
+function updateApiStatusUI(connected) {
+    const apiDot = document.getElementById('apiDot');
+    const apiText = document.getElementById('apiStatusText');
+    if (!apiDot || !apiText) return;
+    if (connected) {
+        apiDot.className = 'status-dot active';
+        apiText.innerText = 'Modo Conectado (PHP Server)';
+    } else {
+        apiDot.className = 'status-dot active';
+        apiText.innerText = 'Modo Simulado (Local)';
+    }
+}
+
+function restoreLocalSavedSession() {
     const savedUser = localStorage.getItem('burger_user_session') || localStorage.getItem('bebidas_user_session');
     if (savedUser) {
-        const u = JSON.parse(savedUser);
-        const match = DB.users.find(usr => usr.id === u.id);
-        if (match) {
-            onLoginSuccess(match, false);
-            return;
-        }
+        try {
+            const u = JSON.parse(savedUser);
+            const match = DB.users ? DB.users.find(usr => usr.id === u.id) : null;
+            if (match) {
+                onLoginSuccess(match, false);
+                return;
+            } else if (u && u.id && u.role) {
+                onLoginSuccess(u, false);
+                return;
+            }
+        } catch (e) {}
     }
     
     // Otherwise show login screen
@@ -392,6 +447,7 @@ function setupEventListeners() {
 
     document.getElementById('toggleConnectedMode').addEventListener('change', (e) => {
         config.connectedMode = e.target.checked;
+        localStorage.setItem('connected_mode', config.connectedMode ? 'true' : 'false');
         const apiDot = document.getElementById('apiDot');
         const apiText = document.getElementById('apiStatusText');
 
@@ -400,16 +456,33 @@ function setupEventListeners() {
             apiText.innerText = 'Intentando conectar a PHP...';
             
             fetch(`${config.apiUrl}/Auth/connection.php`)
-                .then(() => {
+                .then(res => res.json())
+                .then(res => {
                     apiDot.className = 'status-dot active';
                     apiText.innerText = 'Modo Conectado (PHP Server)';
-                    showToast('Conectado a la base de datos MySQL mediante PHP.', 'success');
+                    showToast('Conectado al backend mediante PHP.', 'success');
+
+                    // If a token exists, verify and sync session with backend
+                    const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+                    if (token) {
+                        fetch(`${config.apiUrl}/Auth/session.php`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        })
+                        .then(r => r.json())
+                        .then(sess => {
+                            if (sess.status === 'success' && sess.data && sess.data.user) {
+                                onLoginSuccess(sess.data.user, false);
+                            }
+                        })
+                        .catch(() => {});
+                    }
                 })
                 .catch(err => {
                     apiDot.className = 'status-dot inactive';
                     apiText.innerText = 'Servidor Offline - Modo Simulado Activo';
                     e.target.checked = false;
                     config.connectedMode = false;
+                    localStorage.setItem('connected_mode', 'false');
                     showToast('No se pudo conectar al servidor PHP local. Reversión a simulación.', 'error');
                 });
         } else {
@@ -860,40 +933,42 @@ function hashPassword(password) {
 
 function handleLogin(email, password) {
     if (config.connectedMode) {
-        // Connected mode real auth
+        // Connected mode real auth via backend
+        const existingToken = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (existingToken) {
+            headers['Authorization'] = `Bearer ${existingToken}`;
+        }
+
         fetch(`${config.apiUrl}/Auth/login.php`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: headers,
             body: `correo=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
         })
-        .then(res => res.json())
-        .then(res => {
-            if (res.status === 'success') {
-                localStorage.setItem('bebidas_jwt_token', res.data.token);
-                // Decode token to match local user simulation
-                const payload = parseJwt(res.data.token);
-                if (payload) {
-                    const match = DB.users.find(usr => usr.id === payload.user_id);
-                    if (match) {
-                        onLoginSuccess(match);
-                    } else {
-                        // Create runtime simulation user
-                        const mockUser = {
-                            id: payload.user_id,
-                            nombre: payload.nombre || email.split('@')[0],
-                            email: payload.email || email,
-                            role: payload.role,
-                            ci_status: 'verified'
-                        };
-                        onLoginSuccess(mockUser);
-                    }
-                }
+        .then(res => res.json().then(data => ({ status: res.status, body: data })))
+        .then(({ status, body }) => {
+            if (status === 200 && body.status === 'success') {
+                const token = body.data.token;
+                localStorage.setItem('burger_jwt_token', token);
+                localStorage.setItem('bebidas_jwt_token', token);
+
+                // Hydrate user info from JWT claims and response
+                const jwtData = parseJwt(token);
+                const userObj = {
+                    id: (jwtData && jwtData.user_id) || body.data.user.id,
+                    nombre: (jwtData && jwtData.nombre) || body.data.user.nombre,
+                    email: (jwtData && jwtData.email) || body.data.user.email,
+                    role: (jwtData && jwtData.role) || body.data.user.role,
+                    ci_status: (jwtData && jwtData.ci_status) || body.data.user.ci_status || 'verified'
+                };
+
+                onLoginSuccess(userObj, true);
             } else {
-                showToast(res.error_details || 'Credenciales inválidas.', 'error');
+                showToast(body.error_details || 'Credenciales inválidas.', 'error');
             }
         })
         .catch(err => {
-            showToast('Error de red al intentar conectar con PHP.', 'error');
+            showToast('Error de red al intentar conectar con el backend.', 'error');
         });
     } else {
         // Simulated local login
@@ -909,7 +984,7 @@ function handleLogin(email, password) {
             return;
         }
 
-        onLoginSuccess(found);
+        onLoginSuccess(found, true);
     }
 }
 
@@ -927,20 +1002,40 @@ function parseJwt(token) {
 }
 
 function onLoginSuccess(user, notify = true) {
-    currentSession.currentUser = user;
-    localStorage.setItem('bebidas_user_session', JSON.stringify(user));
+    let activeUser = { ...user };
+
+    // In connected mode, obtain/ensure claims come directly from the verified JWT
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (token) {
+            const jwtData = parseJwt(token);
+            if (jwtData) {
+                activeUser = {
+                    id: jwtData.user_id || activeUser.id,
+                    nombre: jwtData.nombre || activeUser.nombre,
+                    email: jwtData.email || activeUser.email,
+                    role: jwtData.role || activeUser.role,
+                    ci_status: jwtData.ci_status || activeUser.ci_status || 'verified'
+                };
+            }
+        }
+    }
+
+    currentSession.currentUser = activeUser;
+    localStorage.setItem('burger_user_session', JSON.stringify(activeUser));
+    localStorage.setItem('bebidas_user_session', JSON.stringify(activeUser));
 
     // Map role variables for view renderers
-    if (user.role === 'cliente') {
-        currentSession.cliente = user;
+    if (activeUser.role === 'cliente') {
+        currentSession.cliente = activeUser;
         currentSession.rider = null;
         currentSession.admin = null;
-    } else if (user.role === 'rider') {
-        currentSession.rider = user;
+    } else if (activeUser.role === 'rider') {
+        currentSession.rider = activeUser;
         currentSession.cliente = null;
         currentSession.admin = null;
-    } else if (user.role === 'super_usuario') {
-        currentSession.admin = user;
+    } else if (activeUser.role === 'super_usuario') {
+        currentSession.admin = activeUser;
         currentSession.cliente = null;
         currentSession.rider = null;
     }
@@ -948,24 +1043,26 @@ function onLoginSuccess(user, notify = true) {
     // Update Header Status UI
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('headerUserStatus').style.display = 'flex';
-    document.getElementById('lblHeaderUserName').innerText = `${user.nombre} (${user.role.toUpperCase().replace('_', ' ')})`;
+    document.getElementById('lblHeaderUserName').innerText = `${activeUser.nombre} (${activeUser.role.toUpperCase().replace('_', ' ')})`;
 
     // Display appropriate panel
-    const roleKey = user.role === 'super_usuario' ? 'admin' : user.role;
+    const roleKey = activeUser.role === 'super_usuario' ? 'admin' : activeUser.role;
     switchRole(roleKey);
 
     if (notify) {
-        showToast(`¡Sesión iniciada como ${user.nombre}!`, 'success');
+        showToast(`¡Sesión iniciada como ${activeUser.nombre}!`, 'success');
     }
 }
 
-function handleLogout() {
+function handleLogout(notify = true) {
     currentSession.currentUser = null;
     currentSession.cliente = null;
     currentSession.rider = null;
     currentSession.admin = null;
 
+    localStorage.removeItem('burger_user_session');
     localStorage.removeItem('bebidas_user_session');
+    localStorage.removeItem('burger_jwt_token');
     localStorage.removeItem('bebidas_jwt_token');
 
     // Hide panels
@@ -982,7 +1079,9 @@ function handleLogout() {
     riderTrackingMapInstance = null;
     adminMonitoringMapInstance = null;
 
-    showToast('Sesión cerrada correctamente.', 'info');
+    if (notify) {
+        showToast('Sesión cerrada correctamente.', 'info');
+    }
     renderAuthCard('login');
 }
 

@@ -11,11 +11,67 @@ import json
 import urllib.parse
 import mimetypes
 import subprocess
+import hmac
+import hashlib
+import base64
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from datetime import datetime, timezone
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+
+def load_jwt_secret():
+    env_path = os.path.join(ROOT_DIR, 'microservices', 'Auth', '.env')
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        k, v = line.split('=', 1)
+                        if k.strip() == 'JWT_SECRET':
+                            return v.strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return os.environ.get('JWT_SECRET', 'c53a0c7a8788d5ed3e796f49c7de19b493cf5ffc6f657fe0377e993a80bd2d98')
+
+JWT_SECRET = load_jwt_secret()
+
+def base64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode('utf-8').rstrip('=')
+
+def base64url_decode(s: str) -> bytes:
+    padding = '=' * (-len(s) % 4)
+    return base64.urlsafe_b64decode(s + padding)
+
+def generate_jwt(payload: dict, expiry_seconds=86400) -> str:
+    now = int(datetime.now().timestamp())
+    full_payload = {**payload, "iat": now, "exp": now + expiry_seconds}
+    header = {"alg": "HS256", "typ": "JWT"}
+    h_str = base64url_encode(json.dumps(header, separators=(',', ':')).encode('utf-8'))
+    p_str = base64url_encode(json.dumps(full_payload, separators=(',', ':')).encode('utf-8'))
+    signing_input = f"{h_str}.{p_str}".encode('utf-8')
+    sig = hmac.new(JWT_SECRET.encode('utf-8'), signing_input, hashlib.sha256).digest()
+    sig_str = base64url_encode(sig)
+    return f"{h_str}.{p_str}.{sig_str}"
+
+def verify_jwt(token: str):
+    if not token or token.count('.') != 2:
+        return None
+    try:
+        h_str, p_str, sig_str = token.split('.')
+        signing_input = f"{h_str}.{p_str}".encode('utf-8')
+        expected_sig = hmac.new(JWT_SECRET.encode('utf-8'), signing_input, hashlib.sha256).digest()
+        actual_sig = base64url_decode(sig_str)
+        if not hmac.compare_digest(expected_sig, actual_sig):
+            return None
+        payload = json.loads(base64url_decode(p_str).decode('utf-8'))
+        now = int(datetime.now().timestamp())
+        if 'exp' in payload and payload['exp'] < now:
+            return None
+        return payload
+    except Exception:
+        return None
 
 def get_audit_envelope(status, data, user_id=None, error_details=None):
     return {
@@ -110,6 +166,41 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 "engine": "MySQL/Local",
                 "message": "Conexión exitosa a la base de datos de Burger 24/7"
             }))
+            return
+
+        # Microservice: Session restoration via Bearer JWT
+        if path in ['/microservices/Auth/session.php', '/microservices/Auth/session']:
+            auth_header = self.headers.get('Authorization', '')
+            token = ''
+            if auth_header.startswith('Bearer '):
+                token = auth_header[7:].strip()
+            
+            if not token:
+                self.send_json(get_audit_envelope(
+                    "error", None, None, 
+                    "Acceso denegado. Token no proporcionado en el encabezado Authorization."
+                ), status=401)
+                return
+
+            payload = verify_jwt(token)
+            if not payload:
+                self.send_json(get_audit_envelope(
+                    "error", None, None, 
+                    "Acceso denegado. Token inválido o expirado."
+                ), status=401)
+                return
+
+            user_id = payload.get('user_id')
+            self.send_json(get_audit_envelope("success", {
+                "valid": True,
+                "user": {
+                    "id": user_id,
+                    "nombre": payload.get('nombre', 'Usuario'),
+                    "email": payload.get('email', ''),
+                    "role": payload.get('role', 'cliente'),
+                    "ci_status": payload.get('ci_status', 'verified')
+                }
+            }, user_id=user_id))
             return
 
         # Microservice: Logistics calculator via GET query params
@@ -212,11 +303,17 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 ), status=401)
                 return
 
-            # Login successful: clear rate limit and issue token
+            # Login successful: clear rate limit and issue real signed JWT
             record_attempt(client_ip, success=True)
-            mock_token = f"jwt_{matched['id']}_{int(datetime.now().timestamp())}_mock_sig"
+            signed_token = generate_jwt({
+                "user_id": matched['id'],
+                "role": matched['role'],
+                "email": correo,
+                "nombre": matched['nombre'],
+                "ci_status": matched['ci_status']
+            }, expiry_seconds=86400)
             self.send_json(get_audit_envelope("success", {
-                "token": mock_token,
+                "token": signed_token,
                 "user": {
                     "id": matched['id'],
                     "nombre": matched['nombre'],
@@ -225,6 +322,41 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                     "ci_status": matched['ci_status']
                 }
             }, user_id=matched['id']))
+            return
+
+        # Microservice: Session restoration via POST
+        if path in ['/microservices/Auth/session.php', '/microservices/Auth/session']:
+            auth_header = self.headers.get('Authorization', '')
+            token = ''
+            if auth_header.startswith('Bearer '):
+                token = auth_header[7:].strip()
+            
+            if not token:
+                self.send_json(get_audit_envelope(
+                    "error", None, None, 
+                    "Acceso denegado. Token no proporcionado en el encabezado Authorization."
+                ), status=401)
+                return
+
+            payload = verify_jwt(token)
+            if not payload:
+                self.send_json(get_audit_envelope(
+                    "error", None, None, 
+                    "Acceso denegado. Token inválido o expirado."
+                ), status=401)
+                return
+
+            user_id = payload.get('user_id')
+            self.send_json(get_audit_envelope("success", {
+                "valid": True,
+                "user": {
+                    "id": user_id,
+                    "nombre": payload.get('nombre', 'Usuario'),
+                    "email": payload.get('email', ''),
+                    "role": payload.get('role', 'cliente'),
+                    "ci_status": payload.get('ci_status', 'verified')
+                }
+            }, user_id=user_id))
             return
 
         # Microservice: Logistics calculator via POST

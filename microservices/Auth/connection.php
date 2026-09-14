@@ -8,11 +8,11 @@ class DatabaseConnection {
     private function __construct() {
         $this->loadEnv();
 
-        $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-        $db   = $_ENV['DB_NAME'] ?? 'bebidas_247';
-        $user = $_ENV['DB_USER'] ?? 'root';
-        $pass = $_ENV['DB_PASS'] ?? '';
-        $charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
+        $host = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? '127.0.0.1');
+        $db   = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'bebidas_247');
+        $user = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'root');
+        $pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : ($_ENV['DB_PASS'] ?? '');
+        $charset = getenv('DB_CHARSET') ?: ($_ENV['DB_CHARSET'] ?? 'utf8mb4');
 
         $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
         $options = [

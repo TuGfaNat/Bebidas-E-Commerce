@@ -18,21 +18,25 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
 
 try {
     require_once '../Auth/jwt.php';
-    $action = $_GET['action'] ?? null;
 
+    // Enforce strict token transmission: reject query string tokens immediately
+    if (isset($_GET['token']) || isset($_REQUEST['token'])) {
+        http_response_code(401);
+        echo formatResponse("error", null, null, "Acceso denegado. Tokens por query string no están permitidos por seguridad. Utilice el encabezado 'Authorization: Bearer <token>'.");
+        exit;
+    }
+
+    $action = $_GET['action'] ?? null;
     $db = DatabaseConnection::getInstance()->getConnection();
 
     if ($action === 'list') {
         $mostrarPrecio = false;
-        
-        // Extract token safely
+
         $headers = getallheaders();
         $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
         $token = '';
         if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
             $token = $matches[1];
-        } elseif (isset($_GET['token'])) {
-            $token = $_GET['token'];
         }
 
         $userId = null;

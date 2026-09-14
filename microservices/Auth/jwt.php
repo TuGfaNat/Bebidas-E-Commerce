@@ -18,7 +18,11 @@ class JWTHelper {
     private static function getSecret() {
         // Ensure DatabaseConnection instance is initialized to load environmental variables
         DatabaseConnection::getInstance();
-        return getenv('JWT_SECRET') ?: 'bebidas_247_secure_super_secret_key_123_456_789_xyz';
+        $secret = getenv('JWT_SECRET') ?: ($_ENV['JWT_SECRET'] ?? null);
+        if (empty($secret)) {
+            throw new Exception("Error de configuración de seguridad: JWT_SECRET no está definido en el entorno.");
+        }
+        return $secret;
     }
 
     private static function base64UrlEncode($data) {
@@ -80,14 +84,17 @@ class JWTHelper {
     }
 
     public static function authenticate() {
+        // Enforce strict token transmission: reject query string or body parameter tokens
+        if (isset($_GET['token']) || isset($_POST['token']) || isset($_REQUEST['token'])) {
+            throw new Exception("Acceso denegado. El envío de tokens por parámetros URL/query string está estrictamente prohibido. Utilice el encabezado 'Authorization: Bearer <token>'.");
+        }
+
         $headers = getallheaders();
         $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
         $token = '';
 
         if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
             $token = $matches[1];
-        } elseif (isset($_REQUEST['token'])) {
-            $token = $_REQUEST['token'];
         }
 
         if (empty($token)) {

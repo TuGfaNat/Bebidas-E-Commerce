@@ -149,6 +149,7 @@ function initDatabase() {
         .then(res => {
             if (res.status === 'success' && res.data && res.data.user) {
                 onLoginSuccess(res.data.user, false);
+                syncProductsFromBackend();
             } else {
                 console.warn('Sesión JWT expirada o inválida:', res.error_details);
                 handleLogout(false);
@@ -159,6 +160,10 @@ function initDatabase() {
             restoreLocalSavedSession();
         });
         return;
+    }
+
+    if (config.connectedMode) {
+        syncProductsFromBackend();
     }
 
     restoreLocalSavedSession();
@@ -473,8 +478,13 @@ function setupEventListeners() {
                             if (sess.status === 'success' && sess.data && sess.data.user) {
                                 onLoginSuccess(sess.data.user, false);
                             }
+                            syncProductsFromBackend();
                         })
-                        .catch(() => {});
+                        .catch(() => {
+                            syncProductsFromBackend();
+                        });
+                    } else {
+                        syncProductsFromBackend();
                     }
                 })
                 .catch(err => {
@@ -2200,7 +2210,31 @@ function renderAdminProductsTable() {
     initLucide();
 }
 
-function handleProductFormSubmit(e) {
+async function syncProductsFromBackend() {
+    if (!config.connectedMode) return;
+    const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    try {
+        const res = await fetch(`${config.apiUrl}/Catalog/catalog.php`, { headers });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'success' && data.data && Array.isArray(data.data.productos)) {
+                DB.productos = data.data.productos;
+                saveDatabase();
+                renderProducts();
+                if (document.getElementById('adminProductsTableBody')) {
+                    renderAdminProductsTable();
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('Error sincronizando catálogo con backend:', err);
+    }
+}
+
+async function handleProductFormSubmit(e) {
     e.preventDefault();
     const admin = currentSession.admin;
 
@@ -2212,6 +2246,78 @@ function handleProductFormSubmit(e) {
     const price = parseFloat(document.getElementById('txtProdPrice').value);
     const stock = parseInt(document.getElementById('txtProdStock').value);
 
+    // Modo Conectado: CRUD REST contra microservicio Catalog
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (!token) {
+            showToast('Error 401: No se encontró token JWT. Inicia sesión como administrador.', 'danger');
+            return;
+        }
+
+        const isEdit = !!prodId;
+        const method = isEdit ? 'PUT' : 'POST';
+        const payload = {
+            categoria: category,
+            nombre: name,
+            marca: brand,
+            sabor: flavor,
+            precio: price,
+            stock: stock
+        };
+        if (isEdit) payload.id = parseInt(prodId);
+
+        try {
+            const res = await fetch(`${config.apiUrl}/Catalog/catalog.php`, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json().catch(() => ({}));
+
+            if (res.status === 403) {
+                showToast('Error 403: Permiso denegado. Solo administradores pueden modificar el catálogo.', 'danger');
+                return;
+            } else if (res.status === 401) {
+                showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
+                return;
+            } else if (!res.ok || result.status !== 'success') {
+                showToast('Error: ' + (result.error_details || 'No se pudo guardar el producto.'), 'danger');
+                return;
+            }
+
+            if (isEdit) {
+                const id = parseInt(prodId);
+                const prod = DB.productos.find(p => p.id === id);
+                if (prod && result.data && result.data.producto) {
+                    Object.assign(prod, result.data.producto);
+                }
+                showToast('Producto actualizado en la base de datos MySQL.', 'success');
+            } else {
+                if (result.data && result.data.producto) {
+                    DB.productos.push(result.data.producto);
+                } else {
+                    const newId = result.data && result.data.id ? result.data.id : DB.productos.length + 1;
+                    DB.productos.push({ id: newId, categoria: category, nombre: name, marca: brand, sabor: flavor, precio, stock });
+                }
+                showToast('Producto registrado en la base de datos MySQL.', 'success');
+            }
+
+            saveDatabase();
+            resetProductForm();
+            renderAdminProductsTable();
+            renderProducts();
+            return;
+        } catch (err) {
+            console.error('Error conectando con catalog.php:', err);
+            showToast('Fallo de red al comunicar con microservicio. Guardando en modo local...', 'warning');
+        }
+    }
+
+    // Modo Simulado (Local fallback)
     if (prodId) {
         const id = parseInt(prodId);
         const prod = DB.productos.find(p => p.id === id);
@@ -2224,9 +2330,9 @@ function handleProductFormSubmit(e) {
         prod.precio = price;
         prod.stock = stock;
         prod.updated_at = new Date().toISOString();
-        prod.updated_by = admin.id;
+        prod.updated_by = admin ? admin.id : 3;
 
-        logAuditoria('productos', id, 'UPDATE', oldState, prod, admin.id);
+        logAuditoria('productos', id, 'UPDATE', oldState, prod, admin ? admin.id : 3);
         showToast('Producto actualizado correctamente.', 'success');
     } else {
         const newId = DB.productos.length + 1;
@@ -2240,18 +2346,19 @@ function handleProductFormSubmit(e) {
             stock: stock,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            created_by: admin.id,
-            updated_by: admin.id
+            created_by: admin ? admin.id : 3,
+            updated_by: admin ? admin.id : 3
         };
 
         DB.productos.push(newProd);
-        logAuditoria('productos', newId, 'INSERT', null, newProd, admin.id);
+        logAuditoria('productos', newId, 'INSERT', null, newProd, admin ? admin.id : 3);
         showToast('Producto agregado al catálogo.', 'success');
     }
 
     saveDatabase();
     resetProductForm();
     renderAdminProductsTable();
+    renderProducts();
 }
 
 window.editProduct = function(productId) {
@@ -2270,19 +2377,63 @@ window.editProduct = function(productId) {
     document.getElementById('btnCancelEdit').style.display = 'inline-flex';
 };
 
-window.deleteProduct = function(productId) {
+window.deleteProduct = async function(productId) {
     const admin = currentSession.admin;
+
+    // Modo Conectado: DELETE contra microservicio Catalog
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (!token) {
+            showToast('Error 401: Se requiere sesión de administrador para eliminar.', 'danger');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${config.apiUrl}/Catalog/catalog.php?id=${productId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const result = await res.json().catch(() => ({}));
+
+            if (res.status === 403) {
+                showToast('Error 403: Permiso denegado. Solo administradores pueden eliminar productos.', 'danger');
+                return;
+            } else if (res.status === 401) {
+                showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
+                return;
+            } else if (!res.ok || result.status !== 'success') {
+                showToast('Error: ' + (result.error_details || 'No se pudo eliminar el producto.'), 'danger');
+                return;
+            }
+
+            const idx = DB.productos.findIndex(p => p.id === productId);
+            if (idx !== -1) DB.productos.splice(idx, 1);
+            saveDatabase();
+            showToast('Producto eliminado de la base de datos MySQL.', 'warning');
+            renderAdminProductsTable();
+            renderProducts();
+            return;
+        } catch (err) {
+            console.error('Error eliminando en catalog.php:', err);
+            showToast('Fallo de red al comunicar con microservicio. Eliminando localmente...', 'warning');
+        }
+    }
+
     const idx = DB.productos.findIndex(p => p.id === productId);
     if (idx === -1) return;
 
     const oldProduct = DB.productos[idx];
     DB.productos.splice(idx, 1);
     
-    logAuditoria('productos', productId, 'DELETE', oldProduct, null, admin.id);
+    logAuditoria('productos', productId, 'DELETE', oldProduct, null, admin ? admin.id : 3);
     saveDatabase();
     
     showToast('Producto eliminado del catálogo.', 'warning');
     renderAdminProductsTable();
+    renderProducts();
 };
 
 function resetProductForm() {

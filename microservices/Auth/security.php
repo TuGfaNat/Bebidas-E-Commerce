@@ -1,6 +1,7 @@
 <?php
 // microservices/Auth/security.php
-// Middleware de seguridad: CORS restringido y Rate-Limiting para autenticación
+// Middleware de seguridad: CORS restringido, Rate-Limiting, y Helpers de Autenticación Reutilizables
+require_once __DIR__ . '/jwt.php';
 
 /**
  * Aplica políticas estrictas de CORS restringidas a orígenes permitidos.
@@ -166,5 +167,155 @@ function logAudit($db, $tablaAfectada, $registroId, $accion, $datosAnteriores = 
         $uid,
         $uid
     ]);
+}
+
+/**
+ * Helper de autenticación centralizada y reutilizable con JWT Bearer.
+ * Rechaza terminantemente tokens pasados por query string o URL (HTTP 401).
+ * Verifica la firma y vigencia del JWT (HTTP 401).
+ * Si se definen roles permitidos, valida que el rol del usuario esté autorizado (HTTP 403).
+ *
+ * @param array|string $allowedRoles Roles autorizados (ej: ['rider'], ['admin', 'super_usuario']). Vacío para cualquier rol autenticado.
+ * @return array Payload del JWT decodificado
+ */
+function requireAuth($allowedRoles = []) {
+    // 1. Rechazo estricto de tokens por URL o query string
+    if (isset($_GET['token']) || isset($_REQUEST['token']) || isset($_POST['token'])) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            "status" => "error",
+            "data" => null,
+            "audit" => [
+                "user_id" => "ANONYMOUS",
+                "timestamp" => date("c"),
+                "action" => "AUTH_STRICT",
+                "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+            ],
+            "error_details" => "Acceso denegado. El envío de tokens por query string o parámetros de petición (?token=) está estrictamente prohibido por seguridad. Utilice el encabezado 'Authorization: Bearer <token>'."
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    // 2. Extraer token del encabezado Authorization
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? ($_SERVER['HTTP_AUTHORIZATION'] ?? '');
+
+    if (!preg_match('/Bearer\s+(.+)$/i', $authHeader, $matches)) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            "status" => "error",
+            "data" => null,
+            "audit" => [
+                "user_id" => "ANONYMOUS",
+                "timestamp" => date("c"),
+                "action" => "AUTH_REQUIRED",
+                "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+            ],
+            "error_details" => "Acceso denegado. Se requiere encabezado de autorización 'Authorization: Bearer <token>'."
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    $token = trim($matches[1]);
+    $payload = JWTHelper::verify($token);
+    if (!$payload || !isset($payload['user_id'])) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            "status" => "error",
+            "data" => null,
+            "audit" => [
+                "user_id" => "ANONYMOUS",
+                "timestamp" => date("c"),
+                "action" => "AUTH_INVALID",
+                "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+            ],
+            "error_details" => "Acceso denegado. Token JWT inválido, expirado o manipulado."
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    // 3. Verificación de roles si aplica
+    if (!empty($allowedRoles)) {
+        if (is_string($allowedRoles)) {
+            $allowedRoles = [$allowedRoles];
+        }
+        $userRole = $payload['role'] ?? '';
+        if (!in_array($userRole, $allowedRoles, true)) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                "status" => "error",
+                "data" => null,
+                "audit" => [
+                    "user_id" => $payload['user_id'] ?? "ANONYMOUS",
+                    "timestamp" => date("c"),
+                    "action" => "FORBIDDEN",
+                    "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+                ],
+                "error_details" => "Permiso denegado. El rol '" . htmlspecialchars($userRole) . "' no cuenta con privilegios suficientes para realizar esta operación."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        }
+    }
+
+    return $payload;
+}
+
+/**
+ * Valida que el usuario tenga rol 'rider' y su documentación esté en estado 'aprobado'.
+ * Si no está aprobado o no es rider, responde con HTTP 403 Forbidden y termina la ejecución.
+ *
+ * @param PDO $db Conexión activa a base de datos
+ * @param int $riderId ID de usuario del rider
+ * @return array Datos del rider y estado de su expediente
+ */
+function requireApprovedRider($db, $riderId) {
+    $stmt = $db->prepare("
+        SELECT u.id, u.nombre, u.email, u.role, u.ci_status, d.estado_aprobacion 
+        FROM users u 
+        LEFT JOIN documentacion_rider d ON d.rider_id = u.id 
+        WHERE u.id = ?
+    ");
+    $stmt->execute([$riderId]);
+    $rider = $stmt->fetch();
+
+    if (!$rider || $rider['role'] !== 'rider') {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            "status" => "error",
+            "data" => null,
+            "audit" => [
+                "user_id" => $riderId,
+                "timestamp" => date("c"),
+                "action" => "RIDER_ROLE_REQUIRED",
+                "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+            ],
+            "error_details" => "Permiso denegado. El usuario no cuenta con el rol de rider."
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    if ($rider['estado_aprobacion'] !== 'aprobado') {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            "status" => "error",
+            "data" => null,
+            "audit" => [
+                "user_id" => $riderId,
+                "timestamp" => date("c"),
+                "action" => "RIDER_NOT_APPROVED",
+                "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
+            ],
+            "error_details" => "Permiso denegado. La documentación del rider se encuentra en estado '" . ($rider['estado_aprobacion'] ?: 'sin_documentos') . "'. Debe estar aprobada por un administrador para realizar entregas."
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+
+    return $rider;
 }
 

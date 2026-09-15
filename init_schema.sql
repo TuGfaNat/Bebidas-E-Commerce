@@ -153,7 +153,15 @@ ON DUPLICATE KEY UPDATE
     precio = VALUES(precio),
     stock = VALUES(stock);
 
+-- Seed Documentación de Riders (Pedro aprobado, Juan pendiente)
+INSERT INTO documentacion_rider (id, rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by) VALUES
+(1, 2, '/uploads/docs/licencia_pedro.jpg', '/uploads/docs/seguro_pedro.jpg', '/uploads/docs/cv_pedro.pdf', 'aprobado', 3, 3),
+(2, 5, '/uploads/docs/licencia_juan.jpg', '/uploads/docs/seguro_juan.jpg', '/uploads/docs/cv_juan.pdf', 'pendiente', 5, 5)
+ON DUPLICATE KEY UPDATE 
+    estado_aprobacion = VALUES(estado_aprobacion);
+
 -- Seed Auditoría Inicial
 INSERT INTO auditoria_logs (id, tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_by, updated_by) VALUES
 (1, 'productos', 1, 'INSERT', NULL, '{"nombre":"Hamburguesa Clásica Simple","stock":85,"precio":22.00}', '127.0.0.1', 3, 3)
 ON DUPLICATE KEY UPDATE accion = VALUES(accion);
+

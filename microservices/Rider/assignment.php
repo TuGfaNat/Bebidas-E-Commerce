@@ -1,22 +1,50 @@
 <?php
 // microservices/Rider/assignment.php
-require_once '../Auth/connection.php';
+// Microservicio de Asignación de Pedidos para Riders - Burger 24/7
+require_once __DIR__ . '/../Auth/connection.php';
+require_once __DIR__ . '/../Auth/jwt.php';
+require_once __DIR__ . '/../Auth/security.php';
 
-header('Content-Type: application/json');
+// Aplicar CORS
+applyCorsMiddleware();
 
-function formatResponse($status, $data, $userId = null, $errorDetails = null) {
+header('Content-Type: application/json; charset=UTF-8');
+
+/**
+ * Formato de respuesta estándar BMAD
+ */
+function formatResponse($status, $data, $userId = null, $errorDetails = null, $action = "ASSIGNMENT") {
     return json_encode([
         "status" => $status,
         "data" => $data,
         "audit" => [
-            "user_id" => $userId ?: "SYSTEM",
-            "timestamp" => date("c")
+            "user_id" => $userId !== null ? $userId : "ANONYMOUS",
+            "timestamp" => date("c"),
+            "action" => $action,
+            "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
         ],
         "error_details" => $errorDetails
-    ]);
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 }
 
-function haversinePHP($lat1, $lon1, $lat2, $lon2) {
+/**
+ * Obtiene el cuerpo de la petición (JSON o Form-data)
+ */
+function getRequestData() {
+    $raw = file_get_contents('php://input');
+    if (!empty($raw)) {
+        $json = json_decode($raw, true);
+        if (is_array($json)) {
+            return $json;
+        }
+    }
+    return $_POST;
+}
+
+/**
+ * Cálculo de distancia Haversine en kilómetros
+ */
+function calculateDistanceKm($lat1, $lon1, $lat2, $lon2) {
     $R = 6371.0;
     $lat1_rad = deg2rad($lat1);
     $lon1_rad = deg2rad($lon1);
@@ -30,131 +58,178 @@ function haversinePHP($lat1, $lon1, $lat2, $lon2) {
 }
 
 try {
-    require_once '../Auth/jwt.php';
-    $action = $_GET['action'] ?? null;
-
-    if (!$action) {
-        throw new Exception("Falta action.");
-    }
-
-    $payload = JWTHelper::authenticate();
-    $riderId = $payload['user_id'];
-    $riderRole = $payload['role'];
+    // 1. Validar autenticación vía JWT Bearer
+    $payload = requireAuth(['rider', 'super_usuario', 'admin']);
+    $userId = (int)$payload['user_id'];
+    $userRole = $payload['role'];
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
-    // Verificar que sea un Rider verificado
-    $stmtRider = $db->prepare("SELECT role, ci_status FROM users WHERE id = ?");
-    $stmtRider->execute([$riderId]);
-    $rider = $stmtRider->fetch();
-    if (!$rider || $rider['role'] !== 'rider' || $rider['ci_status'] !== 'verified') {
-        throw new Exception("Debes ser un Rider verificado para usar este módulo.");
+    // 2. Si el usuario es rider, validar que su documentación esté en estado 'aprobado'
+    // Criterio de Aceptación: Rider no aprobado recibe 403 Forbidden
+    if ($userRole === 'rider') {
+        requireApprovedRider($db, $userId);
     }
 
-    if ($action === 'list_pending') {
-        // Consultar coordenadas del cliente dinámicamente de pedidos
-        $stmt = $db->query("SELECT id, cliente_id, total, estado_pago, latitud, longitud FROM pedidos WHERE estado_pedido = 'pendiente' AND estado_pago IN ('pagado_qr', 'contraentrega')");
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    $input = getRequestData();
+    $action = $_GET['action'] ?? ($input['action'] ?? null);
+
+    // =========================================================================
+    // ACCIÓN: Listar Pedidos Pendientes Disponibles (GET)
+    // =========================================================================
+    if ($method === 'GET' || $action === 'list_pending') {
+        // Coordenadas fijas de la tienda central Burger 24/7 (Sopocachi, La Paz)
+        $latTienda = -16.4897;
+        $lonTienda = -68.1193;
+
+        $stmt = $db->query("
+            SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
+                   p.latitud, p.longitud, p.created_at,
+                   u.nombre AS cliente_nombre, u.email AS cliente_email
+            FROM pedidos p
+            LEFT JOIN users u ON p.cliente_id = u.id
+            WHERE p.estado_pedido = 'pendiente' 
+              AND p.estado_pago IN ('pagado_qr', 'contraentrega', 'esperando_pago')
+            ORDER BY p.id DESC
+        ");
         $pedidos = $stmt->fetchAll();
 
         $disponibles = [];
         foreach ($pedidos as $p) {
-            $latCliente = $p['latitud'] ?? -16.5000;
-            $lonCliente = $p['longitud'] ?? -68.1193;
-            $latTienda = -16.4897;
-            $lonTienda = -68.1193;
+            $latCliente = floatval($p['latitud'] ?? -16.5000);
+            $lonCliente = floatval($p['longitud'] ?? -68.1193);
 
-            // Intentar ejecutar el motor de Python primero (compatibilidad obligatoria stack)
-            $safeRiderId = escapeshellarg($riderId);
-            $pythonExec = 'python3';
-            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                $pythonExec = 'python';
-            }
-            
-            $cmd = escapeshellcmd("$pythonExec ../Logistics/calculator.py $safeRiderId $latCliente $lonCliente $latTienda $lonTienda");
-            $pythonOutput = shell_exec($cmd);
-            $logisticsData = json_decode($pythonOutput, true);
+            // Obtener detalles de productos del pedido
+            $stmtDet = $db->prepare("
+                SELECT d.producto_id, d.cantidad, d.precio_unitario, pr.nombre AS producto_nombre
+                FROM pedido_detalles d
+                LEFT JOIN productos pr ON pr.id = d.producto_id
+                WHERE d.pedido_id = ?
+            ");
+            $stmtDet->execute([$p['id']]);
+            $detalles = $stmtDet->fetchAll();
 
-            // Fallback en PHP nativo si falla la ejecución del CLI de Python
-            if (!$logisticsData || $logisticsData['status'] !== 'success') {
-                $distancia_km = haversinePHP($latCliente, $lonCliente, $latTienda, $lonTienda);
-                $tiempo_estimado_min = ($distancia_km / 30.0) * 60.0;
-                $costo_envio_bs = 5.0 + ($distancia_km * 2.0);
-                
-                $logData = [
-                    "distancia_km" => round($distancia_km, 2),
-                    "tiempo_estimado" => round($tiempo_estimado_min) . " min",
-                    "costo_envio_bs" => round($costo_envio_bs, 2)
-                ];
-            } else {
-                $logData = $logisticsData['data'];
-            }
+            $distanciaKm = calculateDistanceKm($latCliente, $lonCliente, $latTienda, $lonTienda);
+            $tiempoEstimadoMin = max(5, round(($distanciaKm / 30.0) * 60.0));
+            $costoEnvioBs = round(5.0 + ($distanciaKm * 2.0), 2);
 
             $disponibles[] = [
-                'pedido_id' => $p['id'],
-                'cliente_id' => $p['cliente_id'],
-                'total_factura' => $p['total'],
+                'pedido_id' => (int)$p['id'],
+                'cliente_id' => (int)$p['cliente_id'],
+                'cliente_nombre' => $p['cliente_nombre'] ?? 'Cliente',
+                'cliente_email' => $p['cliente_email'] ?? '',
+                'total' => floatval($p['total']),
                 'estado_pago' => $p['estado_pago'],
-                'logistica' => $logData
+                'estado_pedido' => $p['estado_pedido'],
+                'fecha_creacion' => $p['created_at'],
+                'items' => array_map(function($d) {
+                    return [
+                        'producto_id' => (int)$d['producto_id'],
+                        'nombre' => $d['producto_nombre'] ?? 'Producto',
+                        'cantidad' => (int)$d['cantidad'],
+                        'precio_unitario' => floatval($d['precio_unitario'])
+                    ];
+                }, $detalles),
+                'logistica' => [
+                    'distancia_km' => round($distanciaKm, 2),
+                    'tiempo_estimado' => $tiempoEstimadoMin . " min",
+                    'costo_envio_bs' => $costoEnvioBs
+                ]
             ];
         }
 
-        echo formatResponse("success", ["pedidos_disponibles" => $disponibles], $riderId);
+        echo formatResponse("success", [
+            "pedidos_disponibles" => $disponibles,
+            "total" => count($disponibles)
+        ], $userId, null, "LIST_PENDING_ORDERS");
+        exit;
+    }
 
-    } elseif ($action === 'accept_order') {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') throw new Exception("Método POST requerido.");
+    // =========================================================================
+    // ACCIÓN: Aceptar Pedido y Asignar al Rider (POST)
+    // =========================================================================
+    elseif ($method === 'POST' || $action === 'accept_order') {
+        $pedidoId = isset($input['pedido_id']) ? (int)$input['pedido_id'] : null;
+        if (!$pedidoId) {
+            http_response_code(400);
+            echo formatResponse("error", null, $userId, "Falta el parámetro requerido 'pedido_id'.", "VALIDATION_ERROR");
+            exit;
+        }
 
-        $pedidoId = $_POST['pedido_id'] ?? null;
-        if (!$pedidoId) throw new Exception("Falta ID de pedido.");
+        // Restricción de negocio: Un rider solo puede tener máximo 1 pedido activo simultáneamente
+        if ($userRole === 'rider') {
+            $stmtActive = $db->prepare("
+                SELECT id, estado_pedido 
+                FROM pedidos 
+                WHERE rider_id = ? AND estado_pedido IN ('asignado', 'en_camino')
+            ");
+            $stmtActive->execute([$userId]);
+            $activeOrder = $stmtActive->fetch();
+
+            if ($activeOrder) {
+                http_response_code(409);
+                echo formatResponse("error", null, $userId, "Ya tienes una entrega activa en curso (Pedido #" . $activeOrder['id'] . " en estado '" . $activeOrder['estado_pedido'] . "'). Debes finalizarla antes de aceptar otro pedido.", "ACTIVE_ORDER_EXISTS");
+                exit;
+            }
+        }
 
         $db->beginTransaction();
 
-        $stmtOld = $db->prepare("SELECT estado_pedido FROM pedidos WHERE id = ? FOR UPDATE");
+        $stmtOld = $db->prepare("SELECT id, estado_pedido, rider_id FROM pedidos WHERE id = ? FOR UPDATE");
         $stmtOld->execute([$pedidoId]);
         $oldData = $stmtOld->fetch();
 
-        if (!$oldData || $oldData['estado_pedido'] !== 'pendiente') {
-            throw new Exception("El pedido ya fue asignado o no está disponible.");
+        if (!$oldData) {
+            $db->rollBack();
+            http_response_code(404);
+            echo formatResponse("error", null, $userId, "Pedido no encontrado.", "NOT_FOUND");
+            exit;
+        }
+
+        if ($oldData['estado_pedido'] !== 'pendiente' || !empty($oldData['rider_id'])) {
+            $db->rollBack();
+            http_response_code(409);
+            echo formatResponse("error", null, $userId, "El pedido ya fue asignado a otro rider o no está disponible.", "ORDER_UNAVAILABLE");
+            exit;
         }
 
         // Asignar el pedido al rider
-        $stmt = $db->prepare("UPDATE pedidos SET rider_id = ?, estado_pedido = 'asignado', updated_by = ? WHERE id = ?");
-        $stmt->execute([$riderId, $riderId, $pedidoId]);
+        $stmt = $db->prepare("UPDATE pedidos SET rider_id = ?, estado_pedido = 'asignado', updated_by = ?, updated_at = NOW() WHERE id = ?");
+        $stmt->execute([$userId, $userId, $pedidoId]);
 
-        $stmtLog = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, created_by, updated_by) VALUES (?, ?, 'UPDATE', ?, ?, ?, ?)");
-        $stmtLog->execute(['pedidos', $pedidoId, json_encode(['estado_pedido' => $oldData['estado_pedido']]), json_encode(['estado_pedido' => 'asignado', 'rider_id' => $riderId]), $riderId, $riderId]);
-
-        // Descontar Stock en tiempo real
-        // Como implementaremos pedido_detalles en el esquema, iteraríamos acá:
-        $stmtDetalles = $db->prepare("SELECT producto_id, cantidad FROM pedido_detalles WHERE pedido_id = ?");
-        $stmtDetalles->execute([$pedidoId]);
-        $detalles = $stmtDetalles->fetchAll();
-
-        foreach ($detalles as $det) {
-            // Actualizamos stock y registramos la auditoría de cada producto afectado
-            $stmtStockOld = $db->prepare("SELECT stock FROM productos WHERE id = ? FOR UPDATE");
-            $stmtStockOld->execute([$det['producto_id']]);
-            $oldStock = $stmtStockOld->fetch()['stock'];
-
-            $newStock = $oldStock - $det['cantidad'];
-            if ($newStock < 0) throw new Exception("Stock insuficiente para el producto ID: " . $det['producto_id']);
-
-            $stmtUpdProd = $db->prepare("UPDATE productos SET stock = ?, updated_by = ? WHERE id = ?");
-            $stmtUpdProd->execute([$newStock, $riderId, $det['producto_id']]);
-
-            $stmtLogProd = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, created_by, updated_by) VALUES (?, ?, 'UPDATE', ?, ?, ?, ?)");
-            $stmtLogProd->execute(['productos', $det['producto_id'], json_encode(['stock' => $oldStock]), json_encode(['stock' => $newStock]), $riderId, $riderId]);
-        }
+        // Registrar auditoría inmutable
+        logAudit(
+            $db,
+            'pedidos',
+            $pedidoId,
+            'UPDATE',
+            ['estado_pedido' => 'pendiente', 'rider_id' => null],
+            ['estado_pedido' => 'asignado', 'rider_id' => $userId],
+            $userId
+        );
 
         $db->commit();
-        echo formatResponse("success", ["mensaje" => "Pedido aceptado. El stock ha sido descontado correctamente."], $riderId);
 
-    } else {
-        throw new Exception("Acción no reconocida.");
+        echo formatResponse("success", [
+            "mensaje" => "Pedido #" . $pedidoId . " aceptado y asignado exitosamente.",
+            "pedido_id" => $pedidoId,
+            "estado_pedido" => "asignado",
+            "rider_id" => $userId
+        ], $userId, null, "ACCEPT_ORDER");
+        exit;
+    }
+
+    else {
+        http_response_code(405);
+        echo formatResponse("error", null, $userId, "Método HTTP no permitido.", "METHOD_NOT_ALLOWED");
+        exit;
     }
 
 } catch (Exception $e) {
     if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
-    echo formatResponse("error", null, $_POST['rider_id'] ?? $_GET['rider_id'] ?? null, $e->getMessage());
+    http_response_code(500);
+    echo formatResponse("error", null, $userId ?? null, $e->getMessage(), "SERVER_ERROR");
 }

@@ -1852,10 +1852,73 @@ window.uploadMockDoc = function(docType) {
     updateUIForCurrentRole();
 };
 
-function renderRiderOrderQueue() {
+async function renderRiderOrderQueue() {
     const list = document.getElementById('orderQueueList');
     const r = currentSession.rider;
     const doc = DB.documentacion_rider.find(d => d.rider_id === r.id);
+
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (token) {
+            try {
+                const res = await fetch(`${config.apiUrl}/Rider/assignment.php`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 403) {
+                    list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tu cuenta no está aprobada para realizar despachos. Por favor carga tus documentos y contacta al Administrador.</div>`;
+                    return;
+                }
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.status === 'success' && data.data && Array.isArray(data.data.pedidos_disponibles)) {
+                    const pendings = data.data.pedidos_disponibles;
+                    if (pendings.length === 0) {
+                        list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay pedidos pendientes disponibles en este momento.</div>`;
+                        return;
+                    }
+                    list.innerHTML = pendings.map(p => {
+                        const logData = p.logistica || { distancia_km: 1.5, tiempo_estimado: '10 min' };
+                        const itemsText = (p.items || []).map(d => `${d.cantidad}x ${d.nombre}`).join(', ');
+                        return `
+                            <div class="order-card">
+                                <div class="order-card-header">
+                                    <span class="order-id">Pedido #${p.pedido_id}</span>
+                                    <span class="badge ${p.estado_pago === 'pagado_qr' ? 'badge-verified' : 'badge-pending'}">${(p.estado_pago || '').replace('_', ' ')}</span>
+                                </div>
+                                <div class="order-card-body">
+                                    <div>
+                                        <div class="order-meta-label">Cliente</div>
+                                        <div class="order-meta-val">${p.cliente_nombre || 'Cliente Anónimo'}</div>
+                                    </div>
+                                    <div>
+                                        <div class="order-meta-label">Monto del Pedido</div>
+                                        <div class="order-meta-val">${Number(p.total).toFixed(2)} Bs</div>
+                                    </div>
+                                    <div class="order-items-summary">
+                                        <div class="order-meta-label">Artículos del Pedido</div>
+                                        <div class="order-meta-val" style="font-weight: 500;">${itemsText || 'Combo / Hamburguesa'}</div>
+                                    </div>
+                                    <div>
+                                        <div class="order-meta-label">Distancia de Ruta</div>
+                                        <div class="order-meta-val">${logData.distancia_km || logData.distanceKm || 1.5} Km</div>
+                                    </div>
+                                    <div>
+                                        <div class="order-meta-label">Tiempo Estimado</div>
+                                        <div class="order-meta-val">${logData.tiempo_estimado || logData.etaMin || '10 min'}</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                                    <button class="btn btn-primary" onclick="acceptRiderOrder(${p.pedido_id})">Aceptar Pedido</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    return;
+                }
+            } catch (err) {
+                console.warn('Fallo consultando assignment.php en modo conectado:', err);
+            }
+        }
+    }
 
     if (!doc || doc.estado_aprobacion !== 'aprobado') {
         list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tu cuenta no está aprobada para realizar despachos. Por favor carga tus documentos y contacta al Administrador.</div>`;
@@ -1917,31 +1980,57 @@ function renderRiderOrderQueue() {
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                    <button class="btn btn-primary" onclick="acceptRiderOrder(${p.id})">Aceptar y Cargar Stock</button>
+                    <button class="btn btn-primary" onclick="acceptRiderOrder(${p.id})">Aceptar Pedido</button>
                 </div>
             </div>
         `;
     }).join('');
 }
 
-window.acceptRiderOrder = function(orderId) {
+window.acceptRiderOrder = async function(orderId) {
     const r = currentSession.rider;
-    const order = DB.pedidos.find(p => p.id === orderId);
 
-    if (!order || order.estado_pedido !== 'pendiente') {
-        showToast('El pedido ya no está disponible.', 'error');
-        return;
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (token) {
+            try {
+                const res = await fetch(`${config.apiUrl}/Rider/assignment.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ pedido_id: orderId })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.status === 403) {
+                    showToast('Error 403: Tu cuenta de rider no está aprobada para aceptar pedidos.', 'danger');
+                    return;
+                } else if (res.status === 409) {
+                    showToast(`Conflicto: ${result.error_details || 'El pedido no está disponible o ya tienes uno activo.'}`, 'warning');
+                    return;
+                } else if (!res.ok || result.status !== 'success') {
+                    showToast(`Error al aceptar: ${result.error_details || 'Operación rechazada.'}`, 'danger');
+                    return;
+                }
+            } catch (err) {
+                console.warn('Error en assignment.php:', err);
+            }
+        }
     }
 
-    const oldState = order.estado_pedido;
-    order.estado_pedido = 'asignado';
-    order.rider_id = r.id;
-    order.updated_at = new Date().toISOString();
-    order.updated_by = r.id;
+    const order = DB.pedidos.find(p => p.id === orderId);
+    if (order) {
+        const oldState = order.estado_pedido;
+        order.estado_pedido = 'asignado';
+        order.rider_id = r.id;
+        order.updated_at = new Date().toISOString();
+        order.updated_by = r.id;
 
-    logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'asignado', rider_id: r.id }, r.id);
+        logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'asignado', rider_id: r.id }, r.id);
+        saveDatabase();
+    }
 
-    saveDatabase();
     showToast('Pedido aceptado correctamente.', 'success');
     updateUIForCurrentRole();
 };
@@ -2090,24 +2179,47 @@ function renderRiderActiveOrderPanel() {
     }, 200);
 }
 
-function processRiderActiveOrderStep() {
+async function processRiderActiveOrderStep() {
     const r = currentSession.rider;
     const activeOrder = DB.pedidos.find(p => p.rider_id === r.id && p.estado_pedido !== 'entregado' && p.estado_pedido !== 'cancelado');
 
     if (!activeOrder) return;
 
     const oldState = activeOrder.estado_pedido;
-    let nextState = 'entregado';
-    let msg = 'Pedido completado con éxito.';
+    const nextState = oldState === 'asignado' ? 'en_camino' : 'entregado';
+    let msg = nextState === 'en_camino' ? 'Viaje iniciado. Conduce con cuidado.' : 'Pedido entregado con éxito.';
+
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (token) {
+            try {
+                const res = await fetch(`${config.apiUrl}/Rider/delivery.php`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ pedido_id: activeOrder.id, nuevo_estado: nextState })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.status === 403) {
+                    showToast('Error 403: No estás autorizado para gestionar este pedido.', 'danger');
+                    return;
+                } else if (!res.ok || result.status !== 'success') {
+                    showToast(`Error al avanzar pedido: ${result.error_details || 'Error desconocido'}`, 'danger');
+                    return;
+                }
+            } catch (err) {
+                console.warn('Error en delivery.php:', err);
+            }
+        }
+    }
 
     if (oldState === 'asignado') {
-        nextState = 'en_camino';
-        msg = 'Viaje iniciado. Conduce con cuidado.';
         activeOrder.estado_pedido = nextState;
         logAuditoria('pedidos', activeOrder.id, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: nextState }, r.id);
     } 
     else if (oldState === 'en_camino') {
-        nextState = 'entregado';
         activeOrder.estado_pedido = nextState;
         activeOrder.updated_at = new Date().toISOString();
         activeOrder.updated_by = r.id;
@@ -2853,10 +2965,37 @@ window.cancelAdminOrder = async function(orderId) {
     renderProducts();
 };
 
-window.settleRiderCash = function(riderId) {
+window.settleRiderCash = async function(riderId) {
     const admin = currentSession.admin;
     const cashOrders = DB.pedidos.filter(p => p.rider_id === riderId && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
-    
+
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (token) {
+            try {
+                const res = await fetch(`${config.apiUrl}/Rider/settle_cash.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ rider_id: riderId })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.status === 403) {
+                    showToast('Error 403: Permiso denegado. Solo administradores pueden liquidar cajas.', 'danger');
+                    return;
+                } else if (!res.ok || result.status !== 'success') {
+                    showToast(`Error al liquidar caja: ${result.error_details || 'Error desconocido'}`, 'danger');
+                    return;
+                }
+                showToast(`Liquidación en base de datos completada. Recaudados ${result.data?.total_liquidado_bs || 0} Bs del rider.`, 'success');
+            } catch (err) {
+                console.warn('Error en settle_cash.php:', err);
+            }
+        }
+    }
+
     if (cashOrders.length === 0) return;
 
     let totalSettle = 0;
@@ -2864,13 +3003,15 @@ window.settleRiderCash = function(riderId) {
         totalSettle += p.total;
         p.estado_pago = 'liquidado';
         p.updated_at = new Date().toISOString();
-        p.updated_by = admin.id;
+        p.updated_by = admin ? admin.id : 3;
 
-        logAuditoria('pedidos', p.id, 'UPDATE', { estado_pago: 'pagado_efectivo' }, { estado_pago: 'liquidado', motivo: 'Caja liquidada central' }, admin.id);
+        logAuditoria('pedidos', p.id, 'UPDATE', { estado_pago: 'pagado_efectivo' }, { estado_pago: 'liquidado', motivo: 'Caja liquidada central' }, admin ? admin.id : 3);
     });
 
     saveDatabase();
-    showToast(`Liquidación completada. Recaudados ${totalSettle.toFixed(2)} Bs de la caja del rider.`, 'success');
+    if (!config.connectedMode) {
+        showToast(`Liquidación completada. Recaudados ${totalSettle.toFixed(2)} Bs de la caja del rider.`, 'success');
+    }
     updateUIForCurrentRole();
 };
 

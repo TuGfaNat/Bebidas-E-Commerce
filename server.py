@@ -191,6 +191,34 @@ USERS_DB = {
     'juan@mail.com': {'pass': 'juan', 'id': 5, 'nombre': 'Juan Rodríguez (Pendiente)', 'role': 'rider', 'ci_status': 'pending'}
 }
 
+# Documentación de riders (Pedro aprobado, Juan pendiente)
+RIDER_DOCS_DB = [
+    {
+        "id": 1,
+        "rider_id": 2,
+        "licencia_url": "/uploads/docs/licencia_pedro.jpg",
+        "seguro_url": "/uploads/docs/seguro_pedro.jpg",
+        "cv_url": "/uploads/docs/cv_pedro.pdf",
+        "estado_aprobacion": "aprobado",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 3,
+        "updated_by": 3
+    },
+    {
+        "id": 2,
+        "rider_id": 5,
+        "licencia_url": "/uploads/docs/licencia_juan.jpg",
+        "seguro_url": "/uploads/docs/seguro_juan.jpg",
+        "cv_url": "/uploads/docs/cv_juan.pdf",
+        "estado_aprobacion": "pendiente",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 5,
+        "updated_by": 5
+    }
+]
+
 class BebidasHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT_DIR, **kwargs)
@@ -237,6 +265,24 @@ class BebidasHandler(SimpleHTTPRequestHandler):
         role = payload.get('role', '')
         if role not in ['super_usuario', 'admin']:
             return None, 403, "Permiso denegado. Se requieren privilegios de administrador para esta operación."
+        return payload, 200, None
+
+    def check_rider_auth(self):
+        payload, status, err = self.check_jwt_auth()
+        if not payload:
+            return None, status, err
+        role = payload.get('role', '')
+        user_id = payload.get('user_id')
+        if role not in ['rider', 'super_usuario', 'admin']:
+            return None, 403, "Permiso denegado. Se requiere rol de rider para esta operación."
+        
+        # Validar documentacion_rider.estado_aprobacion
+        if role == 'rider':
+            doc = next((d for d in RIDER_DOCS_DB if d['rider_id'] == user_id), None)
+            if not doc or doc.get('estado_aprobacion') != 'aprobado':
+                estado = doc.get('estado_aprobacion', 'sin_documentos') if doc else 'sin_documentos'
+                return None, 403, f"Permiso denegado. La documentación del rider se encuentra en estado '{estado}'. Debe estar aprobada por un administrador para realizar entregas."
+        
         return payload, 200, None
 
     def do_GET(self):
@@ -351,6 +397,11 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(res.stdout.encode('utf-8'))
             except Exception as ex:
                 self.send_json(get_audit_envelope("error", None, user_id, str(ex), action="LOGISTICS_CALC"), status=500)
+            return
+
+        # Microservice: Rider Assignment (GET)
+        if path in ['/microservices/Rider/assignment.php', '/microservices/Rider/assignment']:
+            self.handle_rider_assignment_get(query_params)
             return
 
         # Default static file routing
@@ -566,6 +617,21 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 self.send_json(get_audit_envelope("error", None, user_id, str(ex), action="LOGISTICS_CALC"), status=500)
             return
 
+        # Microservice: Rider Assignment (POST)
+        if path in ['/microservices/Rider/assignment.php', '/microservices/Rider/assignment']:
+            self.handle_rider_assignment_post(data, query_params)
+            return
+
+        # Microservice: Rider Delivery (POST)
+        if path in ['/microservices/Rider/delivery.php', '/microservices/Rider/delivery']:
+            self.handle_rider_delivery(data, query_params)
+            return
+
+        # Microservice: Rider Settle Cash (POST)
+        if path in ['/microservices/Rider/settle_cash.php', '/microservices/Rider/settle_cash']:
+            self.handle_rider_settle_cash(data, query_params)
+            return
+
         # Microservice: Auth connection test (POST)
         if path in ['/microservices/Auth/connection.php', '/microservices/Auth/connection']:
             self.send_json(get_audit_envelope("success", {
@@ -612,6 +678,10 @@ class BebidasHandler(SimpleHTTPRequestHandler):
 
         if path in ['/microservices/Catalog/catalog.php', '/microservices/Catalog/catalog']:
             self.handle_catalog_update(data, query_params)
+            return
+
+        if path in ['/microservices/Rider/delivery.php', '/microservices/Rider/delivery']:
+            self.handle_rider_delivery(data, query_params)
             return
 
         self.send_json(get_audit_envelope("error", None, None, "Método HTTP no soportado para este endpoint.", action="METHOD_NOT_ALLOWED"), status=405)
@@ -1032,6 +1102,284 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             "mensaje": "Producto eliminado exitosamente",
             "id": pid
         }, user_id=admin['user_id'], action="DELETE"))
+
+    def handle_rider_assignment_get(self, query_params):
+        payload, status, err = self.check_rider_auth()
+        if not payload:
+            self.send_json(get_audit_envelope("error", None, None, err, action="RIDER_AUTH"), status=status)
+            return
+
+        user_id = payload.get('user_id')
+        lat_store = -16.4897
+        lon_store = -68.1193
+
+        pending_orders = [o for o in ORDERS_DB if o.get('estado_pedido') == 'pendiente' and o.get('estado_pago') in ['contraentrega', 'pagado_qr', 'esperando_pago']]
+
+        disponibles = []
+        for p in reversed(pending_orders):
+            lat_c = float(p.get('latitud', -16.5000))
+            lon_c = float(p.get('longitud', -68.1193))
+            dist_km = haversine_km(lat_c, lon_c, lat_store, lon_store)
+            eta_min = max(5, round((dist_km / 30.0) * 60.0))
+            costo_bs = round(5.0 + (dist_km * 2.0), 2)
+
+            client_user = next((u for u in USERS_DB.values() if u['id'] == p.get('cliente_id')), None)
+            order_items = [d for d in ORDER_DETAILS_DB if d.get('pedido_id') == p['id']]
+            items_fmt = []
+            for item in order_items:
+                prod = next((pr for pr in CATALOG_PRODUCTS if pr['id'] == item.get('producto_id')), None)
+                items_fmt.append({
+                    'producto_id': item.get('producto_id'),
+                    'nombre': prod['nombre'] if prod else 'Producto',
+                    'cantidad': item.get('cantidad', 1),
+                    'precio_unitario': item.get('precio_unitario', 0.0)
+                })
+
+            disponibles.append({
+                'pedido_id': p['id'],
+                'cliente_id': p.get('cliente_id'),
+                'cliente_nombre': client_user['nombre'] if client_user else 'Cliente',
+                'cliente_email': client_user.get('email', '') if client_user else '',
+                'total': float(p.get('total', 0.0)),
+                'estado_pago': p.get('estado_pago'),
+                'estado_pedido': p.get('estado_pedido'),
+                'fecha_creacion': p.get('created_at'),
+                'items': items_fmt,
+                'logistica': {
+                    'distancia_km': round(dist_km, 2),
+                    'tiempo_estimado': f"{eta_min} min",
+                    'costo_envio_bs': costo_bs
+                }
+            })
+
+        self.send_json(get_audit_envelope("success", {
+            "pedidos_disponibles": disponibles,
+            "total": len(disponibles)
+        }, user_id=user_id, action="LIST_PENDING_ORDERS"))
+
+    def handle_rider_assignment_post(self, data, query_params):
+        payload, status, err = self.check_rider_auth()
+        if not payload:
+            self.send_json(get_audit_envelope("error", None, None, err, action="RIDER_AUTH"), status=status)
+            return
+
+        user_id = payload.get('user_id')
+        role = payload.get('role')
+        pedido_id_val = data.get('pedido_id') or query_params.get('pedido_id', [None])[0]
+        if not pedido_id_val:
+            self.send_json(get_audit_envelope("error", None, user_id, "Falta el parámetro obligatorio 'pedido_id'.", action="ASSIGNMENT"), status=400)
+            return
+
+        try:
+            pedido_id = int(pedido_id_val)
+        except ValueError:
+            self.send_json(get_audit_envelope("error", None, user_id, "ID de pedido inválido.", action="ASSIGNMENT"), status=400)
+            return
+
+        # Restricción: Max 1 pedido activo simultáneamente
+        if role == 'rider':
+            active_order = next((o for o in ORDERS_DB if o.get('rider_id') == user_id and o.get('estado_pedido') in ['asignado', 'en_camino']), None)
+            if active_order:
+                self.send_json(get_audit_envelope("error", None, user_id, f"Ya tienes una entrega activa en curso (Pedido #{active_order['id']} en estado '{active_order['estado_pedido']}'). Debes finalizarla antes de aceptar otro pedido.", action="ACTIVE_ORDER_EXISTS"), status=409)
+                return
+
+        order = next((o for o in ORDERS_DB if o['id'] == pedido_id), None)
+        if not order:
+            self.send_json(get_audit_envelope("error", None, user_id, f"Pedido #{pedido_id} no encontrado.", action="ASSIGNMENT"), status=404)
+            return
+
+        if order.get('estado_pedido') != 'pendiente' or order.get('rider_id') is not None:
+            self.send_json(get_audit_envelope("error", None, user_id, "El pedido ya fue asignado a otro rider o no está disponible.", action="ORDER_UNAVAILABLE"), status=409)
+            return
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        order['rider_id'] = user_id
+        order['estado_pedido'] = 'asignado'
+        order['updated_at'] = now_iso
+        order['updated_by'] = user_id
+
+        AUDIT_LOGS.append({
+            "id": len(AUDIT_LOGS) + 1,
+            "tabla_afectada": "pedidos",
+            "registro_id": pedido_id,
+            "accion": "UPDATE",
+            "datos_anteriores": json.dumps({"estado_pedido": "pendiente", "rider_id": None}),
+            "datos_nuevos": json.dumps({"estado_pedido": "asignado", "rider_id": user_id}),
+            "ip_address": self.get_client_ip(),
+            "created_at": now_iso,
+            "created_by": user_id,
+            "updated_by": user_id
+        })
+
+        self.send_json(get_audit_envelope("success", {
+            "mensaje": f"Pedido #{pedido_id} aceptado y asignado exitosamente.",
+            "pedido_id": pedido_id,
+            "estado_pedido": "asignado",
+            "rider_id": user_id
+        }, user_id=user_id, action="ACCEPT_ORDER"))
+
+    def handle_rider_delivery(self, data, query_params):
+        payload, status, err = self.check_jwt_auth()
+        if not payload:
+            self.send_json(get_audit_envelope("error", None, None, err, action="DELIVERY_AUTH"), status=status)
+            return
+
+        user_id = payload.get('user_id')
+        user_role = payload.get('role')
+
+        if user_role not in ['rider', 'super_usuario', 'admin']:
+            self.send_json(get_audit_envelope("error", None, user_id, "Permiso denegado. Se requiere rol de rider o administrador.", action="FORBIDDEN"), status=403)
+            return
+
+        pedido_id_val = data.get('pedido_id') or query_params.get('pedido_id', [None])[0]
+        if not pedido_id_val:
+            self.send_json(get_audit_envelope("error", None, user_id, "Falta el parámetro obligatorio 'pedido_id'.", action="DELIVERY"), status=400)
+            return
+
+        try:
+            pedido_id = int(pedido_id_val)
+        except ValueError:
+            self.send_json(get_audit_envelope("error", None, user_id, "ID de pedido inválido.", action="DELIVERY"), status=400)
+            return
+
+        order = next((o for o in ORDERS_DB if o['id'] == pedido_id), None)
+        if not order:
+            self.send_json(get_audit_envelope("error", None, user_id, f"Pedido #{pedido_id} no encontrado.", action="DELIVERY"), status=404)
+            return
+
+        # Criterio: Solo rider asignado avanza estado
+        if user_role == 'rider' and order.get('rider_id') != user_id:
+            self.send_json(get_audit_envelope("error", None, user_id, "Permiso denegado. Solo el rider asignado a este pedido puede actualizar el estado de entrega.", action="FORBIDDEN"), status=403)
+            return
+
+        action = data.get('action') or query_params.get('action', [None])[0]
+        nuevo_estado = data.get('nuevo_estado')
+        if action == 'marcar_en_camino':
+            nuevo_estado = 'en_camino'
+        elif action == 'marcar_entregado':
+            nuevo_estado = 'entregado'
+
+        if nuevo_estado not in ['en_camino', 'entregado']:
+            self.send_json(get_audit_envelope("error", None, user_id, "Estado de destino inválido. Valores permitidos: 'en_camino', 'entregado'.", action="INVALID_STATE"), status=400)
+            return
+
+        estado_actual = order.get('estado_pedido')
+        if nuevo_estado == 'en_camino' and estado_actual != 'asignado':
+            self.send_json(get_audit_envelope("error", None, user_id, f"Transición inválida: El pedido debe estar en estado 'asignado' para pasar a 'en_camino'. Estado actual: '{estado_actual}'.", action="INVALID_TRANSITION"), status=400)
+            return
+
+        if nuevo_estado == 'entregado' and estado_actual != 'en_camino':
+            self.send_json(get_audit_envelope("error", None, user_id, f"Transición inválida: El pedido debe estar en estado 'en_camino' para marcarse como 'entregado'. Estado actual: '{estado_actual}'.", action="INVALID_TRANSITION"), status=400)
+            return
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        order['estado_pedido'] = nuevo_estado
+        order['updated_at'] = now_iso
+        order['updated_by'] = user_id
+
+        AUDIT_LOGS.append({
+            "id": len(AUDIT_LOGS) + 1,
+            "tabla_afectada": "pedidos",
+            "registro_id": pedido_id,
+            "accion": "UPDATE",
+            "datos_anteriores": json.dumps({"estado_pedido": estado_actual}),
+            "datos_nuevos": json.dumps({"estado_pedido": nuevo_estado}),
+            "ip_address": self.get_client_ip(),
+            "created_at": now_iso,
+            "created_by": user_id,
+            "updated_by": user_id
+        })
+
+        nuevo_estado_pago = order.get('estado_pago')
+        if nuevo_estado == 'entregado' and order.get('estado_pago') == 'contraentrega':
+            nuevo_estado_pago = 'pagado_efectivo'
+            order['estado_pago'] = 'pagado_efectivo'
+            AUDIT_LOGS.append({
+                "id": len(AUDIT_LOGS) + 1,
+                "tabla_afectada": "pedidos",
+                "registro_id": pedido_id,
+                "accion": "UPDATE",
+                "datos_anteriores": json.dumps({"estado_pago": "contraentrega"}),
+                "datos_nuevos": json.dumps({"estado_pago": "pagado_efectivo", "motivo": "Cobro en efectivo contraentrega al momento de la entrega"}),
+                "ip_address": self.get_client_ip(),
+                "created_at": now_iso,
+                "created_by": user_id,
+                "updated_by": user_id
+            })
+
+        self.send_json(get_audit_envelope("success", {
+            "mensaje": f"Pedido #{pedido_id} en camino." if nuevo_estado == 'en_camino' else f"Pedido #{pedido_id} entregado con éxito.",
+            "pedido_id": pedido_id,
+            "estado_anterior": estado_actual,
+            "estado_pedido": nuevo_estado,
+            "estado_pago": nuevo_estado_pago,
+            "rider_id": order.get('rider_id')
+        }, user_id=user_id, action="ADVANCE_DELIVERY"))
+
+    def handle_rider_settle_cash(self, data, query_params):
+        payload, status, err = self.check_admin_auth()
+        if not payload:
+            self.send_json(get_audit_envelope("error", None, None, err, action="SETTLE_AUTH"), status=status)
+            return
+
+        admin_id = payload.get('user_id')
+        rider_id_val = data.get('rider_id') or query_params.get('rider_id', [None])[0]
+        if not rider_id_val:
+            self.send_json(get_audit_envelope("error", None, admin_id, "El parámetro 'rider_id' es obligatorio.", action="SETTLE_CASH"), status=400)
+            return
+
+        try:
+            rider_id = int(rider_id_val)
+        except ValueError:
+            self.send_json(get_audit_envelope("error", None, admin_id, "ID de rider inválido.", action="SETTLE_CASH"), status=400)
+            return
+
+        rider_user = next((u for u in USERS_DB.values() if u['id'] == rider_id and u['role'] == 'rider'), None)
+        if not rider_user:
+            self.send_json(get_audit_envelope("error", None, admin_id, f"El usuario con ID #{rider_id} no existe o no tiene rol de rider.", action="RIDER_NOT_FOUND"), status=404)
+            return
+
+        # Buscar pedidos entregados con pagado_efectivo
+        eligible_orders = [o for o in ORDERS_DB if o.get('rider_id') == rider_id and o.get('estado_pedido') == 'entregado' and o.get('estado_pago') == 'pagado_efectivo']
+        if not eligible_orders:
+            self.send_json(get_audit_envelope("error", None, admin_id, f"El rider {rider_user['nombre']} no tiene entregas en efectivo pendientes de liquidar.", action="NO_PENDING_CASH"), status=400)
+            return
+
+        total_liquidado = 0.0
+        pedidos_liquidados = []
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        for o in eligible_orders:
+            pid = o['id']
+            monto = float(o.get('total', 0.0))
+            total_liquidado += monto
+            pedidos_liquidados.append(pid)
+
+            o['estado_pago'] = 'liquidado'
+            o['updated_at'] = now_iso
+            o['updated_by'] = admin_id
+
+            AUDIT_LOGS.append({
+                "id": len(AUDIT_LOGS) + 1,
+                "tabla_afectada": "pedidos",
+                "registro_id": pid,
+                "accion": "UPDATE",
+                "datos_anteriores": json.dumps({"estado_pago": "pagado_efectivo"}),
+                "datos_nuevos": json.dumps({"estado_pago": "liquidado", "motivo": f"Caja liquidada por administrador #{admin_id}"}),
+                "ip_address": self.get_client_ip(),
+                "created_at": now_iso,
+                "created_by": admin_id,
+                "updated_by": admin_id
+            })
+
+        self.send_json(get_audit_envelope("success", {
+            "mensaje": "Caja del rider liquidada exitosamente.",
+            "rider_id": rider_id,
+            "nombre_rider": rider_user['nombre'],
+            "total_liquidado_bs": round(total_liquidado, 2),
+            "pedidos_liquidados": pedidos_liquidados,
+            "cantidad_pedidos": len(pedidos_liquidados)
+        }, user_id=admin_id, action="SETTLE_CASH"))
 
     def send_json(self, payload, status=200):
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode('utf-8')

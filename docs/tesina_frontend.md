@@ -1,62 +1,109 @@
-# Documentación Técnica - Tesina
+# Interfaz de Usuario y Componentes Frontend - Tesina Técnica
 
-## Título del Módulo: Módulo de Interfaz Web Centralizada (Frontend Multi-Actor)
+## 1. Arquitectura de la Interfaz (SPA Multi-Actor)
 
-### Descripción Técnica
-Este módulo implementa el Frontend de la plataforma **E-commerce Bebidas 24/7**. Utiliza una arquitectura modular estructurada en un archivo de marcado HTML5 semántico ([index.html](file:///F:/Bebidas-E-Commerce/index.html)), un sistema de estilos responsivos y modernos en CSS3 ([style.css](file:///F:/Bebidas-E-Commerce/style.css)) con efectos de glassmorphism y micro-animaciones, y un motor de lógica reactiva en JavaScript ES6 ([app.js](file:///F:/Bebidas-E-Commerce/app.js)).
+El frontend de **Burger 24/7** está implementado como una **Single Page Application (SPA)** de alto rendimiento desarrollada en **Vanilla JavaScript (ES6+)**, sin dependencia de frameworks pesados (como React, Angular o Vue), logrando una velocidad de renderizado instantánea, bajo consumo de memoria y compatibilidad universal con navegadores modernos.
 
-El módulo unifica las experiencias de los tres actores del sistema:
-1. **Cliente:** Quien puede registrarse de forma segura, subir su C.I. y verificar su mayoría de edad ($>18$). Una vez verificado por un administrador, puede explorar el catálogo jerárquico, agregar bebidas al carrito, interactuar con el mapa GPS de checkout y realizar pagos (QR bancario con comprobante o efectivo contraentrega).
-2. **Rider:** Quien puede registrarse subiendo su expediente digital de conducción. Al ser aprobado, puede visualizar los pedidos en cola con el cálculo de distancias y ganancias estimadas, aceptar pedidos descontando stock en tiempo real (ACID), y controlar las etapas de tránsito mediante GPS.
-3. **Super Usuario (Admin):** Quien cuenta con un centro de mando para aprobar/rechazar clientes y riders, realizar operaciones CRUD sobre los productos de catálogo, visualizar el **Ledger de Auditoría (BMAD)** en tiempo real y consultar reportes estadísticos e indicadores de rendimiento de riders.
-
----
-
-### Diagrama de Flujo / Lógica de Interacción
-1. **Flujo de Registro y Desbloqueo Comercial:**
-   - El Cliente se registra en el panel lateral, sube una foto de C.I. y se calcula su edad. El estado se inicializa en `pending`.
-   - Al navegar por el catálogo, los precios y botones de compra se muestran bloqueados y difuminados ("Oculto - Verifica tu C.I.").
-   - El Super Usuario ingresa al panel de **Aprobación C.I.** y hace clic en **Aprobar**.
-   - El estado del cliente cambia a `verified` reactivamente. El catálogo del cliente se desbloquea de inmediato mostrando los precios reales y habilitando la opción de compra.
-2. **Flujo de Checkout y Cálculo de Ruta (Logística):**
-   - El Cliente agrega productos al carrito y hace clic en **Proceder al Checkout**.
-   - En el modal de checkout, el cliente selecciona su ubicación haciendo clic en un mapa interactivo (cuadrícula). El sistema ejecuta el cálculo logístico:
-     $$\text{Distancia} = \text{Haversine}(\text{Tienda}, \text{Cliente})$$
-     $$\text{Costo Envío} = 5.00\text{ Bs} + (\text{Distancia} \times 2.00\text{ Bs})$$
-   - El cliente selecciona el método de pago: si es QR, sube un archivo de imagen; si es contraentrega, se habilita directo. Confirma el pedido.
-   - El stock de productos se decrementa en la base de datos y se registra una transacción y log de auditoría múltiple.
-3. **Flujo de Despacho y Entrega (Rider):**
-   - El Rider visualiza el pedido en la cola de pedidos pendientes con el costo total e información de ruta.
-   - Al hacer clic en **Aceptar y Cargar Stock**, el pedido se asocia al Rider (`estado_pedido = 'asignado'`).
-   - El Rider marca **Iniciar Despacho** (`estado_pedido = 'en_camino'`). El mapa de rastreo del cliente y del rider muestran el movimiento del transportista en tiempo real.
-   - El Rider marca **Finalizar Entrega** (`estado_pedido = 'entregado'`). Si era contraentrega, el estado de pago cambia a `pagado_efectivo` (liquidación de caja).
-   - Se actualizan los logs de auditoría del Admin y los gráficos del panel de reportes mensuales.
+### Principios de Diseño
+- **Glassmorphism y Tema Oscuro:** Estética visual futurista basada en tarjetas de cristal difuminado (`backdrop-filter: blur(12px)`), bordes sutiles semitransparentes y gradientes de color cálidos (naranja `#f97316`, rojo `#ef4444`, morado `#8b5cf6`).
+- **Reactividad Nativa del DOM:** Gestión de estado centralizada mediante objetos JavaScript (`DB`, `currentSession`, `cart`, `config`) que propagan cambios a la interfaz mediante funciones de renderizado dirigidas (`renderProducts`, `renderAdminMonitoringUI`, `updateUIForCurrentRole`).
+- **Resiliencia y Modo Dual:** Switch maestro `toggleConnectedMode` que permite operar en **Modo Conectado** consumiendo los microservicios REST PHP/MySQL mediante [`api.js`](file:///F:/Bebidas-E-Commerce/api.js) o en **Modo Simulado** con persistencia local en `localStorage` como fallback ante cortes de red o servidores fuera de línea.
 
 ---
 
-### Diccionario de Datos del Frontend
+## 2. Descripción Detallada de Paneles y Componentes
 
-#### Variables de Estado Global ([app.js](file:///F:/Bebidas-E-Commerce/app.js))
-- **`DB` (Object):** Representa la base de datos relacional simulada en el cliente.
-  - `users` (Array): Lista de usuarios (id, role, nombre, email, password_hash, fecha_nacimiento, ci_url, ci_status).
-  - `productos` (Array): Catálogo de productos (id, categoria, nombre, marca, sabor, precio, stock, created_by, updated_by).
-  - `pedidos` (Array): Registros de pedidos de compra (id, cliente_id, rider_id, estado_pago, estado_pedido, total, qr_comprobante_url).
-  - `pedido_detalles` (Array): Relación de productos e ítems por pedido (id, pedido_id, producto_id, cantidad, precio_unitario).
-  - `documentacion_rider` (Array): Expedientes de conducción (id, rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion).
-  - `auditoria_logs` (Array): Historial de logs inmutables (id, tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_at, created_by).
-- **`currentSession` (Object):** Almacena las referencias a los usuarios activos simulados para cada rol (`cliente`, `rider`, `admin`).
-- **`cart` (Array):** Listado de productos agregados temporalmente en el carrito `{ product: Object, quantity: Number }`.
-- **`selectedDeliveryCoords` (Object):** Coordenadas geográficas y cálculo de despacho calculados en el checkout `{ lat, lon, distanceKm, etaMin, costBs }`.
+### A. Panel del Cliente (`#panelCliente`)
+Provee la experiencia comercial integral para el consumidor final:
+1. **Barra Lateral de Cuenta y Categorías:**
+   - Visualiza el estado de identidad del cliente con badges dinámicos: *Pendiente de Aprobación* (amarillo), *C.I. Verificado* (verde) o *C.I. Rechazado* (rojo).
+   - Selector de categorías jerárquicas: *Todos*, *Hamburguesas*, *Combos*, *Acompañamientos*, *Bebidas*.
+2. **Control de Acceso Comercial (Bloqueo por C.I.):**
+   - Si el cliente no ha verificado su C.I. (`ci_status !== 'verified'`), los precios de los productos se difuminan con la leyenda `"Oculto - Verifica tu C.I."` y los botones de compra permanecen deshabilitados, impidiendo compras no autorizadas.
+3. **Catálogo Reactivo y Buscador:**
+   - Campo de búsqueda en vivo (`#txtSearch`) que filtra productos por nombre, marca o ingredientes en tiempo real.
+   - Rejilla responsiva con tarjetas de producto que informan stock en almacén, precio en Bolivianos (Bs) y botón *"Agregar al Carrito"*.
+4. **Modal de Checkout y Geolocalización GPS:**
+   - Selector interactivo con mapa **Leaflet.js** que permite al cliente hacer clic para fijar el punto exacto de recepción.
+   - Cálculo dinámico de distancia en kilómetros desde la central Sopocachi y flete logístico según la fórmula oficial:
+     $$\text{Costo Envío} = 5.00\text{ Bs} + (\text{Distancia Km} \times 2.00\text{ Bs})$$
+   - Selector de método de pago: *QR Bancario Simple* (con carga obligatoria de imagen de comprobante) o *Contraentrega en Efectivo*.
+5. **Seguimiento de Pedido Activo en Tiempo Real:**
+   - Línea de tiempo visual en 4 etapas: **1. Pendiente** $\rightarrow$ **2. Asignado** $\rightarrow$ **3. En Camino** $\rightarrow$ **4. Entregado**.
+   - Mapa de tracking embebido que muestra la ubicación del cliente, la tienda y la posición en movimiento del repartidor asignado junto al ETA calculado.
 
 ---
 
-### Manual de Pruebas y Casos de Uso
+### B. Panel del Repartidor (`#panelRider`)
+Orientado a la gestión ágil de rutas y cobros en calle:
+1. **Perfil del Conductor y Expediente Digital:**
+   - Muestra el estado de habilitación operativa: *Pendiente*, *Aprobado* o *Rechazado*.
+   - Módulo de subida de documentación obligatoria: Licencia de conducir, SOAT/Seguro vehicular y Curriculum Vitae.
+   - Bloqueo operativo preventivo: Si el expediente no está aprobado por el Administrador, el sistema prohíbe la toma de pedidos retornando alertas claras.
+2. **Cola de Pedidos Pendientes de Despacho:**
+   - Lista dinámica que agrupa las órdenes creadas en espera de asignación.
+   - Cada tarjeta desglosa el cliente, los productos a retirar, el total monetario a cobrar y el botón *"Aceptar Pedido"*.
+3. **Tarjeta de Entrega Activa y Navegación GPS:**
+   - Mapa interactivo con ruta trazada entre la cocina de despacho y el domicilio del cliente.
+   - Indicadores de telemetría: Distancia de ruta estimada y tiempo aproximado de llegada.
+   - Botón de avance de estado:
+     - De *Aceptado* pasa a *"Iniciar Entrega (En Camino)"*.
+     - De *En Camino* pasa a *"Finalizar Entrega (Entregado)"*.
+   - Al finalizar un pedido pagado en contraentrega, el monto se acumula automáticamente en la caja física del conductor para su posterior rendición de cuentas.
 
-| Caso de Prueba | Entrada de Usuario | Comportamiento Esperado | Estado de Salida |
-|---|---|---|---|
-| **CP-01: Registro de menor de edad** | Fecha de nacimiento menor a 18 años del día actual. | El sistema calcula la edad, muestra mensaje de error en rojo y bloquea el botón de envío. | Registro denegado. |
-| **CP-02: Visualización de Catálogo bloqueado** | Cliente registrado recién con estado `pending`. | Se listan los productos en el catálogo, pero el precio se muestra difuminado como "Oculto" y el botón de compra está deshabilitado. | Compra bloqueada. |
-| **CP-03: Aprobación de C.I. por Admin** | Super Usuario entra al panel y hace clic en "Aprobar" sobre el cliente pendiente. | Se ejecuta la actualización de estado y se inserta un log en `auditoria_logs`. Al volver al panel del cliente, los precios se muestran inmediatamente legibles. | Cliente verificado, catálogo abierto. |
-| **CP-04: Cálculo de costos GPS en Checkout** | Clic en coordenadas lejanas de la tienda en el mapa. | La distancia aumenta, el costo de envío suma 2.00 Bs por kilómetro a la tarifa base de 5.00 Bs y el total final se actualiza de forma reactiva. | Total incrementado. |
-| **CP-05: Asignación y Descuento de Stock** | Rider acepta una orden pendiente. | El pedido pasa a `asignado`, el rider queda enlazado, se descuenta la cantidad correspondiente del stock del catálogo y se generan logs inmutables para el Admin. | Stock actualizado, pedido asignado. |
-| **CP-06: Entrega y Cierre de Caja** | Rider hace clic en "Finalizar Entrega" de pedido contraentrega. | El estado de pedido cambia a `entregado` y el estado de pago se actualiza a `pagado_efectivo`, sumando a los reportes financieros del Admin. | Caja liquidada con éxito. |
+---
+
+### C. Panel del Super Usuario / Administrador (`#panelAdmin`)
+Centro de mando unificado compuesto por 5 sub-paneles especializados:
+
+```
+Centro de Control Administrativo
+├── 1. Aprobación C.I. & Expedientes   -> Validación documental de clientes y riders
+├── 2. Control de Catálogo (CRUD)      -> Gestión de existencias, precios y altas
+├── 3. Monitoreo & Caja Central        -> Mapa operativo en vivo (10s) y cierre de cajas
+├── 4. Ledger de Auditoría (BMAD)      -> Bitácora inmutable de eventos del sistema
+└── 5. Reporte de Ventas & Riders      -> Métricas de facturación y rankings
+```
+
+1. **Subpanel 1: Aprobación C.I. & Expedientes (`#subpanelApprovals`):**
+   - Lista clientes pendientes de verificación con vista previa de imagen en modal emergente (`#fileViewerModal`).
+   - Lista expedientes de repartidores con accesos directos a licencia, seguro y CV, permitiendo la aprobación o rechazo en un solo clic.
+2. **Subpanel 2: Control de Catálogo CRUD (`#subpanelCatalog`):**
+   - Tabla administrativa completa con badges de stock (verde para existencias normales, rojo para stock crítico).
+   - Formulario de alta y edición con validación de precios positivos y stock no negativo.
+   - Acciones de Edición en línea y Eliminación lógica de ítems con registro inmediato en la bitácora de auditoría.
+3. **Subpanel 3: Monitoreo en Tiempo Real y Caja Central (`#subpanelMonitoring`):**
+   - **Polling Automático de 10 Segundos:** Consulta periódica asíncrona que refresca la lista de pedidos en tránsito sin recargar la página.
+   - **Mapa Operativo del Centro de Control:** Instancia Leaflet con capa CartoDB Dark. Representa la central con marcador morado, el cliente con marcador ámbar y el repartidor con ícono de moto 🛵 interpolado dinámicamente entre ambos puntos.
+   - **Corrección de Tamaño Leaflet (`invalidateSize`):** Resuelve el problema común de renderizado en blanco al cambiar de pestañas mediante temporizadores de recalculación geométrica.
+   - **Liquidación y Cierre de Cajas:** Panel financiero que lista a cada repartidor con el total de efectivo recaudado por cobrar. Al presionar *"Liquidar Caja"*, el dinero pasa a caja central y las órdenes se marcan como `liquidado`.
+4. **Subpanel 4: Ledger Inmutable de Auditoría BMAD (`#subpanelAudit`):**
+   - Registro cronológico detallado que expone ID, fecha y hora UTC, IP de origen, operador responsable, tabla afectada, tipo de acción (`INSERT`, `UPDATE`, `DELETE`) y comparador JSON con el estado previo y resultante.
+5. **Subpanel 5: Reporte de Ventas & Desempeño (`#subpanelReports`):**
+   - Tarjetas KPI: Ventas totales acumuladas en Bs, pedidos entregados y repartidores activos.
+   - Gráfico comparativo de métodos de pago (Porcentaje cobrado en QR vs Porcentaje cobrado en Efectivo).
+   - Tabla de rendimiento de repartidores ordenada por cantidad de entregas exitosas y recaudación.
+
+---
+
+### D. Componentes Globales de Navegación y Soporte
+- **Selector Rápido de Cuentas (Tesina Quick Switcher - `#devQuickSwitch`):** Accesos directos de demostración para alternar instantáneamente entre Carlos (Cliente), Pedro (Rider Aprobado) y Central (Administrador).
+- **Banner de Estado de Conexión (`#apiStatusText`, `#apiDot`):** Muestra si el sistema opera conectado a la API PHP Backend o en modo simulado local.
+- **Sistema Centralizado de Toasts (`showToast`):** Alertas flotantes animadas con código de colores (éxito en verde, información en azul, advertencia en amarillo, peligro en rojo).
+
+---
+
+## 3. Manual de Pruebas Frontend (Casos de Éxito y Error)
+
+| ID | Caso de Prueba | Entrada / Acción del Usuario | Comportamiento Esperado | Tipo | Resultado de Salida |
+|---|---|---|---|---|---|
+| **CP-FE-01** | Registro con menor de edad | Fecha de nacimiento menor a 18 años respecto a hoy. | Se calcula la edad, se muestra toast de advertencia y se cancela el registro. | Error | Registro bloqueado (`edad < 18`). |
+| **CP-FE-02** | Navegación de cliente no verificado | Login como cliente con `ci_status = 'pending'`. | Catálogo renderiza precios como "Oculto - Verifica tu C.I." y deshabilita botones de añadir al carrito. | Éxito (Restricción) | Compra prevenida para usuarios no aprobados. |
+| **CP-FE-03** | Aprobación reactiva de C.I. | Administrador presiona "Aprobar" en cliente pendiente. | Se envía petición al backend, cambia a `verified`, se actualiza el badge y se desbloquea el catálogo inmediatamente. | Éxito | Catálogo desbloqueado con precios visibles. |
+| **CP-FE-04** | Selección GPS en Checkout | Clic sobre un punto en el mapa interactivo de checkout. | Se ubica el marcador, se calcula la distancia Haversine, el flete en Bs y el total final en tiempo real. | Éxito | Coordenadas y costo calculados reactivamente. |
+| **CP-FE-05** | Checkout sin comprobante QR | Selecciona "QR Bancario" pero no adjunta comprobante. | El sistema detecta la ausencia del archivo de pago y detiene el envío mostrando alerta roja. | Error | Checkout retenido hasta adjuntar comprobante. |
+| **CP-FE-06** | Rider no aprobado intenta aceptar | Rider con `estado_aprobacion = 'pendiente'` hace clic en "Aceptar Pedido". | El sistema despliega mensaje de restricción: "Debes estar aprobado por la administración". | Error | Asignación denegada (HTTP 403 en modo conectado). |
+| **CP-FE-07** | Rider aprobado acepta orden | Rider verificado hace clic en "Aceptar Pedido". | La orden pasa a `asignado`, se descuenta el stock de la tienda y se abre el panel de navegación GPS. | Éxito | Pedido vinculado al conductor; stock restado. |
+| **CP-FE-08** | Avance de entrega y cobro | Rider presiona "Iniciar Entrega" y luego "Finalizar Entrega". | El estado cambia a `en_camino` (GPS activado) y luego a `entregado`. La recaudación en efectivo suma a su caja. | Éxito | Pedido entregado y dinero registrado en caja. |
+| **CP-FE-09** | Polling en Monitoreo Admin | Administrador permanece en la pestaña "Monitoreo & Caja Central". | Cada 10 segundos el sistema consulta el endpoint sin recargar la página, actualizando los repartidores en el mapa. | Éxito | Datos e interpolación de ruta actualizados. |
+| **CP-FE-10** | Liquidación de caja de rider | Administrador presiona "Liquidar Caja" en rider con cobros en mano. | Se invoca `settle_cash.php`, las órdenes pasan a `liquidado`, el saldo pasa a 0.00 Bs y se emite toast verde. | Éxito | Cierre de caja conciliado en base de datos. |

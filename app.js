@@ -1410,14 +1410,12 @@ function validateCheckoutForm() {
     placeBtn.disabled = !(hasLocation && (!isQr || hasQrFile));
 }
 
-function submitOrderCheckout() {
+async function submitOrderCheckout() {
     if (cart.length === 0 || !selectedDeliveryCoords) return;
 
     const u = currentSession.cliente;
     const isQr = document.getElementById('payOptQr').classList.contains('active');
-    
-    const estadoPago = isQr ? 'pagado_qr' : 'contraentrega';
-    const totalPedido = parseFloat(cart.reduce((acc, item) => acc + (item.product.precio * item.quantity), 0)) + parseFloat(selectedDeliveryCoords.costBs);
+    const metodoPago = isQr ? 'qr' : 'contraentrega';
 
     let qrUrl = null;
     if (isQr) {
@@ -1425,10 +1423,111 @@ function submitOrderCheckout() {
         qrUrl = `/uploads/qr/qr_${Date.now()}_${file ? file.name : 'comprobante.png'}`;
     }
 
+    // Modo Conectado: Checkout atómico contra backend MySQL
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (!token) {
+            showToast('Error 401: Sesión no autenticada. Inicia sesión para continuar.', 'danger');
+            return;
+        }
+
+        const itemsPayload = cart.map(item => ({
+            producto_id: item.product.id,
+            cantidad: item.quantity
+        }));
+
+        try {
+            const res = await fetch(`${config.apiUrl}/Transactions/checkout.php`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    items: itemsPayload,
+                    latitud: selectedDeliveryCoords.lat,
+                    longitud: selectedDeliveryCoords.lon,
+                    metodo_pago: metodoPago,
+                    distancia_km: selectedDeliveryCoords.distKm,
+                    qr_comprobante_url: qrUrl
+                })
+            });
+
+            const result = await res.json().catch(() => ({}));
+
+            if (res.status === 400 && result.error_details && result.error_details.includes('Stock insuficiente')) {
+                showToast(`Error: ${result.error_details}`, 'danger');
+                return;
+            } else if (res.status === 403) {
+                showToast(`Error 403: ${result.error_details || 'Debes tener tu C.I. verificado para realizar compras.'}`, 'danger');
+                return;
+            } else if (!res.ok || result.status !== 'success') {
+                showToast(`Error en checkout: ${result.error_details || 'No se pudo procesar la transacción.'}`, 'danger');
+                return;
+            }
+
+            const backendData = result.data;
+            const newOrderId = backendData.pedido_id;
+
+            const newOrder = {
+                id: newOrderId,
+                cliente_id: u ? u.id : 1,
+                rider_id: null,
+                estado_pago: backendData.estado_pago,
+                estado_pedido: 'pendiente',
+                total: backendData.total,
+                latitud: selectedDeliveryCoords.lat,
+                longitud: selectedDeliveryCoords.lon,
+                qr_comprobante_url: qrUrl,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                created_by: u ? u.id : 1,
+                updated_by: u ? u.id : 1
+            };
+
+            DB.pedidos.push(newOrder);
+
+            // Descontar inventario localmente para reflejar cambio inmediato en UI
+            cart.forEach(item => {
+                const prod = DB.productos.find(p => p.id === item.product.id);
+                if (prod) {
+                    prod.stock = Math.max(0, prod.stock - item.quantity);
+                }
+                DB.pedido_detalles.push({
+                    id: DB.pedido_detalles.length + 1,
+                    pedido_id: newOrderId,
+                    producto_id: item.product.id,
+                    cantidad: item.quantity,
+                    precio_unitario: item.product.precio,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    created_by: u ? u.id : 1,
+                    updated_by: u ? u.id : 1
+                });
+            });
+
+            saveDatabase();
+            closeCheckoutModal();
+            cart = [];
+            updateCartBadge();
+            showToast('¡Pedido registrado en MySQL exitosamente! Inventario descontado.', 'success');
+            renderClienteActiveOrderTracker();
+            renderProducts();
+            return;
+        } catch (err) {
+            console.error('Error enviando checkout a backend:', err);
+            showToast('Fallo de red al comunicar con microservicio. Procesando en modo local...', 'warning');
+        }
+    }
+
+    // Modo Simulado (Local fallback)
+    const estadoPago = isQr ? 'pagado_qr' : 'contraentrega';
+    const totalPedido = parseFloat(cart.reduce((acc, item) => acc + (item.product.precio * item.quantity), 0)) + parseFloat(selectedDeliveryCoords.costBs);
+
     const orderId = DB.pedidos.length + 1;
     const newOrder = {
         id: orderId,
-        cliente_id: u.id,
+        cliente_id: u ? u.id : 1,
         rider_id: null, 
         estado_pago: estadoPago,
         estado_pedido: 'pendiente',
@@ -1438,21 +1537,21 @@ function submitOrderCheckout() {
         qr_comprobante_url: qrUrl,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        created_by: u.id,
-        updated_by: u.id
+        created_by: u ? u.id : 1,
+        updated_by: u ? u.id : 1
     };
 
     DB.pedidos.push(newOrder);
 
     logAuditoria('pedidos', orderId, 'INSERT', null, { 
-        cliente_id: u.id, 
+        cliente_id: u ? u.id : 1, 
         estado_pago: estadoPago, 
         estado_pedido: 'pendiente', 
         total: totalPedido,
         latitud: newOrder.latitud,
         longitud: newOrder.longitud,
         qr_url: qrUrl 
-    }, u.id);
+    }, u ? u.id : 1);
 
     cart.forEach(item => {
         const detailId = DB.pedido_detalles.length + 1;
@@ -1464,18 +1563,19 @@ function submitOrderCheckout() {
             precio_unitario: item.product.precio,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            created_by: u.id,
-            updated_by: u.id
+            created_by: u ? u.id : 1,
+            updated_by: u ? u.id : 1
         };
         DB.pedido_detalles.push(newDetail);
 
         const prod = DB.productos.find(p => p.id === item.product.id);
-        const oldStock = prod.stock;
-        prod.stock -= item.quantity;
-        prod.updated_at = new Date().toISOString();
-        prod.updated_by = u.id;
-
-        logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, u.id);
+        if (prod) {
+            const oldStock = prod.stock;
+            prod.stock -= item.quantity;
+            prod.updated_at = new Date().toISOString();
+            prod.updated_by = u ? u.id : 1;
+            logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, u ? u.id : 1);
+        }
     });
 
     saveDatabase();
@@ -2544,6 +2644,24 @@ function renderAdminAuditLogs() {
 }
 
 function renderAdminReports() {
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (token) {
+            fetch(`${config.apiUrl}/Transactions/report.php`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success' && res.data && res.data.resumen) {
+                    const r = res.data.resumen;
+                    document.getElementById('reportTotalSales').innerText = `${parseFloat(r.total_ventas_bs).toFixed(2)} Bs`;
+                    document.getElementById('reportTotalOrders').innerText = r.pedidos_entregados;
+                }
+            })
+            .catch(() => {});
+        }
+    }
+
     const delivers = DB.pedidos.filter(p => p.estado_pedido === 'entregado');
     const totalSalesSum = delivers.reduce((acc, p) => acc + p.total, 0);
 
@@ -2679,7 +2797,7 @@ window.selectAdminOrderToTrack = function(orderId) {
     renderAdminMonitoring();
 };
 
-window.cancelAdminOrder = function(orderId) {
+window.cancelAdminOrder = async function(orderId) {
     const admin = currentSession.admin;
     const order = DB.pedidos.find(p => p.id === orderId);
 
@@ -2688,25 +2806,51 @@ window.cancelAdminOrder = function(orderId) {
         return;
     }
 
+    if (config.connectedMode) {
+        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        if (token) {
+            try {
+                const res = await fetch(`${config.apiUrl}/Transactions/cancel_order.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ pedido_id: orderId })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (!res.ok || result.status !== 'success') {
+                    showToast(`Error al cancelar: ${result.error_details || 'Cancelación rechazada.'}`, 'danger');
+                    return;
+                }
+            } catch (err) {
+                console.error('Error cancelando pedido en backend:', err);
+            }
+        }
+    }
+
     const details = DB.pedido_detalles.filter(d => d.pedido_id === orderId);
     details.forEach(d => {
         const prod = DB.productos.find(p => p.id === d.producto_id);
-        const oldStock = prod.stock;
-        prod.stock += d.cantidad;
-        logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, admin.id);
+        if (prod) {
+            const oldStock = prod.stock;
+            prod.stock += d.cantidad;
+            logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, admin ? admin.id : 3);
+        }
     });
 
     const oldState = order.estado_pedido;
     order.estado_pedido = 'cancelado';
     order.estado_pago = 'cancelado';
     order.updated_at = new Date().toISOString();
-    order.updated_by = admin.id;
+    order.updated_by = admin ? admin.id : 3;
 
-    logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'cancelado', estado_pago: 'cancelado' }, admin.id);
+    logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'cancelado', estado_pago: 'cancelado' }, admin ? admin.id : 3);
 
     saveDatabase();
     showToast(`Pedido #${orderId} cancelado. El stock ha sido reembolsado.`, 'warning');
     updateUIForCurrentRole();
+    renderProducts();
 };
 
 window.settleRiderCash = function(riderId) {

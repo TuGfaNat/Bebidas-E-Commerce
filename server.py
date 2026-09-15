@@ -377,6 +377,11 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             self.handle_report()
             return
 
+        # Microservice: Live Monitoring (GET)
+        if path in ['/microservices/Transactions/live_monitoring.php', '/microservices/Transactions/live_monitoring', '/microservices/live_monitoring.php', '/microservices/Rider/live_monitoring.php']:
+            self.handle_live_monitoring()
+            return
+
         # Microservice: Logistics calculator via GET query params
         if path in ['/microservices/Logistics/calculator.py', '/microservices/Logistics/calculator']:
             user_id = query_params.get('user_id', ['SYSTEM'])[0]
@@ -995,6 +1000,122 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             "ranking_riders": [],
             "top_productos": []
         }, user_id=admin['user_id'], action="GENERATE_REPORT"))
+
+    def handle_live_monitoring(self):
+        admin, status, err = self.check_admin_auth()
+        if not admin:
+            self.send_json(get_audit_envelope("error", None, None, err, action="FORBIDDEN"), status=status)
+            return
+
+        active_orders = [o for o in ORDERS_DB if o.get('estado_pedido') in ['asignado', 'en_camino']]
+        lat_tienda = -16.5050
+        lon_tienda = -68.1290
+
+        monitoreo_data = []
+        for o in sorted(active_orders, key=lambda x: x.get('id', 0), reverse=True):
+            lat_cliente = float(o.get('latitud', -16.5090))
+            lon_cliente = float(o.get('longitud', -68.1340))
+
+            dist_km = haversine_km(lat_cliente, lon_cliente, lat_tienda, lon_tienda)
+            eta_min = max(5.0, round((dist_km / 25.0) * 60.0))
+            costo_envio = 5.0 + (dist_km * 2.0)
+
+            # Interpolación lineal de la posición del rider
+            progreso = 0.0
+            if o.get('estado_pedido') == 'en_camino':
+                progreso = 0.50
+
+            lat_rider = lat_tienda + (lat_cliente - lat_tienda) * progreso
+            lon_rider = lon_tienda + (lon_cliente - lon_tienda) * progreso
+
+            client_user = next((u for u in USERS_DB.values() if u.get('id') == o.get('cliente_id')), None)
+            rider_user = next((u for u in USERS_DB.values() if u.get('id') == o.get('rider_id')), None)
+
+            items = []
+            for d in ORDER_DETAILS_DB:
+                if d.get('pedido_id') == o.get('id'):
+                    prod = next((p for p in CATALOG_PRODUCTS if p.get('id') == d.get('producto_id')), None)
+                    items.append({
+                        "producto_id": d.get('producto_id'),
+                        "nombre": prod['nombre'] if prod else "Producto",
+                        "cantidad": d.get('cantidad', 1),
+                        "precio_unitario": float(d.get('precio_unitario', 0.0))
+                    })
+
+            monitoreo_data.append({
+                "id": o.get('id'),
+                "pedido_id": o.get('id'),
+                "estado_pedido": o.get('estado_pedido'),
+                "estado_pago": o.get('estado_pago'),
+                "total": float(o.get('total', 0.0)),
+                "created_at": o.get('created_at'),
+                "updated_at": o.get('updated_at', o.get('created_at')),
+                "items": items,
+                "detalles": items,
+                "cliente_id": o.get('cliente_id'),
+                "cliente_nombre": client_user['nombre'] if client_user else "Cliente",
+                "rider_id": o.get('rider_id'),
+                "rider_nombre": rider_user['nombre'] if rider_user else "Sin Asignar",
+                "latitud": lat_cliente,
+                "longitud": lon_cliente,
+                "distancia_km": round(dist_km, 2),
+                "eta_minutos": int(eta_min),
+                "posicion_rider": {
+                    "lat": round(lat_rider, 6),
+                    "lon": round(lon_rider, 6),
+                    "progreso": round(progreso, 2)
+                },
+                "cliente": {
+                    "id": o.get('cliente_id'),
+                    "nombre": client_user['nombre'] if client_user else "Cliente",
+                    "email": next((k for k, v in USERS_DB.items() if v.get('id') == o.get('cliente_id')), ""),
+                    "latitud": lat_cliente,
+                    "longitud": lon_cliente
+                },
+                "rider": {
+                    "id": o.get('rider_id'),
+                    "nombre": rider_user['nombre'] if rider_user else "Rider",
+                    "email": next((k for k, v in USERS_DB.items() if v.get('id') == o.get('rider_id')), ""),
+                    "ubicacion_actual": {
+                        "latitud": round(lat_rider, 6),
+                        "longitud": round(lon_rider, 6),
+                        "progreso": round(progreso, 2)
+                    }
+                } if o.get('rider_id') else None,
+                "logistica": {
+                    "distancia_km": round(dist_km, 2),
+                    "tiempo_estimado": f"{int(eta_min)} min",
+                    "costo_envio_bs": round(costo_envio, 2)
+                }
+            })
+
+        # Riders con efectivo pendiente de liquidación
+        riders_settlements = []
+        for r_user in [u for u in USERS_DB.values() if u.get('role') == 'rider']:
+            cash_orders = [ord_item for ord_item in ORDERS_DB if ord_item.get('rider_id') == r_user.get('id') and ord_item.get('estado_pedido') == 'entregado' and ord_item.get('estado_pago') == 'pagado_efectivo']
+            if cash_orders:
+                total_cash = sum(ord_item.get('total', 0.0) for ord_item in cash_orders)
+                riders_settlements.append({
+                    "id": r_user.get('id'),
+                    "rider_id": r_user.get('id'),
+                    "nombre": r_user.get('nombre'),
+                    "pendingCash": round(total_cash, 2),
+                    "total_efectivo_pendiente": round(total_cash, 2),
+                    "total_recaudado_bs": round(total_cash, 2),
+                    "pedidos_pendientes": len(cash_orders),
+                    "orderIds": [ord_item.get('id') for ord_item in cash_orders]
+                })
+
+        self.send_json(get_audit_envelope("success", {
+            "pedidos_activos": monitoreo_data,
+            "total_activos": len(monitoreo_data),
+            "riders_liquidaciones": riders_settlements,
+            "liquidaciones_pendientes": riders_settlements,
+            "coordenadas_tienda": {
+                "latitud": lat_tienda,
+                "longitud": lon_tienda
+            }
+        }, user_id=admin['user_id'], action="LIVE_MONITORING"))
 
     def handle_catalog_update(self, data, query_params):
         admin, status_code, err_msg = self.check_admin_auth()

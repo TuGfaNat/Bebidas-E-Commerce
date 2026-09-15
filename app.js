@@ -62,6 +62,8 @@ let adminMonitoringRouteLine = null;
 
 // Selected order ID to track in Admin panel
 let selectedAdminMonitoringOrderId = null;
+let adminMonitoringIntervalId = null;
+let adminMonitoringCachedOrders = [];
 
 // Initialize System
 document.addEventListener('DOMContentLoaded', () => {
@@ -572,15 +574,21 @@ function setupEventListeners() {
             
             if (tabId === 'monitoring') {
                 renderAdminMonitoring();
-            } else if (tabId === 'reports') {
-                renderAdminReports();
-            } else if (tabId === 'products') {
-                renderAdminProductsTable();
-                if (config.connectedMode) syncProductsFromBackend();
-            } else if (tabId === 'approvals') {
-                renderAdminPendingApprovals();
-            } else if (tabId === 'audit') {
-                renderAdminAuditLogs();
+                setTimeout(() => {
+                    if (adminMonitoringMapInstance) adminMonitoringMapInstance.invalidateSize();
+                }, 150);
+            } else {
+                stopAdminMonitoringPolling();
+                if (tabId === 'reports') {
+                    renderAdminReports();
+                } else if (tabId === 'catalog' || tabId === 'products') {
+                    renderAdminProductsTable();
+                    if (config.connectedMode) syncProductsFromBackend();
+                } else if (tabId === 'approvals') {
+                    renderAdminPendingApprovals();
+                } else if (tabId === 'audit') {
+                    renderAdminAuditLogs();
+                }
             }
         });
     });
@@ -620,6 +628,10 @@ function updateUIForCurrentRole() {
 }
 
 function switchRole(role) {
+    if (role !== 'admin') {
+        stopAdminMonitoringPolling();
+    }
+
     document.querySelectorAll('.panel').forEach(panel => {
         panel.classList.remove('active');
     });
@@ -631,6 +643,13 @@ function switchRole(role) {
     }
 
     updateUIForCurrentRole();
+
+    // Invalidate Leaflet map size on panel transitions
+    setTimeout(() => {
+        if (role === 'cliente' && clientTrackingMapInstance) clientTrackingMapInstance.invalidateSize();
+        if (role === 'rider' && riderTrackingMapInstance) riderTrackingMapInstance.invalidateSize();
+        if (role === 'admin' && adminMonitoringMapInstance) adminMonitoringMapInstance.invalidateSize();
+    }, 150);
 }
 
 // ----------------------------------------------------
@@ -1097,6 +1116,9 @@ function handleLogout(notify = true) {
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('headerUserStatus').style.display = 'none';
     
+    // Stop live monitoring interval if running
+    stopAdminMonitoringPolling();
+
     // Clear maps elements
     checkoutMapInstance = null;
     clientTrackingMapInstance = null;
@@ -2837,13 +2859,67 @@ function renderAdminReports() {
 // ----------------------------------------------------
 // 12. ADMIN LIVE MONITORING & CASH SETTLEMENTS
 // ----------------------------------------------------
-function renderAdminMonitoring() {
+function calculateRiderInterpolatedPosition(latStore, lonStore, latClient, lonClient, progress = 0.5) {
+    const t = Math.max(0, Math.min(1, progress));
+    return {
+        lat: latStore + t * (latClient - latStore),
+        lon: lonStore + t * (lonClient - lonStore)
+    };
+}
+
+function stopAdminMonitoringPolling() {
+    if (adminMonitoringIntervalId) {
+        clearInterval(adminMonitoringIntervalId);
+        adminMonitoringIntervalId = null;
+    }
+}
+
+async function fetchAndUpdateAdminMonitoring() {
     const listActive = document.getElementById('adminLiveOrdersList');
     const listSettlements = document.getElementById('adminRiderSettlementsList');
-    
-    if (!listActive) return;
+    if (!listActive || !listSettlements) return;
 
-    const activeOrders = DB.pedidos.filter(p => p.estado_pedido === 'asignado' || p.estado_pedido === 'en_camino');
+    if (config.connectedMode) {
+        const token = getAuthToken();
+        if (token) {
+            try {
+                const res = await apiGet('/Transactions/live_monitoring.php');
+                if (res.ok && res.data) {
+                    const activeOrders = res.data.pedidos_activos || [];
+                    const settlements = res.data.liquidaciones_pendientes || [];
+                    adminMonitoringCachedOrders = activeOrders;
+                    renderAdminMonitoringUI(activeOrders, settlements);
+                    return;
+                }
+            } catch (err) {
+                console.warn('Error en live_monitoring.php polling:', err);
+            }
+        }
+    }
+
+    // Modo simulado / Fallback local
+    const activeOrders = (DB.pedidos || []).filter(p => p.estado_pedido === 'asignado' || p.estado_pedido === 'en_camino');
+    adminMonitoringCachedOrders = activeOrders;
+
+    const riders = (DB.users || []).filter(u => u.role === 'rider');
+    const settlements = riders.map(r => {
+        const cashOrders = (DB.pedidos || []).filter(p => p.rider_id === r.id && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
+        const pendingCash = cashOrders.reduce((acc, p) => acc + p.total, 0);
+        return {
+            id: r.id,
+            nombre: r.nombre,
+            pedidos_pendientes: cashOrders.length,
+            total_recaudado_bs: pendingCash
+        };
+    }).filter(r => r.total_recaudado_bs > 0);
+
+    renderAdminMonitoringUI(activeOrders, settlements);
+}
+
+function renderAdminMonitoringUI(activeOrders, settlements) {
+    const listActive = document.getElementById('adminLiveOrdersList');
+    const listSettlements = document.getElementById('adminRiderSettlementsList');
+    if (!listActive || !listSettlements) return;
 
     if (activeOrders.length === 0) {
         listActive.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay despachos ni envíos en camino activos.</div>`;
@@ -2851,25 +2927,35 @@ function renderAdminMonitoring() {
         initAdminMonitoringMap(null);
     } else {
         listActive.innerHTML = activeOrders.map(p => {
-            const clientUser = DB.users.find(usr => usr.id === p.cliente_id);
-            const riderUser = DB.users.find(usr => usr.id === p.rider_id);
-            const items = DB.pedido_detalles.filter(d => d.pedido_id === p.id);
-            const itemsText = items.map(d => {
-                const prod = DB.productos.find(pr => pr.id === d.producto_id);
-                return `${d.cantidad}x ${prod ? prod.nombre : 'Producto'}`;
-            }).join(', ');
+            const clientUser = (DB.users || []).find(usr => usr.id === p.cliente_id);
+            const riderUser = (DB.users || []).find(usr => usr.id === p.rider_id);
+            const clientName = p.cliente_nombre || (clientUser ? clientUser.nombre : 'Anónimo');
+            const riderName = p.rider_nombre || (riderUser ? riderUser.nombre : 'Sin Asignar');
+
+            let itemsText = '';
+            if (p.detalles && Array.isArray(p.detalles) && p.detalles.length > 0) {
+                itemsText = p.detalles.map(d => `${d.cantidad}x ${d.producto_nombre || 'Producto'}`).join(', ');
+            } else {
+                const items = (DB.pedido_detalles || []).filter(d => d.pedido_id === p.id);
+                itemsText = items.map(d => {
+                    const prod = (DB.productos || []).find(pr => pr.id === d.producto_id);
+                    return `${d.cantidad}x ${prod ? prod.nombre : 'Producto'}`;
+                }).join(', ');
+            }
+
+            const etaInfo = p.eta_minutos ? ` • ETA: ~${p.eta_minutos} min (${p.distancia_km} km)` : '';
 
             return `
-                <div class="order-card" style="border-color: ${selectedAdminMonitoringOrderId === p.id ? 'var(--accent-purple)' : 'var(--border-color)'}">
+                <div class="order-card" id="adminOrderCard_${p.id}" style="border-color: ${selectedAdminMonitoringOrderId === p.id ? 'var(--accent-purple)' : 'var(--border-color)'}">
                     <div class="order-card-header">
-                        <span class="order-id">Pedido #${p.id} - ${p.estado_pedido.toUpperCase()}</span>
-                        <span class="badge ${p.estado_pago === 'pagado_qr' ? 'badge-verified' : 'badge-pending'}">${p.estado_pago.replace('_', ' ')}</span>
+                        <span class="order-id">Pedido #${p.id} - ${p.estado_pedido.toUpperCase()}${etaInfo}</span>
+                        <span class="badge ${p.estado_pago === 'pagado_qr' ? 'badge-verified' : 'badge-pending'}">${p.estado_pago ? p.estado_pago.replace('_', ' ') : 'Pendiente'}</span>
                     </div>
                     <div style="font-size:0.85rem; margin-bottom: 0.75rem;">
-                        <p><strong>Cliente:</strong> ${clientUser ? clientUser.nombre : 'Anónimo'}</p>
-                        <p><strong>Repartidor:</strong> ${riderUser ? riderUser.nombre : 'Sin Asignar'}</p>
-                        <p><strong>Detalles:</strong> ${itemsText}</p>
-                        <p><strong>Monto:</strong> ${p.total.toFixed(2)} Bs</p>
+                        <p><strong>Cliente:</strong> ${clientName}</p>
+                        <p><strong>Repartidor:</strong> ${riderName}</p>
+                        <p><strong>Detalles:</strong> ${itemsText || 'Sin detalles'}</p>
+                        <p><strong>Monto:</strong> ${parseFloat(p.total).toFixed(2)} Bs</p>
                     </div>
                     <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
                         <button class="btn btn-danger btn-sm" onclick="cancelAdminOrder(${p.id})">Cancelar Pedido</button>
@@ -2882,20 +2968,8 @@ function renderAdminMonitoring() {
         if (selectedAdminMonitoringOrderId === null || !activeOrders.some(p => p.id === selectedAdminMonitoringOrderId)) {
             selectedAdminMonitoringOrderId = activeOrders[0].id;
         }
-        initAdminMonitoringMap(selectedAdminMonitoringOrderId);
+        initAdminMonitoringMap(selectedAdminMonitoringOrderId, activeOrders);
     }
-
-    const riders = DB.users.filter(u => u.role === 'rider');
-    const settlements = riders.map(r => {
-        const cashOrders = DB.pedidos.filter(p => p.rider_id === r.id && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
-        const pendingCash = cashOrders.reduce((acc, p) => acc + p.total, 0);
-        return {
-            id: r.id,
-            nombre: r.nombre,
-            pendingCash: pendingCash,
-            orderIds: cashOrders.map(p => p.id)
-        };
-    }).filter(r => r.pendingCash > 0);
 
     if (settlements.length === 0) {
         listSettlements.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 1.5rem;">Todos los Riders están al día con sus liquidaciones de caja.</div>`;
@@ -2904,10 +2978,10 @@ function renderAdminMonitoring() {
             <li class="leaderboard-item" style="border-left: 3px solid var(--accent-amber); border-radius: 0 var(--radius-md) var(--radius-md) 0;">
                 <div class="rider-info-main">
                     <div class="rider-name-lead">${r.nombre}</div>
-                    <div class="rider-orders-lead">${r.orderIds.length} cobros en efectivo pendientes de liquidación</div>
+                    <div class="rider-orders-lead">${r.pedidos_pendientes || 0} cobros en efectivo pendientes de liquidación</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:1rem;">
-                    <span class="rider-earnings-lead" style="color:var(--accent-amber);">${r.pendingCash.toFixed(2)} Bs</span>
+                    <span class="rider-earnings-lead" style="color:var(--accent-amber);">${parseFloat(r.total_recaudado_bs).toFixed(2)} Bs</span>
                     <button class="btn btn-primary btn-sm" onclick="settleRiderCash(${r.id})">Liquidar Caja</button>
                 </div>
             </li>
@@ -2915,18 +2989,29 @@ function renderAdminMonitoring() {
     }
 }
 
+function renderAdminMonitoring() {
+    stopAdminMonitoringPolling();
+    fetchAndUpdateAdminMonitoring();
+    adminMonitoringIntervalId = setInterval(fetchAndUpdateAdminMonitoring, 10000);
+}
+
 window.selectAdminOrderToTrack = function(orderId) {
     selectedAdminMonitoringOrderId = orderId;
-    renderAdminMonitoring();
+    document.querySelectorAll('#adminLiveOrdersList .order-card').forEach(card => {
+        card.style.borderColor = 'var(--border-color)';
+    });
+    const selectedCard = document.getElementById(`adminOrderCard_${orderId}`);
+    if (selectedCard) {
+        selectedCard.style.borderColor = 'var(--accent-purple)';
+    }
+    initAdminMonitoringMap(orderId, adminMonitoringCachedOrders);
 };
 
 window.cancelAdminOrder = async function(orderId) {
     const admin = currentSession.admin;
-    const order = DB.pedidos.find(p => p.id === orderId);
-
-    if (!order || order.estado_pedido === 'cancelado' || order.estado_pedido === 'entregado') {
-        showToast('No se puede cancelar este pedido.', 'error');
-        return;
+    let order = (DB.pedidos || []).find(p => p.id === orderId);
+    if (!order && adminMonitoringCachedOrders) {
+        order = adminMonitoringCachedOrders.find(p => p.id === orderId);
     }
 
     if (config.connectedMode) {
@@ -2938,39 +3023,46 @@ window.cancelAdminOrder = async function(orderId) {
                     showToast(`Error al cancelar: ${res.error || 'Cancelación rechazada.'}`, 'danger');
                     return;
                 }
+                showToast(`Pedido #${orderId} cancelado en el backend y stock reembolsado.`, 'warning');
             } catch (err) {
                 console.error('Error cancelando pedido en backend:', err);
             }
         }
     }
 
-    const details = DB.pedido_detalles.filter(d => d.pedido_id === orderId);
-    details.forEach(d => {
-        const prod = DB.productos.find(p => p.id === d.producto_id);
-        if (prod) {
-            const oldStock = prod.stock;
-            prod.stock += d.cantidad;
-            logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, admin ? admin.id : 3);
+    const localOrder = (DB.pedidos || []).find(p => p.id === orderId);
+    if (localOrder && localOrder.estado_pedido !== 'cancelado' && localOrder.estado_pedido !== 'entregado') {
+        const details = (DB.pedido_detalles || []).filter(d => d.pedido_id === orderId);
+        details.forEach(d => {
+            const prod = (DB.productos || []).find(p => p.id === d.producto_id);
+            if (prod) {
+                const oldStock = prod.stock;
+                prod.stock += d.cantidad;
+                logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, admin ? admin.id : 3);
+            }
+        });
+
+        const oldState = localOrder.estado_pedido;
+        localOrder.estado_pedido = 'cancelado';
+        localOrder.estado_pago = 'cancelado';
+        localOrder.updated_at = new Date().toISOString();
+        localOrder.updated_by = admin ? admin.id : 3;
+
+        logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'cancelado', estado_pago: 'cancelado' }, admin ? admin.id : 3);
+
+        saveDatabase();
+        if (!config.connectedMode) {
+            showToast(`Pedido #${orderId} cancelado. El stock ha sido reembolsado.`, 'warning');
         }
-    });
+    }
 
-    const oldState = order.estado_pedido;
-    order.estado_pedido = 'cancelado';
-    order.estado_pago = 'cancelado';
-    order.updated_at = new Date().toISOString();
-    order.updated_by = admin ? admin.id : 3;
-
-    logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'cancelado', estado_pago: 'cancelado' }, admin ? admin.id : 3);
-
-    saveDatabase();
-    showToast(`Pedido #${orderId} cancelado. El stock ha sido reembolsado.`, 'warning');
-    updateUIForCurrentRole();
+    fetchAndUpdateAdminMonitoring();
     renderProducts();
 };
 
 window.settleRiderCash = async function(riderId) {
     const admin = currentSession.admin;
-    const cashOrders = DB.pedidos.filter(p => p.rider_id === riderId && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
+    let apiSuccess = false;
 
     if (config.connectedMode) {
         const token = getAuthToken();
@@ -2984,34 +3076,40 @@ window.settleRiderCash = async function(riderId) {
                     showToast(`Error al liquidar caja: ${res.error || 'Error desconocido'}`, 'danger');
                     return;
                 }
-                showToast(`Liquidación en base de datos completada. Recaudados ${res.data?.total_liquidado_bs || 0} Bs del rider.`, 'success');
+                apiSuccess = true;
+                showToast(`Liquidación completada en backend. Recaudados ${res.data?.total_liquidado_bs || 0} Bs del rider.`, 'success');
             } catch (err) {
                 console.warn('Error en settle_cash.php:', err);
             }
         }
     }
 
-    if (cashOrders.length === 0) return;
+    const cashOrders = (DB.pedidos || []).filter(p => p.rider_id === riderId && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
+    if (cashOrders.length > 0) {
+        let totalSettle = 0;
+        cashOrders.forEach(p => {
+            totalSettle += p.total;
+            p.estado_pago = 'liquidado';
+            p.updated_at = new Date().toISOString();
+            p.updated_by = admin ? admin.id : 3;
 
-    let totalSettle = 0;
-    cashOrders.forEach(p => {
-        totalSettle += p.total;
-        p.estado_pago = 'liquidado';
-        p.updated_at = new Date().toISOString();
-        p.updated_by = admin ? admin.id : 3;
+            logAuditoria('pedidos', p.id, 'UPDATE', { estado_pago: 'pagado_efectivo' }, { estado_pago: 'liquidado', motivo: 'Caja liquidada central' }, admin ? admin.id : 3);
+        });
 
-        logAuditoria('pedidos', p.id, 'UPDATE', { estado_pago: 'pagado_efectivo' }, { estado_pago: 'liquidado', motivo: 'Caja liquidada central' }, admin ? admin.id : 3);
-    });
-
-    saveDatabase();
-    if (!config.connectedMode) {
-        showToast(`Liquidación completada. Recaudados ${totalSettle.toFixed(2)} Bs de la caja del rider.`, 'success');
+        saveDatabase();
+        if (!config.connectedMode && !apiSuccess) {
+            showToast(`Liquidación completada. Recaudados ${totalSettle.toFixed(2)} Bs de la caja del rider.`, 'success');
+        }
     }
-    updateUIForCurrentRole();
+
+    fetchAndUpdateAdminMonitoring();
 };
 
-function initAdminMonitoringMap(orderId) {
+function initAdminMonitoringMap(orderId, ordersList = null) {
     setTimeout(() => {
+        const mapContainer = document.getElementById('adminMonitoringMap');
+        if (!mapContainer) return;
+
         if (!adminMonitoringMapInstance) {
             adminMonitoringMapInstance = L.map('adminMonitoringMap', {
                 zoomControl: true
@@ -3024,14 +3122,14 @@ function initAdminMonitoringMap(orderId) {
             adminMonitoringMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: L.divIcon({
                     className: 'node-store-wrap',
-                    html: '<div style="background:#8b5cf6; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #8b5cf6;"></div>',
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6]
+                    html: '<div style="background:#8b5cf6; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #8b5cf6;"></div>',
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7]
                 })
-            }).addTo(adminMonitoringMapInstance);
-        } else {
-            adminMonitoringMapInstance.invalidateSize();
+            }).addTo(adminMonitoringMapInstance).bindPopup("<b>Burger 24/7 Central Sopocachi</b><br>Cocina & Despacho");
         }
+
+        adminMonitoringMapInstance.invalidateSize();
 
         if (adminMonitoringMarkerClient) {
             adminMonitoringMapInstance.removeLayer(adminMonitoringMarkerClient);
@@ -3046,25 +3144,29 @@ function initAdminMonitoringMap(orderId) {
             adminMonitoringRouteLine = null;
         }
 
-        if (orderId === null) {
+        if (orderId === null || orderId === undefined) {
             adminMonitoringMapInstance.setView([STORE_COORDS.lat, STORE_COORDS.lon], 14);
             return;
         }
 
-        const order = DB.pedidos.find(p => p.id === orderId);
+        const orders = ordersList || adminMonitoringCachedOrders || DB.pedidos || [];
+        const order = orders.find(p => p.id === orderId);
         if (!order) return;
 
-        const latCliente = order.latitud || -16.5090;
-        const lonCliente = order.longitud || -68.1340;
+        const latCliente = parseFloat(order.latitud) || -16.5090;
+        const lonCliente = parseFloat(order.longitud) || -68.1340;
+        const clientName = order.cliente_nombre || 'Cliente Destino';
+        const riderName = order.rider_nombre || 'Rider';
 
         adminMonitoringMarkerClient = L.marker([latCliente, lonCliente], {
             icon: L.divIcon({
                 className: 'node-client-wrap',
-                html: '<div style="background:#f59e0b; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
+                html: '<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
             })
         }).addTo(adminMonitoringMapInstance);
+        adminMonitoringMarkerClient.bindPopup(`<b>Cliente: ${clientName}</b><br>Pedido #${order.id}`);
 
         adminMonitoringRouteLine = L.polyline([
             [STORE_COORDS.lat, STORE_COORDS.lon],
@@ -3079,24 +3181,32 @@ function initAdminMonitoringMap(orderId) {
             [STORE_COORDS.lat, STORE_COORDS.lon],
             [latCliente, lonCliente]
         ]);
-        adminMonitoringMapInstance.fitBounds(bounds, { padding: [30, 30] });
+        adminMonitoringMapInstance.fitBounds(bounds, { padding: [35, 35] });
 
         let riderLat = STORE_COORDS.lat;
         let riderLon = STORE_COORDS.lon;
-        if (order.estado_pedido === 'en_camino') {
-            riderLat = (STORE_COORDS.lat + latCliente) / 2;
-            riderLon = (STORE_COORDS.lon + lonCliente) / 2;
+
+        if (order.posicion_rider && typeof order.posicion_rider.lat === 'number' && typeof order.posicion_rider.lon === 'number') {
+            riderLat = order.posicion_rider.lat;
+            riderLon = order.posicion_rider.lon;
+        } else if (order.estado_pedido === 'en_camino') {
+            const interpolated = calculateRiderInterpolatedPosition(STORE_COORDS.lat, STORE_COORDS.lon, latCliente, lonCliente, 0.5);
+            riderLat = interpolated.lat;
+            riderLon = interpolated.lon;
         }
 
         adminMonitoringMarkerRider = L.marker([riderLat, riderLon], {
             icon: L.divIcon({
                 className: 'node-rider-wrap',
-                html: `<div style="background:#10b981; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #10b981; display:flex; align-items:center; justify-content:center; color:#fff; font-size:8px;"><i class="lucide-bike" style="width:8px;height:8px;fill:currentColor;"></i></div>`,
-                iconSize: [16, 16],
-                iconAnchor: [8, 8]
+                html: `<div style="background:#10b981; width:18px; height:18px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #10b981; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px;">🛵</div>`,
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
             })
         }).addTo(adminMonitoringMapInstance);
-    }, 200);
+        adminMonitoringMarkerRider.bindPopup(`<b>Rider: ${riderName}</b><br>Estado: ${order.estado_pedido.toUpperCase()}`);
+
+        adminMonitoringMapInstance.invalidateSize();
+    }, 150);
 }
 
 // ----------------------------------------------------

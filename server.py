@@ -14,6 +14,7 @@ import subprocess
 import hmac
 import hashlib
 import base64
+import math
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from datetime import datetime, timezone
 
@@ -85,6 +86,14 @@ def get_audit_envelope(status, data, user_id=None, error_details=None, action=No
         "error_details": error_details
     }
 
+def haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
 ALLOWED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
@@ -127,6 +136,38 @@ CATALOG_PRODUCTS = [
     {"id": 12, "categoria": "Bebidas", "nombre": "Limonada Frozen con Menta", "marca": "Burger 24/7", "sabor": "Refrescante, limón natural y menta fresca", "precio": 12.00, "stock": 100, "created_by": 3, "updated_by": 3, "created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}
 ]
 
+# Pedidos y Detalles en memoria
+ORDERS_DB = [
+    {
+        "id": 1,
+        "cliente_id": 1,
+        "rider_id": 2,
+        "estado_pago": "liquidado",
+        "estado_pedido": "entregado",
+        "total": 45.00,
+        "latitud": -16.5020,
+        "longitud": -68.1310,
+        "qr_comprobante_url": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 1,
+        "updated_by": 3
+    }
+]
+
+ORDER_DETAILS_DB = [
+    {
+        "id": 1,
+        "pedido_id": 1,
+        "producto_id": 1,
+        "cantidad": 1,
+        "precio_unitario": 22.00,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 1,
+        "updated_by": 1
+    }
+]
+
 AUDIT_LOGS = [
     {
         "id": 1,
@@ -141,6 +182,14 @@ AUDIT_LOGS = [
         "updated_by": 3
     }
 ]
+
+USERS_DB = {
+    'admin@mail.com': {'pass': 'admin', 'id': 3, 'nombre': 'Admin Central', 'role': 'super_usuario', 'ci_status': 'verified'},
+    'pedro@mail.com': {'pass': 'pedro', 'id': 2, 'nombre': 'Pedro Gómez', 'role': 'rider', 'ci_status': 'verified'},
+    'carlos@mail.com': {'pass': 'carlos', 'id': 1, 'nombre': 'Carlos Pérez', 'role': 'cliente', 'ci_status': 'verified'},
+    'maria@mail.com': {'pass': 'maria', 'id': 4, 'nombre': 'María López (Pendiente)', 'role': 'cliente', 'ci_status': 'pending'},
+    'juan@mail.com': {'pass': 'juan', 'id': 5, 'nombre': 'Juan Rodríguez (Pendiente)', 'role': 'rider', 'ci_status': 'pending'}
+}
 
 class BebidasHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -169,7 +218,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.end_headers()
 
-    def check_admin_auth(self):
+    def check_jwt_auth(self):
         auth_header = self.headers.get('Authorization', '')
         token = ''
         if auth_header.startswith('Bearer '):
@@ -179,17 +228,23 @@ class BebidasHandler(SimpleHTTPRequestHandler):
         payload = verify_jwt(token)
         if not payload:
             return None, 401, "Acceso denegado. Token inválido o expirado."
+        return payload, 200, None
+
+    def check_admin_auth(self):
+        payload, status, err = self.check_jwt_auth()
+        if not payload:
+            return None, status, err
         role = payload.get('role', '')
         if role not in ['super_usuario', 'admin']:
-            return None, 403, "Permiso denegado. Se requieren privilegios de administrador para modificar el catálogo."
+            return None, 403, "Permiso denegado. Se requieren privilegios de administrador para esta operación."
         return payload, 200, None
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+        query_params = urllib.parse.parse_qs(parsed.query)
 
         # Reject tokens sent via query parameters on any endpoint
-        query_params = urllib.parse.parse_qs(parsed.query)
         if 'token' in query_params:
             self.send_json(get_audit_envelope(
                 "error", 
@@ -200,7 +255,6 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             ), status=401)
             return
 
-        # Normalize alias /Bebidas-E-Commerce/
         if path.startswith('/Bebidas-E-Commerce'):
             path = path[len('/Bebidas-E-Commerce'):]
             if not path:
@@ -218,26 +272,9 @@ class BebidasHandler(SimpleHTTPRequestHandler):
 
         # Microservice: Session restoration via Bearer JWT
         if path in ['/microservices/Auth/session.php', '/microservices/Auth/session']:
-            auth_header = self.headers.get('Authorization', '')
-            token = ''
-            if auth_header.startswith('Bearer '):
-                token = auth_header[7:].strip()
-            
-            if not token:
-                self.send_json(get_audit_envelope(
-                    "error", None, None, 
-                    "Acceso denegado. Token no proporcionado en el encabezado Authorization.",
-                    action="SESSION_CHECK"
-                ), status=401)
-                return
-
-            payload = verify_jwt(token)
+            payload, status, err = self.check_jwt_auth()
             if not payload:
-                self.send_json(get_audit_envelope(
-                    "error", None, None, 
-                    "Acceso denegado. Token inválido o expirado.",
-                    action="SESSION_CHECK"
-                ), status=401)
+                self.send_json(get_audit_envelope("error", None, None, err, action="SESSION_CHECK"), status=status)
                 return
 
             user_id = payload.get('user_id')
@@ -289,6 +326,11 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             }, user_id=user_id, action="GET_CATALOG"))
             return
 
+        # Microservice: Transactions Reports (GET)
+        if path in ['/microservices/Transactions/report.php', '/microservices/Transactions/report']:
+            self.handle_report()
+            return
+
         # Microservice: Logistics calculator via GET query params
         if path in ['/microservices/Logistics/calculator.py', '/microservices/Logistics/calculator']:
             user_id = query_params.get('user_id', ['SYSTEM'])[0]
@@ -322,9 +364,9 @@ class BebidasHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+        query_params = urllib.parse.parse_qs(parsed.query)
 
         # Reject tokens sent via query parameters
-        query_params = urllib.parse.parse_qs(parsed.query)
         if 'token' in query_params:
             self.send_json(get_audit_envelope(
                 "error", 
@@ -356,12 +398,9 @@ class BebidasHandler(SimpleHTTPRequestHandler):
         if path in ['/microservices/Auth/login.php', '/microservices/Auth/login']:
             client_ip = self.get_client_ip()
 
-            # Rate-limiting check (max 5 failed attempts per 300 seconds)
             if not check_rate_limit(client_ip):
                 self.send_json(get_audit_envelope(
-                    "error",
-                    None,
-                    None,
+                    "error", None, None,
                     "Demasiados intentos fallidos de autenticación. Bloqueo temporal por 5 minutos.",
                     action="LOGIN_RATE_LIMITED"
                 ), status=429)
@@ -370,27 +409,16 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             correo = data.get('correo', data.get('email', '')).strip().lower()
             password = data.get('password', '').strip()
 
-            valid_users = {
-                'admin@mail.com': {'pass': 'admin', 'id': 3, 'nombre': 'Admin Central', 'role': 'super_usuario', 'ci_status': 'verified'},
-                'pedro@mail.com': {'pass': 'pedro', 'id': 2, 'nombre': 'Pedro Gómez', 'role': 'rider', 'ci_status': 'verified'},
-                'carlos@mail.com': {'pass': 'carlos', 'id': 1, 'nombre': 'Carlos Pérez', 'role': 'cliente', 'ci_status': 'verified'},
-                'maria@mail.com': {'pass': 'maria', 'id': 4, 'nombre': 'María López (Pendiente)', 'role': 'cliente', 'ci_status': 'pending'},
-                'juan@mail.com': {'pass': 'juan', 'id': 5, 'nombre': 'Juan Rodríguez (Pendiente)', 'role': 'rider', 'ci_status': 'pending'}
-            }
-
-            matched = valid_users.get(correo)
+            matched = USERS_DB.get(correo)
             if not matched or matched['pass'] != password:
                 record_attempt(client_ip, success=False)
                 self.send_json(get_audit_envelope(
-                    "error",
-                    None,
-                    None,
+                    "error", None, None,
                     "Credenciales incorrectas. Verifique su correo electrónico y contraseña.",
                     action="LOGIN_FAILED"
                 ), status=401)
                 return
 
-            # Login successful: clear rate limit and issue real signed JWT
             record_attempt(client_ip, success=True)
             signed_token = generate_jwt({
                 "user_id": matched['id'],
@@ -413,26 +441,9 @@ class BebidasHandler(SimpleHTTPRequestHandler):
 
         # Microservice: Session restoration via POST
         if path in ['/microservices/Auth/session.php', '/microservices/Auth/session']:
-            auth_header = self.headers.get('Authorization', '')
-            token = ''
-            if auth_header.startswith('Bearer '):
-                token = auth_header[7:].strip()
-            
-            if not token:
-                self.send_json(get_audit_envelope(
-                    "error", None, None, 
-                    "Acceso denegado. Token no proporcionado en el encabezado Authorization.",
-                    action="SESSION_CHECK"
-                ), status=401)
-                return
-
-            payload = verify_jwt(token)
+            payload, status, err = self.check_jwt_auth()
             if not payload:
-                self.send_json(get_audit_envelope(
-                    "error", None, None, 
-                    "Acceso denegado. Token inválido o expirado.",
-                    action="SESSION_CHECK"
-                ), status=401)
+                self.send_json(get_audit_envelope("error", None, None, err, action="SESSION_CHECK"), status=status)
                 return
 
             user_id = payload.get('user_id')
@@ -516,6 +527,21 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 "producto": new_prod,
                 "id": new_id
             }, user_id=admin['user_id'], action="INSERT"), status=201)
+            return
+
+        # Microservice: Transactions Checkout (POST)
+        if path in ['/microservices/Transactions/checkout.php', '/microservices/Transactions/checkout']:
+            self.handle_checkout(data, query_params)
+            return
+
+        # Microservice: Transactions Cancel Order (POST)
+        if path in ['/microservices/Transactions/cancel_order.php', '/microservices/Transactions/cancel_order']:
+            self.handle_cancel_order(data, query_params)
+            return
+
+        # Microservice: Transactions Report (POST)
+        if path in ['/microservices/Transactions/report.php', '/microservices/Transactions/report']:
+            self.handle_report()
             return
 
         # Microservice: Logistics calculator via POST
@@ -619,6 +645,286 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             return
 
         self.send_json(get_audit_envelope("error", None, None, "Método HTTP no soportado para este endpoint.", action="METHOD_NOT_ALLOWED"), status=405)
+
+    def handle_checkout(self, data, query_params):
+        payload, status, err = self.check_jwt_auth()
+        if not payload:
+            self.send_json(get_audit_envelope("error", None, None, err, action="AUTH_REQUIRED"), status=status)
+            return
+
+        user_id = payload['user_id']
+        role = payload.get('role', 'cliente')
+        ci_status = payload.get('ci_status', 'pending')
+
+        if ci_status != 'verified' and role not in ['super_usuario', 'admin']:
+            self.send_json(get_audit_envelope("error", None, user_id, "Debes tener tu C.I. verificado para realizar transacciones de compra.", action="CI_UNVERIFIED"), status=403)
+            return
+
+        action = query_params.get('action', [None])[0] or data.get('action', 'create_order')
+
+        if action == 'upload_qr':
+            order_id = query_params.get('pedido_id', [None])[0] or data.get('pedido_id')
+            if not order_id:
+                self.send_json(get_audit_envelope("error", None, user_id, "Falta pedido_id.", action="VALIDATION_ERROR"), status=400)
+                return
+            pid = int(order_id)
+            ord_found = next((o for o in ORDERS_DB if o['id'] == pid), None)
+            if not ord_found:
+                self.send_json(get_audit_envelope("error", None, user_id, "Pedido no encontrado.", action="NOT_FOUND"), status=404)
+                return
+            ord_found['estado_pago'] = 'pagado_qr'
+            ord_found['qr_comprobante_url'] = '/uploads/qr/qr_demo.png'
+            self.send_json(get_audit_envelope("success", {"mensaje": "Comprobante QR registrado.", "pedido_id": pid}, user_id=user_id, action="UPLOAD_QR"))
+            return
+
+        items = data.get('items', [])
+        if not items:
+            self.send_json(get_audit_envelope("error", None, user_id, "El carrito de compra no contiene productos (items vacíos).", action="EMPTY_CART"), status=400)
+            return
+
+        lat_c = float(data.get('latitud', -16.5050))
+        lon_c = float(data.get('longitud', -68.1290))
+        metodo = data.get('metodo_pago', 'contraentrega')
+        dist_km = float(data.get('distancia_km', haversine_km(-16.5050, -68.1290, lat_c, lon_c)))
+        costo_envio = round(5.0 + (dist_km * 2.0), 2)
+
+        # 1. Validación de stock ATÓMICA
+        subtotal = 0.0
+        verified_items = []
+        for item in items:
+            pid = int(item.get('producto_id', item.get('id', 0)))
+            qty = int(item.get('cantidad', item.get('quantity', 0)))
+            if pid <= 0 or qty <= 0:
+                self.send_json(get_audit_envelope("error", None, user_id, "Formato de item inválido.", action="INVALID_ITEM"), status=400)
+                return
+
+            prod = next((p for p in CATALOG_PRODUCTS if p['id'] == pid), None)
+            if not prod:
+                self.send_json(get_audit_envelope("error", None, user_id, f"Producto con ID #{pid} no encontrado.", action="PRODUCT_NOT_FOUND"), status=404)
+                return
+
+            # Criterio de aceptación: "Stock insuficiente causa ROLLBACK sin descontar"
+            if prod['stock'] < qty:
+                self.send_json(get_audit_envelope(
+                    "error", None, user_id,
+                    f"Stock insuficiente para '{prod['nombre']}'. Disponible: {prod['stock']}, Solicitado: {qty}.",
+                    action="INSUFFICIENT_STOCK"
+                ), status=400)
+                return
+
+            subtotal += prod['precio'] * qty
+            verified_items.append({'prod': prod, 'qty': qty, 'precio': prod['precio']})
+
+        # 2. Descuento de inventario (solo tras validar todos los items)
+        for vi in verified_items:
+            p = vi['prod']
+            old_stock = p['stock']
+            p['stock'] -= vi['qty']
+            p['updated_at'] = datetime.now(timezone.utc).isoformat()
+            p['updated_by'] = user_id
+            AUDIT_LOGS.append({
+                "id": len(AUDIT_LOGS) + 1,
+                "tabla_afectada": "productos",
+                "registro_id": p['id'],
+                "accion": "UPDATE",
+                "datos_anteriores": json.dumps({"stock": old_stock}),
+                "datos_nuevos": json.dumps({"stock": p['stock'], "motivo": "Descuento por venta"}),
+                "ip_address": self.get_client_ip(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": user_id,
+                "updated_by": user_id
+            })
+
+        total = round(subtotal + costo_envio, 2)
+        new_order_id = max([o['id'] for o in ORDERS_DB], default=0) + 1
+        now_iso = datetime.now(timezone.utc).isoformat()
+        estado_pago = 'pagado_qr' if (metodo == 'qr' and data.get('qr_comprobante_url')) else ('qr' if metodo == 'qr' else 'contraentrega')
+
+        new_order = {
+            "id": new_order_id,
+            "cliente_id": user_id,
+            "rider_id": None,
+            "estado_pago": estado_pago,
+            "estado_pedido": "pendiente",
+            "total": total,
+            "latitud": lat_c,
+            "longitud": lon_c,
+            "qr_comprobante_url": data.get('qr_comprobante_url'),
+            "created_at": now_iso,
+            "updated_at": now_iso,
+            "created_by": user_id,
+            "updated_by": user_id
+        }
+        ORDERS_DB.append(new_order)
+
+        for vi in verified_items:
+            ORDER_DETAILS_DB.append({
+                "id": len(ORDER_DETAILS_DB) + 1,
+                "pedido_id": new_order_id,
+                "producto_id": vi['prod']['id'],
+                "cantidad": vi['qty'],
+                "precio_unitario": vi['precio'],
+                "created_at": now_iso,
+                "created_by": user_id,
+                "updated_by": user_id
+            })
+
+        AUDIT_LOGS.append({
+            "id": len(AUDIT_LOGS) + 1,
+            "tabla_afectada": "pedidos",
+            "registro_id": new_order_id,
+            "accion": "INSERT",
+            "datos_anteriores": None,
+            "datos_nuevos": json.dumps(new_order),
+            "ip_address": self.get_client_ip(),
+            "created_at": now_iso,
+            "created_by": user_id,
+            "updated_by": user_id
+        })
+
+        self.send_json(get_audit_envelope("success", {
+            "mensaje": "Pedido creado exitosamente con descuento atómico de inventario.",
+            "pedido_id": new_order_id,
+            "subtotal": subtotal,
+            "costo_envio": costo_envio,
+            "total": total,
+            "distancia_km": round(dist_km, 2),
+            "estado_pago": estado_pago,
+            "estado_pedido": "pendiente"
+        }, user_id=user_id, action="CREATE_ORDER"), status=201)
+
+    def handle_cancel_order(self, data, query_params):
+        payload, status, err = self.check_jwt_auth()
+        if not payload:
+            self.send_json(get_audit_envelope("error", None, None, err, action="AUTH_REQUIRED"), status=status)
+            return
+
+        user_id = payload['user_id']
+        role = payload.get('role', 'cliente')
+
+        prod_id = query_params.get('pedido_id', [None])[0] or data.get('pedido_id') or data.get('id')
+        if not prod_id:
+            self.send_json(get_audit_envelope("error", None, user_id, "El parámetro pedido_id es obligatorio.", action="VALIDATION_ERROR"), status=400)
+            return
+
+        try:
+            pid = int(prod_id)
+        except ValueError:
+            self.send_json(get_audit_envelope("error", None, user_id, "ID numérico de pedido inválido.", action="VALIDATION_ERROR"), status=400)
+            return
+
+        order = next((o for o in ORDERS_DB if o['id'] == pid), None)
+        if not order:
+            self.send_json(get_audit_envelope("error", None, user_id, f"Pedido #{pid} no existe.", action="NOT_FOUND"), status=404)
+            return
+
+        is_admin = role in ['super_usuario', 'admin']
+        is_owner = (order['cliente_id'] == user_id)
+        if not is_admin and not is_owner:
+            self.send_json(get_audit_envelope("error", None, user_id, "Permiso denegado para cancelar este pedido.", action="FORBIDDEN"), status=403)
+            return
+
+        if order['estado_pedido'] == 'cancelado':
+            self.send_json(get_audit_envelope("error", None, user_id, f"El pedido #{pid} ya se encuentra cancelado.", action="ALREADY_CANCELLED"), status=400)
+            return
+
+        # Criterio: "Cancelación reembolsa stock solo para pedidos pendientes/asignados"
+        if order['estado_pedido'] not in ['pendiente', 'asignado']:
+            self.send_json(get_audit_envelope(
+                "error", None, user_id,
+                f"Cancelación no permitida: el pedido está '{order['estado_pedido']}'. Solo se puede reembolsar stock en pedidos pendientes o asignados.",
+                action="INVALID_ORDER_STATE"
+            ), status=400)
+            return
+
+        # Reembolso de stock
+        details = [d for d in ORDER_DETAILS_DB if d['pedido_id'] == pid]
+        reembolsos = []
+        for d in details:
+            p = next((prod for prod in CATALOG_PRODUCTS if prod['id'] == d['producto_id']), None)
+            if p:
+                old_stock = p['stock']
+                p['stock'] += d['cantidad']
+                p['updated_at'] = datetime.now(timezone.utc).isoformat()
+                p['updated_by'] = user_id
+                reembolsos.append({'producto_id': p['id'], 'nombre': p['nombre'], 'cantidad_reembolsada': d['cantidad'], 'stock_restaurado': p['stock']})
+
+                AUDIT_LOGS.append({
+                    "id": len(AUDIT_LOGS) + 1,
+                    "tabla_afectada": "productos",
+                    "registro_id": p['id'],
+                    "accion": "UPDATE",
+                    "datos_anteriores": json.dumps({"stock": old_stock}),
+                    "datos_nuevos": json.dumps({"stock": p['stock'], "motivo": f"Reembolso por cancelación de pedido #{pid}"}),
+                    "ip_address": self.get_client_ip(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_by": user_id,
+                    "updated_by": user_id
+                })
+
+        old_state = dict(order)
+        order['estado_pedido'] = 'cancelado'
+        order['estado_pago'] = 'cancelado'
+        order['updated_at'] = datetime.now(timezone.utc).isoformat()
+        order['updated_by'] = user_id
+
+        AUDIT_LOGS.append({
+            "id": len(AUDIT_LOGS) + 1,
+            "tabla_afectada": "pedidos",
+            "registro_id": pid,
+            "accion": "UPDATE",
+            "datos_anteriores": json.dumps(old_state),
+            "datos_nuevos": json.dumps(order),
+            "ip_address": self.get_client_ip(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": user_id,
+            "updated_by": user_id
+        })
+
+        self.send_json(get_audit_envelope("success", {
+            "mensaje": f"Pedido #{pid} cancelado exitosamente y stock reembolsado.",
+            "pedido_id": pid,
+            "estado_anterior": old_state['estado_pedido'],
+            "nuevo_estado": "cancelado",
+            "reembolsos": reembolsos
+        }, user_id=user_id, action="CANCEL_ORDER"))
+
+    def handle_report(self):
+        admin, status, err = self.check_admin_auth()
+        if not admin:
+            self.send_json(get_audit_envelope("error", None, None, err, action="FORBIDDEN"), status=status)
+            return
+
+        entregados = [o for o in ORDERS_DB if o['estado_pedido'] == 'entregado']
+        cancelados = [o for o in ORDERS_DB if o['estado_pedido'] == 'cancelado']
+        total_ventas = sum(o['total'] for o in entregados)
+
+        # Metodos pago
+        metodos = {}
+        for o in ORDERS_DB:
+            if o['estado_pedido'] != 'cancelado':
+                mp = o['estado_pago']
+                if mp not in metodos:
+                    metodos[mp] = {'cantidad': 0, 'monto': 0.0}
+                metodos[mp]['cantidad'] += 1
+                metodos[mp]['monto'] += o['total']
+
+        resumen = {
+            "total_ventas_bs": round(total_ventas, 2),
+            "total_pedidos": len(ORDERS_DB),
+            "pedidos_entregados": len(entregados),
+            "pedidos_cancelados": len(cancelados),
+            "pedidos_en_camino": len([o for o in ORDERS_DB if o['estado_pedido'] == 'en_camino']),
+            "pedidos_pendientes": len([o for o in ORDERS_DB if o['estado_pedido'] in ['pendiente', 'asignado']])
+        }
+
+        self.send_json(get_audit_envelope("success", {
+            "resumen": resumen,
+            "metodos_pago": [{'estado_pago': k, 'cantidad_pedidos': v['cantidad'], 'monto_total': round(v['monto'], 2)} for k, v in metodos.items()],
+            "ventas_por_categoria": [],
+            "ranking_riders": [],
+            "top_productos": []
+        }, user_id=admin['user_id'], action="GENERATE_REPORT"))
 
     def handle_catalog_update(self, data, query_params):
         admin, status_code, err_msg = self.check_admin_auth()
@@ -747,6 +1053,9 @@ def run():
   [+] Aplicación Web (Frontend):  http://localhost:{PORT}/
   [+] Servidor de Microservicios: http://localhost:{PORT}/microservices/
   [+] Catálogo REST (CRUD):       http://localhost:{PORT}/microservices/Catalog/catalog.php
+  [+] Checkout & Transacciones:   http://localhost:{PORT}/microservices/Transactions/checkout.php
+  [+] Cancelación & Reembolsos:   http://localhost:{PORT}/microservices/Transactions/cancel_order.php
+  [+] Reportes & Estadísticas:    http://localhost:{PORT}/microservices/Transactions/report.php
   [+] Motor Logístico Python:     http://localhost:{PORT}/microservices/Logistics/calculator.py
   [+] Raíz del Proyecto:          {ROOT_DIR}
 ========================================================================

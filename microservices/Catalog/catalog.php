@@ -45,22 +45,7 @@ function getRequestPayload() {
  * Registra automáticamente la operación en auditoria_logs
  */
 function logAuditRecord($db, $table, $recordId, $action, $oldData, $newData, $userId) {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    $stmt = $db->prepare("
-        INSERT INTO auditoria_logs 
-        (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_by, updated_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $table,
-        $recordId,
-        $action,
-        $oldData ? json_encode($oldData, JSON_UNESCAPED_UNICODE) : null,
-        $newData ? json_encode($newData, JSON_UNESCAPED_UNICODE) : null,
-        $ip,
-        $userId,
-        $userId
-    ]);
+    return logAudit($db, $table, $recordId, $action, $oldData, $newData, $userId);
 }
 
 /**

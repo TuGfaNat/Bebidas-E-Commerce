@@ -128,3 +128,43 @@ function recordLoginSuccess() {
         @unlink($file);
     }
 }
+
+/**
+ * Helper reutilizable para registrar eventos en la tabla auditoria_logs.
+ * Cumple con el estándar inmutable y no-repudio del BMAD.
+ */
+function logAudit($db, $tablaAfectada, $registroId, $accion, $datosAnteriores = null, $datosNuevos = null, $userId = null, $ip = null) {
+    if (!$db) return false;
+    $clientIp = $ip ?: ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+    $uid = $userId;
+    if ($uid === null && class_exists('JWTHelper')) {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            $payload = JWTHelper::verify($matches[1]);
+            if ($payload && isset($payload['user_id'])) {
+                $uid = $payload['user_id'];
+            }
+        }
+    }
+
+    $oldJson = is_string($datosAnteriores) ? $datosAnteriores : ($datosAnteriores !== null ? json_encode($datosAnteriores, JSON_UNESCAPED_UNICODE) : null);
+    $newJson = is_string($datosNuevos) ? $datosNuevos : ($datosNuevos !== null ? json_encode($datosNuevos, JSON_UNESCAPED_UNICODE) : null);
+
+    $stmt = $db->prepare("
+        INSERT INTO auditoria_logs 
+        (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_by, updated_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    return $stmt->execute([
+        $tablaAfectada,
+        $registroId,
+        $accion,
+        $oldJson,
+        $newJson,
+        $clientIp,
+        $uid,
+        $uid
+    ]);
+}
+

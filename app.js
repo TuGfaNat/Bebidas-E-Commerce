@@ -137,28 +137,22 @@ function initDatabase() {
     }
 
     // Restore session: check for JWT in connected mode first
-    const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+    const token = getAuthToken();
     if (config.connectedMode && token) {
-        fetch(`${config.apiUrl}/Auth/session.php`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        .then(res => res.json())
-        .then(res => {
-            if (res.status === 'success' && res.data && res.data.user) {
-                onLoginSuccess(res.data.user, false);
-                syncProductsFromBackend();
-            } else {
-                console.warn('Sesión JWT expirada o inválida:', res.error_details);
-                handleLogout(false);
-            }
-        })
-        .catch(err => {
-            console.warn('Error validando sesión remota, restaurando local:', err);
-            restoreLocalSavedSession();
-        });
+        apiGet('/Auth/session.php')
+            .then(res => {
+                if (res.ok && res.data && res.data.user) {
+                    onLoginSuccess(res.data.user, false);
+                    syncProductsFromBackend();
+                } else {
+                    console.warn('Sesión JWT expirada o inválida:', res.error);
+                    handleLogout(false);
+                }
+            })
+            .catch(err => {
+                console.warn('Error validando sesión remota, restaurando local:', err);
+                restoreLocalSavedSession();
+            });
         return;
     }
 
@@ -460,31 +454,31 @@ function setupEventListeners() {
             apiDot.className = 'status-dot inactive';
             apiText.innerText = 'Intentando conectar a PHP...';
             
-            fetch(`${config.apiUrl}/Auth/connection.php`)
-                .then(res => res.json())
+            apiGet('/Auth/connection.php', null, { skipAuth: true })
                 .then(res => {
-                    apiDot.className = 'status-dot active';
-                    apiText.innerText = 'Modo Conectado (PHP Server)';
-                    showToast('Conectado al backend mediante PHP.', 'success');
+                    if (res.ok) {
+                        apiDot.className = 'status-dot active';
+                        apiText.innerText = 'Modo Conectado (PHP Server)';
+                        showToast('Conectado al backend mediante PHP.', 'success');
 
-                    // If a token exists, verify and sync session with backend
-                    const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
-                    if (token) {
-                        fetch(`${config.apiUrl}/Auth/session.php`, {
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        })
-                        .then(r => r.json())
-                        .then(sess => {
-                            if (sess.status === 'success' && sess.data && sess.data.user) {
-                                onLoginSuccess(sess.data.user, false);
-                            }
+                        // If a token exists, verify and sync session with backend
+                        const token = getAuthToken();
+                        if (token) {
+                            apiGet('/Auth/session.php')
+                                .then(sess => {
+                                    if (sess.ok && sess.data && sess.data.user) {
+                                        onLoginSuccess(sess.data.user, false);
+                                    }
+                                    syncProductsFromBackend();
+                                })
+                                .catch(() => {
+                                    syncProductsFromBackend();
+                                });
+                        } else {
                             syncProductsFromBackend();
-                        })
-                        .catch(() => {
-                            syncProductsFromBackend();
-                        });
+                        }
                     } else {
-                        syncProductsFromBackend();
+                        throw new Error(res.error || 'Offline');
                     }
                 })
                 .catch(err => {
@@ -573,10 +567,20 @@ function setupEventListeners() {
             
             document.querySelectorAll('.admin-subpanel').forEach(panel => panel.classList.remove('active'));
             const tabId = btn.dataset.tab;
-            document.getElementById(`subpanel${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`).classList.add('active');
+            const targetPanel = document.getElementById(`subpanel${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
+            if (targetPanel) targetPanel.classList.add('active');
             
             if (tabId === 'monitoring') {
                 renderAdminMonitoring();
+            } else if (tabId === 'reports') {
+                renderAdminReports();
+            } else if (tabId === 'products') {
+                renderAdminProductsTable();
+                if (config.connectedMode) syncProductsFromBackend();
+            } else if (tabId === 'approvals') {
+                renderAdminPendingApprovals();
+            } else if (tabId === 'audit') {
+                renderAdminAuditLogs();
             }
         });
     });
@@ -592,6 +596,27 @@ function setupEventListeners() {
 function getActiveCategory() {
     const activeItem = document.querySelector('.category-item.active');
     return activeItem ? activeItem.dataset.category : 'todos';
+}
+
+function updateUIForCurrentRole() {
+    if (currentSession.cliente) {
+        renderClienteAccountInfo();
+        renderProducts();
+        renderClienteActiveOrderTracker();
+    } else if (currentSession.rider) {
+        renderRiderProfile();
+        renderRiderOrderQueue();
+        renderRiderActiveOrderPanel();
+    } else if (currentSession.admin) {
+        renderAdminPendingApprovals();
+        renderAdminProductsTable();
+        renderAdminReports();
+        renderAdminMonitoring();
+        renderAdminAuditLogs();
+        if (config.connectedMode) {
+            syncProductsFromBackend();
+        }
+    }
 }
 
 function switchRole(role) {
@@ -943,43 +968,32 @@ function hashPassword(password) {
 
 function handleLogin(email, password) {
     if (config.connectedMode) {
-        // Connected mode real auth via backend
-        const existingToken = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
-        const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-        if (existingToken) {
-            headers['Authorization'] = `Bearer ${existingToken}`;
-        }
+        // Connected mode real auth via backend usando helper apiPost
+        apiPost('/Auth/login.php', { correo: email, email: email, password: password }, { skipAuth: true })
+            .then(res => {
+                if (res.ok && res.data && res.data.token) {
+                    const token = res.data.token;
+                    localStorage.setItem('burger_jwt_token', token);
+                    localStorage.setItem('bebidas_jwt_token', token);
 
-        fetch(`${config.apiUrl}/Auth/login.php`, {
-            method: 'POST',
-            headers: headers,
-            body: `correo=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
-        })
-        .then(res => res.json().then(data => ({ status: res.status, body: data })))
-        .then(({ status, body }) => {
-            if (status === 200 && body.status === 'success') {
-                const token = body.data.token;
-                localStorage.setItem('burger_jwt_token', token);
-                localStorage.setItem('bebidas_jwt_token', token);
+                    // Hydrate user info from JWT claims and response
+                    const jwtData = parseJwt(token);
+                    const userObj = {
+                        id: (jwtData && jwtData.user_id) || res.data.user.id,
+                        nombre: (jwtData && jwtData.nombre) || res.data.user.nombre,
+                        email: (jwtData && jwtData.email) || res.data.user.email,
+                        role: (jwtData && jwtData.role) || res.data.user.role,
+                        ci_status: (jwtData && jwtData.ci_status) || res.data.user.ci_status || 'verified'
+                    };
 
-                // Hydrate user info from JWT claims and response
-                const jwtData = parseJwt(token);
-                const userObj = {
-                    id: (jwtData && jwtData.user_id) || body.data.user.id,
-                    nombre: (jwtData && jwtData.nombre) || body.data.user.nombre,
-                    email: (jwtData && jwtData.email) || body.data.user.email,
-                    role: (jwtData && jwtData.role) || body.data.user.role,
-                    ci_status: (jwtData && jwtData.ci_status) || body.data.user.ci_status || 'verified'
-                };
-
-                onLoginSuccess(userObj, true);
-            } else {
-                showToast(body.error_details || 'Credenciales inválidas.', 'error');
-            }
-        })
-        .catch(err => {
-            showToast('Error de red al intentar conectar con el backend.', 'error');
-        });
+                    onLoginSuccess(userObj, true);
+                } else {
+                    showToast(res.error || 'Credenciales inválidas.', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Error de red al intentar conectar con el backend.', 'error');
+            });
     } else {
         // Simulated local login
         const found = DB.users.find(usr => usr.email.toLowerCase() === email.toLowerCase());
@@ -1148,32 +1162,58 @@ function renderClienteAccountInfo() {
     });
 }
 
-function renderProducts(category = 'todos', searchQuery = '') {
+async function renderProducts(category = 'todos', searchQuery = '') {
     const grid = document.getElementById('productsGrid');
+    if (!grid) return;
     const u = currentSession.cliente;
     const isVerified = u && u.ci_status === 'verified';
     
     const alertBox = document.getElementById('catalogVerifiedAlert');
-    if (!u) {
-        alertBox.innerHTML = `<span class="badge badge-pending"><i data-lucide="info"></i> Inicia sesión para comprar</span>`;
-    } else if (u.ci_status === 'pending') {
-        alertBox.innerHTML = `<span class="badge badge-pending"><i data-lucide="clock"></i> Tu C.I. está pendiente de aprobación. Precios ocultos.</span>`;
-    } else if (u.ci_status === 'rejected') {
-        alertBox.innerHTML = `<span class="badge badge-rejected"><i data-lucide="octagon-alert"></i> C.I. rechazado. Sube un documento legible.</span>`;
-    } else {
-        alertBox.innerHTML = `<span class="badge badge-verified"><i data-lucide="circle-check"></i> Catalogo desbloqueado</span>`;
+    if (alertBox) {
+        if (!u) {
+            alertBox.innerHTML = `<span class="badge badge-pending"><i data-lucide="info"></i> Inicia sesión para comprar</span>`;
+        } else if (u.ci_status === 'pending') {
+            alertBox.innerHTML = `<span class="badge badge-pending"><i data-lucide="clock"></i> Tu C.I. está pendiente de aprobación. Precios ocultos.</span>`;
+        } else if (u.ci_status === 'rejected') {
+            alertBox.innerHTML = `<span class="badge badge-rejected"><i data-lucide="octagon-alert"></i> C.I. rechazado. Sube un documento legible.</span>`;
+        } else {
+            alertBox.innerHTML = `<span class="badge badge-verified"><i data-lucide="circle-check"></i> Catalogo desbloqueado</span>`;
+        }
+        initLucide();
     }
-    initLucide();
+
+    if (config.connectedMode) {
+        try {
+            const res = await apiGet('/Catalog/catalog.php');
+            if (res.ok && res.data && Array.isArray(res.data.productos)) {
+                DB.productos = res.data.productos.map(p => ({
+                    id: parseInt(p.id, 10),
+                    categoria: p.categoria,
+                    nombre: p.nombre,
+                    marca: p.marca,
+                    sabor: p.sabor || '',
+                    precio: parseFloat(p.precio),
+                    stock: parseInt(p.stock, 10),
+                    created_at: p.created_at,
+                    updated_at: p.updated_at
+                }));
+                saveDatabase();
+            }
+        } catch (err) {
+            console.warn('Error consultando catálogo vía API, usando fallback local:', err);
+        }
+    }
 
     let filtered = DB.productos;
     if (category !== 'todos') {
         filtered = filtered.filter(p => p.categoria === category);
     }
-    if (searchQuery.trim() !== '') {
+    if (searchQuery && searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(p => 
-            p.nombre.toLowerCase().includes(query) || 
-            p.marca.toLowerCase().includes(query)
+            (p.nombre && p.nombre.toLowerCase().includes(query)) || 
+            (p.marca && p.marca.toLowerCase().includes(query)) ||
+            (p.sabor && p.sabor.toLowerCase().includes(query))
         );
     }
 
@@ -1425,7 +1465,7 @@ async function submitOrderCheckout() {
 
     // Modo Conectado: Checkout atómico contra backend MySQL
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (!token) {
             showToast('Error 401: Sesión no autenticada. Inicia sesión para continuar.', 'danger');
             return;
@@ -1437,36 +1477,28 @@ async function submitOrderCheckout() {
         }));
 
         try {
-            const res = await fetch(`${config.apiUrl}/Transactions/checkout.php`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    items: itemsPayload,
-                    latitud: selectedDeliveryCoords.lat,
-                    longitud: selectedDeliveryCoords.lon,
-                    metodo_pago: metodoPago,
-                    distancia_km: selectedDeliveryCoords.distKm,
-                    qr_comprobante_url: qrUrl
-                })
+            const res = await apiPost('/Transactions/checkout.php', {
+                items: itemsPayload,
+                latitud: selectedDeliveryCoords.lat,
+                longitud: selectedDeliveryCoords.lon,
+                metodo_pago: metodoPago,
+                distancia_km: selectedDeliveryCoords.distKm,
+                qr_comprobante_url: qrUrl
             });
 
-            const result = await res.json().catch(() => ({}));
-
-            if (res.status === 400 && result.error_details && result.error_details.includes('Stock insuficiente')) {
-                showToast(`Error: ${result.error_details}`, 'danger');
-                return;
-            } else if (res.status === 403) {
-                showToast(`Error 403: ${result.error_details || 'Debes tener tu C.I. verificado para realizar compras.'}`, 'danger');
-                return;
-            } else if (!res.ok || result.status !== 'success') {
-                showToast(`Error en checkout: ${result.error_details || 'No se pudo procesar la transacción.'}`, 'danger');
+            if (!res.ok) {
+                if (res.status === 400 && res.error && res.error.includes('Stock insuficiente')) {
+                    showToast(`Error: ${res.error}`, 'danger');
+                    return;
+                } else if (res.status === 403) {
+                    showToast(`Error 403: ${res.error || 'Debes tener tu C.I. verificado para realizar compras.'}`, 'danger');
+                    return;
+                }
+                showToast(`Error en checkout: ${res.error || 'No se pudo procesar la transacción.'}`, 'danger');
                 return;
             }
 
-            const backendData = result.data;
+            const backendData = res.data;
             const newOrderId = backendData.pedido_id;
 
             const newOrder = {
@@ -1858,19 +1890,16 @@ async function renderRiderOrderQueue() {
     const doc = DB.documentacion_rider.find(d => d.rider_id === r.id);
 
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (token) {
             try {
-                const res = await fetch(`${config.apiUrl}/Rider/assignment.php`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await apiGet('/Rider/assignment.php');
                 if (res.status === 403) {
                     list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tu cuenta no está aprobada para realizar despachos. Por favor carga tus documentos y contacta al Administrador.</div>`;
                     return;
                 }
-                const data = await res.json().catch(() => ({}));
-                if (res.ok && data.status === 'success' && data.data && Array.isArray(data.data.pedidos_disponibles)) {
-                    const pendings = data.data.pedidos_disponibles;
+                if (res.ok && res.data && Array.isArray(res.data.pedidos_disponibles)) {
+                    const pendings = res.data.pedidos_disponibles;
                     if (pendings.length === 0) {
                         list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay pedidos pendientes disponibles en este momento.</div>`;
                         return;
@@ -1991,26 +2020,18 @@ window.acceptRiderOrder = async function(orderId) {
     const r = currentSession.rider;
 
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (token) {
             try {
-                const res = await fetch(`${config.apiUrl}/Rider/assignment.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ pedido_id: orderId })
-                });
-                const result = await res.json().catch(() => ({}));
+                const res = await apiPost('/Rider/assignment.php', { pedido_id: orderId });
                 if (res.status === 403) {
                     showToast('Error 403: Tu cuenta de rider no está aprobada para aceptar pedidos.', 'danger');
                     return;
                 } else if (res.status === 409) {
-                    showToast(`Conflicto: ${result.error_details || 'El pedido no está disponible o ya tienes uno activo.'}`, 'warning');
+                    showToast(`Conflicto: ${res.error || 'El pedido no está disponible o ya tienes uno activo.'}`, 'warning');
                     return;
-                } else if (!res.ok || result.status !== 'success') {
-                    showToast(`Error al aceptar: ${result.error_details || 'Operación rechazada.'}`, 'danger');
+                } else if (!res.ok) {
+                    showToast(`Error al aceptar: ${res.error || 'Operación rechazada.'}`, 'danger');
                     return;
                 }
             } catch (err) {
@@ -2190,23 +2211,15 @@ async function processRiderActiveOrderStep() {
     let msg = nextState === 'en_camino' ? 'Viaje iniciado. Conduce con cuidado.' : 'Pedido entregado con éxito.';
 
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (token) {
             try {
-                const res = await fetch(`${config.apiUrl}/Rider/delivery.php`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ pedido_id: activeOrder.id, nuevo_estado: nextState })
-                });
-                const result = await res.json().catch(() => ({}));
+                const res = await apiPut('/Rider/delivery.php', { pedido_id: activeOrder.id, nuevo_estado: nextState });
                 if (res.status === 403) {
                     showToast('Error 403: No estás autorizado para gestionar este pedido.', 'danger');
                     return;
-                } else if (!res.ok || result.status !== 'success') {
-                    showToast(`Error al avanzar pedido: ${result.error_details || 'Error desconocido'}`, 'danger');
+                } else if (!res.ok) {
+                    showToast(`Error al avanzar pedido: ${res.error || 'Error desconocido'}`, 'danger');
                     return;
                 }
             } catch (err) {
@@ -2424,21 +2437,24 @@ function renderAdminProductsTable() {
 
 async function syncProductsFromBackend() {
     if (!config.connectedMode) return;
-    const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
     try {
-        const res = await fetch(`${config.apiUrl}/Catalog/catalog.php`, { headers });
-        if (res.ok) {
-            const data = await res.json();
-            if (data.status === 'success' && data.data && Array.isArray(data.data.productos)) {
-                DB.productos = data.data.productos;
-                saveDatabase();
-                renderProducts();
-                if (document.getElementById('adminProductsTableBody')) {
-                    renderAdminProductsTable();
-                }
+        const res = await apiGet('/Catalog/catalog.php');
+        if (res.ok && res.data && Array.isArray(res.data.productos)) {
+            DB.productos = res.data.productos.map(p => ({
+                id: parseInt(p.id, 10),
+                categoria: p.categoria,
+                nombre: p.nombre,
+                marca: p.marca,
+                sabor: p.sabor || '',
+                precio: parseFloat(p.precio),
+                stock: parseInt(p.stock, 10),
+                created_at: p.created_at,
+                updated_at: p.updated_at
+            }));
+            saveDatabase();
+            renderProducts();
+            if (document.getElementById('adminProductsTableBody')) {
+                renderAdminProductsTable();
             }
         }
     } catch (err) {
@@ -2460,14 +2476,13 @@ async function handleProductFormSubmit(e) {
 
     // Modo Conectado: CRUD REST contra microservicio Catalog
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (!token) {
             showToast('Error 401: No se encontró token JWT. Inicia sesión como administrador.', 'danger');
             return;
         }
 
         const isEdit = !!prodId;
-        const method = isEdit ? 'PUT' : 'POST';
         const payload = {
             categoria: category,
             nombre: name,
@@ -2479,16 +2494,9 @@ async function handleProductFormSubmit(e) {
         if (isEdit) payload.id = parseInt(prodId);
 
         try {
-            const res = await fetch(`${config.apiUrl}/Catalog/catalog.php`, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await res.json().catch(() => ({}));
+            const res = isEdit
+                ? await apiPut('/Catalog/catalog.php', payload)
+                : await apiPost('/Catalog/catalog.php', payload);
 
             if (res.status === 403) {
                 showToast('Error 403: Permiso denegado. Solo administradores pueden modificar el catálogo.', 'danger');
@@ -2496,23 +2504,23 @@ async function handleProductFormSubmit(e) {
             } else if (res.status === 401) {
                 showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
                 return;
-            } else if (!res.ok || result.status !== 'success') {
-                showToast('Error: ' + (result.error_details || 'No se pudo guardar el producto.'), 'danger');
+            } else if (!res.ok) {
+                showToast('Error: ' + (res.error || 'No se pudo guardar el producto.'), 'danger');
                 return;
             }
 
             if (isEdit) {
                 const id = parseInt(prodId);
                 const prod = DB.productos.find(p => p.id === id);
-                if (prod && result.data && result.data.producto) {
-                    Object.assign(prod, result.data.producto);
+                if (prod && res.data && res.data.producto) {
+                    Object.assign(prod, res.data.producto);
                 }
                 showToast('Producto actualizado en la base de datos MySQL.', 'success');
             } else {
-                if (result.data && result.data.producto) {
-                    DB.productos.push(result.data.producto);
+                if (res.data && res.data.producto) {
+                    DB.productos.push(res.data.producto);
                 } else {
-                    const newId = result.data && result.data.id ? result.data.id : DB.productos.length + 1;
+                    const newId = res.data && res.data.id ? res.data.id : DB.productos.length + 1;
                     DB.productos.push({ id: newId, categoria: category, nombre: name, marca: brand, sabor: flavor, precio, stock });
                 }
                 showToast('Producto registrado en la base de datos MySQL.', 'success');
@@ -2594,21 +2602,14 @@ window.deleteProduct = async function(productId) {
 
     // Modo Conectado: DELETE contra microservicio Catalog
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (!token) {
             showToast('Error 401: Se requiere sesión de administrador para eliminar.', 'danger');
             return;
         }
 
         try {
-            const res = await fetch(`${config.apiUrl}/Catalog/catalog.php?id=${productId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const result = await res.json().catch(() => ({}));
+            const res = await apiDelete('/Catalog/catalog.php', { id: productId });
 
             if (res.status === 403) {
                 showToast('Error 403: Permiso denegado. Solo administradores pueden eliminar productos.', 'danger');
@@ -2616,8 +2617,8 @@ window.deleteProduct = async function(productId) {
             } else if (res.status === 401) {
                 showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
                 return;
-            } else if (!res.ok || result.status !== 'success') {
-                showToast('Error: ' + (result.error_details || 'No se pudo eliminar el producto.'), 'danger');
+            } else if (!res.ok) {
+                showToast('Error: ' + (res.error || 'No se pudo eliminar el producto.'), 'danger');
                 return;
             }
 
@@ -2757,29 +2758,33 @@ function renderAdminAuditLogs() {
 
 function renderAdminReports() {
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (token) {
-            fetch(`${config.apiUrl}/Transactions/report.php`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.status === 'success' && res.data && res.data.resumen) {
-                    const r = res.data.resumen;
-                    document.getElementById('reportTotalSales').innerText = `${parseFloat(r.total_ventas_bs).toFixed(2)} Bs`;
-                    document.getElementById('reportTotalOrders').innerText = r.pedidos_entregados;
-                }
-            })
-            .catch(() => {});
+            apiGet('/Transactions/report.php')
+                .then(res => {
+                    if (res.ok && res.data && res.data.resumen) {
+                        const r = res.data.resumen;
+                        const elSales = document.getElementById('reportTotalSales');
+                        const elOrders = document.getElementById('reportTotalOrders');
+                        if (elSales) elSales.innerText = `${parseFloat(r.total_ventas_bs).toFixed(2)} Bs`;
+                        if (elOrders) elOrders.innerText = r.pedidos_entregados;
+                    }
+                })
+                .catch(err => {
+                    console.warn('Error cargando reportes desde API:', err);
+                });
         }
     }
 
     const delivers = DB.pedidos.filter(p => p.estado_pedido === 'entregado');
     const totalSalesSum = delivers.reduce((acc, p) => acc + p.total, 0);
 
-    document.getElementById('reportTotalSales').innerText = `${totalSalesSum.toFixed(2)} Bs`;
-    document.getElementById('reportTotalOrders').innerText = delivers.length;
-    document.getElementById('reportActiveRiders').innerText = DB.users.filter(u => u.role === 'rider').length;
+    const elSales = document.getElementById('reportTotalSales');
+    const elOrders = document.getElementById('reportTotalOrders');
+    const elActiveRiders = document.getElementById('reportActiveRiders');
+    if (elSales && !config.connectedMode) elSales.innerText = `${totalSalesSum.toFixed(2)} Bs`;
+    if (elOrders && !config.connectedMode) elOrders.innerText = delivers.length;
+    if (elActiveRiders) elActiveRiders.innerText = DB.users.filter(u => u.role === 'rider').length;
 
     const qrSum = delivers.filter(p => p.estado_pago === 'pagado_qr').reduce((acc, p) => acc + p.total, 0);
     const cashSum = delivers.filter(p => p.estado_pago === 'pagado_efectivo' || p.estado_pago === 'contraentrega' || p.estado_pago === 'liquidado').reduce((acc, p) => acc + p.total, 0);
@@ -2788,10 +2793,15 @@ function renderAdminReports() {
     const qrPct = totalPayments > 0 ? (qrSum / totalPayments) * 100 : 0;
     const cashPct = totalPayments > 0 ? (cashSum / totalPayments) * 100 : 0;
 
-    document.getElementById('chartQrVal').innerText = `${qrSum.toFixed(2)} Bs (${Math.round(qrPct)}%)`;
-    document.getElementById('chartQrBar').style.width = `${qrPct}%`;
-    document.getElementById('chartCashVal').innerText = `${cashSum.toFixed(2)} Bs (${Math.round(cashPct)}%)`;
-    document.getElementById('chartCashBar').style.width = `${cashPct}%`;
+    const elQrVal = document.getElementById('chartQrVal');
+    const elQrBar = document.getElementById('chartQrBar');
+    const elCashVal = document.getElementById('chartCashVal');
+    const elCashBar = document.getElementById('chartCashBar');
+
+    if (elQrVal) elQrVal.innerText = `${qrSum.toFixed(2)} Bs (${Math.round(qrPct)}%)`;
+    if (elQrBar) elQrBar.style.width = `${qrPct}%`;
+    if (elCashVal) elCashVal.innerText = `${cashSum.toFixed(2)} Bs (${Math.round(cashPct)}%)`;
+    if (elCashBar) elCashBar.style.width = `${cashPct}%`;
 
     const riders = DB.users.filter(u => u.role === 'rider');
     const rankings = riders.map(r => {
@@ -2806,6 +2816,7 @@ function renderAdminReports() {
     }).sort((a, b) => b.ordersCount - a.ordersCount); 
 
     const list = document.getElementById('riderLeaderboard');
+    if (!list) return;
     if (rankings.length === 0) {
         list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 1rem;">No hay registros de riders activos en entregas.</div>`;
         return;
@@ -2919,20 +2930,12 @@ window.cancelAdminOrder = async function(orderId) {
     }
 
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (token) {
             try {
-                const res = await fetch(`${config.apiUrl}/Transactions/cancel_order.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ pedido_id: orderId })
-                });
-                const result = await res.json().catch(() => ({}));
-                if (!res.ok || result.status !== 'success') {
-                    showToast(`Error al cancelar: ${result.error_details || 'Cancelación rechazada.'}`, 'danger');
+                const res = await apiPost('/Transactions/cancel_order.php', { pedido_id: orderId });
+                if (!res.ok) {
+                    showToast(`Error al cancelar: ${res.error || 'Cancelación rechazada.'}`, 'danger');
                     return;
                 }
             } catch (err) {
@@ -2970,26 +2973,18 @@ window.settleRiderCash = async function(riderId) {
     const cashOrders = DB.pedidos.filter(p => p.rider_id === riderId && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
 
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = getAuthToken();
         if (token) {
             try {
-                const res = await fetch(`${config.apiUrl}/Rider/settle_cash.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ rider_id: riderId })
-                });
-                const result = await res.json().catch(() => ({}));
+                const res = await apiPost('/Rider/settle_cash.php', { rider_id: riderId });
                 if (res.status === 403) {
                     showToast('Error 403: Permiso denegado. Solo administradores pueden liquidar cajas.', 'danger');
                     return;
-                } else if (!res.ok || result.status !== 'success') {
-                    showToast(`Error al liquidar caja: ${result.error_details || 'Error desconocido'}`, 'danger');
+                } else if (!res.ok) {
+                    showToast(`Error al liquidar caja: ${res.error || 'Error desconocido'}`, 'danger');
                     return;
                 }
-                showToast(`Liquidación en base de datos completada. Recaudados ${result.data?.total_liquidado_bs || 0} Bs del rider.`, 'success');
+                showToast(`Liquidación en base de datos completada. Recaudados ${res.data?.total_liquidado_bs || 0} Bs del rider.`, 'success');
             } catch (err) {
                 console.warn('Error en settle_cash.php:', err);
             }

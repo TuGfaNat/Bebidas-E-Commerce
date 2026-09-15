@@ -38,6 +38,14 @@ class JWTHelper {
         return base64_decode(str_replace(['-', '_'], ['+', '/'], $data));
     }
 
+    public static function generateToken($payload, $expirySeconds = 86400) {
+        return self::generate($payload, $expirySeconds);
+    }
+
+    public static function validateToken($token) {
+        return self::verify($token);
+    }
+
     public static function generate($payload, $expirySeconds = 86400) {
         $secret = self::getSecret();
         $header = json_encode(['alg' => 'HS256', 'typ' => 'JWT']);

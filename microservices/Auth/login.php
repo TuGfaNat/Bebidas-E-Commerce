@@ -29,16 +29,19 @@ try {
     // Comprobar rate limit por IP antes de procesar
     checkLoginRateLimit(5, 300);
 
-    $correo = $_POST['correo'] ?? '';
-    $password = $_POST['password'] ?? '';
+    // Parse form-data or JSON body
+    $input = json_decode(file_get_contents('php://input'), true) ?: [];
+    $correo = trim($_POST['correo'] ?? ($_POST['email'] ?? ($input['correo'] ?? ($input['email'] ?? ''))));
+    $password = trim($_POST['password'] ?? ($input['password'] ?? ''));
 
     if (empty($correo) || empty($password)) {
+        http_response_code(400);
         throw new Exception("Correo y contraseña son obligatorios.");
     }
 
     $db = DatabaseConnection::getInstance()->getConnection();
     
-    $stmt = $db->prepare("SELECT id, role, nombre, password_hash, ci_status FROM users WHERE email = ?");
+    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, ci_status FROM users WHERE LOWER(email) = LOWER(?)");
     $stmt->execute([$correo]);
     $user = $stmt->fetch();
 
@@ -51,19 +54,22 @@ try {
     // Login exitoso: restablecer intentos fallidos
     recordLoginSuccess();
 
-    $token = JWTHelper::generate([
-        'user_id' => $user['id'],
+    // Generar JWT firmado con expiración de 24 horas (86400 segundos)
+    $token = JWTHelper::generateToken([
+        'user_id' => (int)$user['id'],
         'role' => $user['role'],
-        'email' => $correo
-    ]);
+        'email' => $user['email'],
+        'nombre' => $user['nombre'],
+        'ci_status' => $user['ci_status']
+    ], 86400);
 
     echo formatResponse("success", [
         "token" => $token,
         "user" => [
-            "id" => $user['id'],
+            "id" => (int)$user['id'],
             "nombre" => $user['nombre'],
             "role" => $user['role'],
-            "email" => $correo,
+            "email" => $user['email'],
             "ci_status" => $user['ci_status']
         ]
     ], $user['id']);

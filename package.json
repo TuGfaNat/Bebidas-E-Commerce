@@ -1,6 +1,6 @@
 {
   "name": "burger-e-commerce",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sistema E-commerce Burger 24/7 con arquitectura de pedidos, despacho y entrega de hamburguesas en tiempo real",
   "main": "server.py",
   "scripts": {

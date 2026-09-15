@@ -1,105 +1,142 @@
 <?php
 // microservices/Rider/settle_cash.php
-require_once '../Auth/connection.php';
-require_once '../Auth/jwt.php';
+// Microservicio de Liquidación de Caja de Riders - Burger 24/7
+require_once __DIR__ . '/../Auth/connection.php';
+require_once __DIR__ . '/../Auth/jwt.php';
+require_once __DIR__ . '/../Auth/security.php';
 
-header('Content-Type: application/json');
+// Aplicar CORS
+applyCorsMiddleware();
 
-function formatResponse($status, $data, $userId = null, $errorDetails = null) {
+header('Content-Type: application/json; charset=UTF-8');
+
+/**
+ * Formato de respuesta estándar BMAD
+ */
+function formatResponse($status, $data, $userId = null, $errorDetails = null, $action = "SETTLE_CASH") {
     return json_encode([
         "status" => $status,
         "data" => $data,
         "audit" => [
-            "user_id" => $userId ?: "SYSTEM",
-            "timestamp" => date("c")
+            "user_id" => $userId !== null ? $userId : "ANONYMOUS",
+            "timestamp" => date("c"),
+            "action" => $action,
+            "ip_address" => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'
         ],
         "error_details" => $errorDetails
-    ]);
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+}
+
+/**
+ * Obtiene el cuerpo de la petición (JSON o Form-data)
+ */
+function getRequestData() {
+    $raw = file_get_contents('php://input');
+    if (!empty($raw)) {
+        $json = json_decode($raw, true);
+        if (is_array($json)) {
+            return $json;
+        }
+    }
+    return $_POST;
 }
 
 try {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception("Método no permitido. Use POST.");
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'POST');
+    if ($method !== 'POST') {
+        http_response_code(405);
+        echo formatResponse("error", null, null, "Método no permitido. Utilice POST.", "METHOD_NOT_ALLOWED");
+        exit;
     }
 
-    // 1. Validar Autenticación y Autorización (Admin)
-    $payload = JWTHelper::authenticate();
-    $adminId = $payload['user_id'];
-    $adminRole = $payload['role'];
+    // 1. Validar Autenticación y Autorización (Solo administradores)
+    // Criterio de Aceptación: Liquidación de caja por admin (403 para no-admin)
+    $payload = requireAuth(['super_usuario', 'admin']);
+    $adminId = (int)$payload['user_id'];
 
-    if ($adminRole !== 'super_usuario') {
-        throw new Exception("Permiso denegado. Se requiere rol de super_usuario para liquidar cajas.");
-    }
+    $input = getRequestData();
+    $riderId = isset($input['rider_id']) ? (int)$input['rider_id'] : null;
 
-    $riderId = $_POST['rider_id'] ?? null;
     if (!$riderId) {
-        throw new Exception("El parámetro rider_id es obligatorio.");
+        http_response_code(400);
+        echo formatResponse("error", null, $adminId, "El parámetro 'rider_id' es obligatorio.", "VALIDATION_ERROR");
+        exit;
     }
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
-    // 2. Verificar que el rider sea válido
-    $stmtRider = $db->prepare("SELECT id, nombre, role FROM users WHERE id = ?");
+    // 2. Verificar existencia del rider
+    $stmtRider = $db->prepare("SELECT id, nombre, email, role FROM users WHERE id = ?");
     $stmtRider->execute([$riderId]);
     $rider = $stmtRider->fetch();
 
     if (!$rider || $rider['role'] !== 'rider') {
-        throw new Exception("El usuario especificado no existe o no es un Rider.");
+        http_response_code(404);
+        echo formatResponse("error", null, $adminId, "El usuario con ID #$riderId no existe o no tiene rol de rider.", "RIDER_NOT_FOUND");
+        exit;
     }
 
     $db->beginTransaction();
 
-    // 3. Obtener todas las entregas en efectivo pendientes de liquidar (pagado_efectivo)
+    // 3. Obtener todas las órdenes entregadas pendientes de liquidar (pagado_efectivo)
     $stmtOrders = $db->prepare("
         SELECT id, total, estado_pago 
         FROM pedidos 
-        WHERE rider_id = ? AND estado_pedido = 'entregado' AND estado_pago = 'pagado_efectivo' 
+        WHERE rider_id = ? 
+          AND estado_pedido = 'entregado' 
+          AND estado_pago = 'pagado_efectivo' 
         FOR UPDATE
     ");
     $stmtOrders->execute([$riderId]);
     $orders = $stmtOrders->fetchAll();
 
     if (empty($orders)) {
-        throw new Exception("El Rider no tiene montos en efectivo pendientes de liquidar.");
+        $db->rollBack();
+        http_response_code(400);
+        echo formatResponse("error", null, $adminId, "El rider " . htmlspecialchars($rider['nombre']) . " no tiene entregas en efectivo pendientes de liquidar.", "NO_PENDING_CASH");
+        exit;
     }
 
-    $totalLiquidado = 0;
+    $totalLiquidado = 0.0;
     $pedidosLiquidadosIds = [];
 
-    // 4. Actualizar estado de pago y registrar en auditoría por cada orden
+    // 4. Actualizar estado de pago a 'liquidado' y registrar auditoría individual
     foreach ($orders as $order) {
-        $pedidoId = $order['id'];
+        $pedidoId = (int)$order['id'];
         $monto = floatval($order['total']);
         $totalLiquidado += $monto;
         $pedidosLiquidadosIds[] = $pedidoId;
 
-        // Actualizar estado de pago a 'liquidado'
-        $stmtUpdate = $db->prepare("UPDATE pedidos SET estado_pago = 'liquidado', updated_by = ? WHERE id = ?");
+        $stmtUpdate = $db->prepare("UPDATE pedidos SET estado_pago = 'liquidado', updated_by = ?, updated_at = NOW() WHERE id = ?");
         $stmtUpdate->execute([$adminId, $pedidoId]);
 
-        // Registrar auditoría de liquidación
-        $stmtLog = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, created_by, updated_by) VALUES (?, ?, 'UPDATE', ?, ?, ?, ?)");
-        $stmtLog->execute([
-            'pedidos', $pedidoId, 'UPDATE',
-            json_encode(['estado_pago' => 'pagado_efectivo']),
-            json_encode(['estado_pago' => 'liquidado', 'motivo' => "Caja liquidada por administrador #$adminId"]),
-            $adminId, $adminId
-        ]);
+        logAudit(
+            $db,
+            'pedidos',
+            $pedidoId,
+            'UPDATE',
+            ['estado_pago' => 'pagado_efectivo'],
+            ['estado_pago' => 'liquidado', 'motivo' => "Caja liquidada por administrador #$adminId (" . ($payload['nombre'] ?? 'Admin') . ")"],
+            $adminId
+        );
     }
 
     $db->commit();
 
     echo formatResponse("success", [
-        "mensaje" => "Caja del Rider liquidada con éxito.",
+        "mensaje" => "Caja del rider liquidada exitosamente.",
         "rider_id" => $riderId,
         "nombre_rider" => $rider['nombre'],
-        "total_liquidado_bs" => $totalLiquidado,
-        "pedidos_liquidados" => $pedidosLiquidadosIds
-    ], $adminId);
+        "total_liquidado_bs" => round($totalLiquidado, 2),
+        "pedidos_liquidados" => $pedidosLiquidadosIds,
+        "cantidad_pedidos" => count($pedidosLiquidadosIds)
+    ], $adminId, null, "SETTLE_CASH");
+    exit;
 
 } catch (Exception $e) {
     if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
-    echo formatResponse("error", null, null, $e->getMessage());
+    http_response_code(500);
+    echo formatResponse("error", null, $adminId ?? null, $e->getMessage(), "SERVER_ERROR");
 }

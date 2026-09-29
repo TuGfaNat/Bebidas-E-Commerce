@@ -180,20 +180,86 @@ La plataforma ofrece **dos modos de ejecución**:
 * El servidor autónomo en Python ([`server.py`](file:///D:/Bebidas-E-Commerce/server.py)) incluye una **capa de persistencia en memoria y emulación completa de base de datos** precargada con todos los usuarios, productos y pedidos de prueba.
 * Puedes pasar directamente al [Paso 4](#paso-4-puesta-en-marcha-del-servidor).
 
-#### Opción B: Modo Producción con MySQL Real (XAMPP / Laragon / MariaDB)
-Si deseas ejecutar los microservicios conectándote a un motor MySQL real:
+#### Opción B: Modo Producción con MySQL / MariaDB Real (XAMPP / Laragon / Docker)
 
-1. Inicia el servicio MySQL (por ejemplo, desde el panel de control de **XAMPP** haciendo clic en **Start** en el módulo MySQL).
-2. Ejecuta el asistente de migraciones:
+> [!NOTE]
+> **¿Es obligatorio instalar MariaDB/MySQL para usar la plataforma?**  
+> **No.** Si solo quieres probar el sistema, hacer pedidos, probar los roles y ver los mapas interactivos, **puedes usar la Opción A (servidor autónomo Python)** que no requiere instalar nada más.  
+> Sin embargo, si vas a **defender tu tesina ante un tribunal académico** o deseas ver y administrar las tablas físicamente en **phpMyAdmin**, sigue una de las siguientes guías de instalación:
+
+---
+
+#### 📌 Guía Paso a Paso: Cómo Instalar MariaDB / MySQL en Windows
+
+##### Método 1: Mediante XAMPP (Recomendado & Más Fácil para la Universidad)
+**XAMPP** es el paquete estándar que instala en un solo clic el servidor MariaDB/MySQL, el servidor web Apache y la herramienta visual **phpMyAdmin**:
+
+1. **Descargar el Instalador:**
+   * Entra a la web oficial: 👉 **[Descargar XAMPP para Windows](https://www.apachefriends.org/es/index.html)** (selecciona la versión con PHP 8.2 o superior).
+   * *Opcional vía terminal Windows:* Puedes instalarlo automáticamente ejecutando en PowerShell:
+     ```powershell
+     winget install ApacheFriends.Xampp.8.2
+     ```
+2. **Instalación:**
+   * Ejecuta el instalador descargado (`xampp-windows-x64-...-installer.exe`).
+   * En la pantalla de componentes (*Select Components*), asegúrate de que estén marcados:
+     * ✅ **Apache**
+     * ✅ **MySQL**
+     * ✅ **phpMyAdmin**
+   * Deja la ruta de instalación por defecto: `C:\xampp`.
+   * Haz clic en *Next* hasta finalizar la instalación.
+3. **Iniciar los Servicios:**
+   * Abre la aplicación **XAMPP Control Panel** desde el menú Inicio de Windows.
+   * En la fila de **MySQL**, haz clic en el botón **Start** (el fondo se pondrá en verde y mostrará el puerto `3306`).
+   * En la fila de **Apache**, haz clic en el botón **Start** (necesario para ver phpMyAdmin).
+4. **Verificar phpMyAdmin:**
+   * Abre tu navegador e ingresa a: **[http://localhost/phpmyadmin/](http://localhost/phpmyadmin/)**.
+   * Verás la interfaz gráfica de administración de bases de datos.
+5. **Ejecutar las Migraciones Automáticas:**
+   * Con MySQL iniciado en XAMPP, abre tu terminal en la carpeta del proyecto y ejecuta:
+     ```bash
+     npm run migrate
+     # o alternativamente:
+     python migrate.py
+     ```
+   * El asistente creará automáticamente la base de datos `bebidas_247`, creará las 6 tablas relacionales normalizadas y cargará los datos iniciales de prueba (usuarios, hamburguesas, documentos de riders y logs de auditoría).
+   * Actualiza phpMyAdmin y verás la base de datos `bebidas_247` lista para ser mostrada en tu exposición.
+
+---
+
+##### Método 2: Instalación de MariaDB Server Independiente (Oficial y Ligero)
+Si prefieres instalar solo el motor de base de datos sin Apache:
+
+1. **Descargar:**
+   * Descarga el instalador MSI desde: 👉 **[MariaDB Server Downloads](https://mariadb.org/download/)**.
+   * *Opcional vía terminal Windows:*
+     ```powershell
+     winget install MariaDB.Server
+     ```
+2. **Instalación:**
+   * Ejecuta el archivo `.msi`.
+   * En la pantalla de credenciales de `root`:
+     * Puedes dejar la contraseña vacía (por defecto en el proyecto).
+     * O si estableces una contraseña (ej: `admin123`), colócala en tu archivo `.env` en la variable `DB_PASS=admin123`.
+   * Deja el puerto por defecto: `3306` y codificación `UTF-8`.
+   * Finaliza la instalación. El servicio de Windows `MariaDB` se iniciará automáticamente.
+3. **Ejecutar Migración:**
    ```bash
-   npm run migrate
-   # o bien:
    python migrate.py
-   # o bien:
-   php migrate.php
    ```
-   *El asistente creará la base de datos `bebidas_247`, creará las 6 tablas relacionales y cargará los registros iniciales con contraseñas encriptadas.*
-3. **Importación Manual Alternativa:** También puedes abrir **phpMyAdmin** (`http://localhost/phpmyadmin`), crear la base de datos `bebidas_247` e importar el archivo [`init_schema.sql`](file:///D:/Bebidas-E-Commerce/init_schema.sql).
+
+---
+
+##### Método 3: Mediante Contenedores Docker (Para Desarrolladores)
+Si tienes instalado **Docker Desktop**, puedes levantar MariaDB con un solo comando en tu terminal:
+
+```bash
+docker run -d --name burger-mariadb -p 3306:3306 -e MYSQL_DATABASE=bebidas_247 -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mariadb:10.5
+```
+Luego ejecuta:
+```bash
+python migrate.py
+```
 
 ---
 

@@ -18,12 +18,12 @@ let currentSession = {
     currentUser: null
 };
 
-// Configuration & Connectivity State
+// Configuration & Connectivity State — always connected to local Python server
 let config = {
-    connectedMode: false,
+    connectedMode: true,
     apiUrl: (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:'))
-        ? `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, '')}/microservices`
-        : 'http://localhost/Bebidas-E-Commerce/microservices'
+        ? `${window.location.origin}/microservices`
+        : 'http://localhost:8000/microservices'
 };
 
 // Cart State
@@ -129,14 +129,19 @@ function initDatabase() {
     // Initialize Auth view
     renderAuthCard('login');
 
-    // Restore connected mode preference if saved
-    const isConnected = localStorage.getItem('connected_mode') === 'true';
-    if (isConnected) {
-        config.connectedMode = true;
-        const toggle = document.getElementById('toggleConnectedMode');
-        if (toggle) toggle.checked = true;
-        updateApiStatusUI(true);
-    }
+    // Always connected mode — verify server is reachable
+    config.connectedMode = true;
+    const apiDot = document.getElementById('apiDot');
+    const apiStatusTxt = document.getElementById('apiStatusText');
+    apiGet('/Auth/connection.php', null, { skipAuth: true })
+        .then(res => {
+            if (apiDot) apiDot.className = res.ok ? 'status-dot active' : 'status-dot inactive';
+            if (apiStatusTxt) apiStatusTxt.innerText = res.ok ? 'Conectado · localhost:8000' : 'Servidor no disponible';
+        })
+        .catch(() => {
+            if (apiDot) apiDot.className = 'status-dot inactive';
+            if (apiStatusTxt) apiStatusTxt.innerText = 'Servidor no disponible';
+        });
 
     // Restore session: check for JWT in connected mode first
     const token = getAuthToken();
@@ -276,6 +281,34 @@ function seedDatabase() {
             updated_at: new Date().toISOString(),
             created_by: 5,
             updated_by: 5
+        },
+        {
+            id: 6,
+            role: 'cliente',
+            nombre: 'Roberto Flores (Rechazado)',
+            email: 'roberto@mail.com',
+            password_hash: '$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', // roberto (same hash, simulated)
+            fecha_nacimiento: '1998-07-20',
+            ci_url: '/uploads/ci/ci_roberto.jpg',
+            ci_status: 'rejected',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 6,
+            updated_by: 3
+        },
+        {
+            id: 7,
+            role: 'rider',
+            nombre: 'Marcos Vargas (Rechazado)',
+            email: 'marcos@mail.com',
+            password_hash: '$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', // marcos (same hash, simulated)
+            fecha_nacimiento: '1993-11-14',
+            ci_url: '/uploads/ci/ci_marcos.jpg',
+            ci_status: 'rejected',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 7,
+            updated_by: 3
         }
     ];
 
@@ -304,6 +337,18 @@ function seedDatabase() {
             updated_at: new Date().toISOString(),
             created_by: 5,
             updated_by: 5
+        },
+        {
+            id: 3,
+            rider_id: 7,
+            licencia_url: '/uploads/docs/licencia_marcos.jpg',
+            seguro_url: '/uploads/docs/seguro_marcos.jpg',
+            cv_url: '/uploads/docs/cv_marcos.pdf',
+            estado_aprobacion: 'rechazado',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: 3,
+            updated_by: 3
         }
     ];
 
@@ -357,28 +402,80 @@ function getBurgerProducts() {
         }
     ];
 
-    // 5. Seed Pedidos (history)
+    // 5. Seed Pedidos (history: Entregados, Rechazados, Pendientes)
     DB.pedidos = [
         {
             id: 1,
             cliente_id: 1,
             rider_id: 2,
+            estado_pago: 'pagado_efectivo',
+            estado_pedido: 'entregado',
+            total: 45.00,
+            latitud: -16.5020,
+            longitud: -68.1310,
+            motivo_cancelacion: null,
+            qr_comprobante_url: null,
+            created_at: new Date(Date.now() - 3600000 * 6).toISOString(), 
+            updated_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+            created_by: 1,
+            updated_by: 3
+        },
+        {
+            id: 2,
+            cliente_id: 4,
+            rider_id: 2,
+            estado_pago: 'contraentrega',
+            estado_pedido: 'rechazado',
+            total: 36.00,
+            latitud: -16.5120,
+            longitud: -68.1250,
+            motivo_cancelacion: 'Rider reportó imposibilidad de despacho (Zona fuera de cobertura / lluvia)',
+            qr_comprobante_url: null,
+            created_at: new Date(Date.now() - 3600000 * 4).toISOString(), 
+            updated_at: new Date(Date.now() - 3600000 * 3).toISOString(),
+            created_by: 4,
+            updated_by: 2
+        },
+        {
+            id: 3,
+            cliente_id: 1,
+            rider_id: 2,
             estado_pago: 'pagado_qr',
             estado_pedido: 'entregado',
-            total: 62.00,
-            latitud: -16.5090,
-            longitud: -68.1340,
+            total: 58.00,
+            latitud: -16.5080,
+            longitud: -68.1330,
+            motivo_cancelacion: null,
             qr_comprobante_url: '/uploads/qr/comprobante_carlos1.jpg',
-            created_at: new Date(Date.now() - 3600000 * 24).toISOString(), 
-            updated_at: new Date(Date.now() - 3600000 * 23).toISOString(),
+            created_at: new Date(Date.now() - 3600000 * 2).toISOString(), 
+            updated_at: new Date(Date.now() - 3600000 * 1).toISOString(),
             created_by: 1,
             updated_by: 2
+        },
+        {
+            id: 4,
+            cliente_id: 1,
+            rider_id: null,
+            estado_pago: 'contraentrega',
+            estado_pedido: 'pendiente',
+            total: 44.00,
+            latitud: -16.5090,
+            longitud: -68.1340,
+            motivo_cancelacion: null,
+            qr_comprobante_url: null,
+            created_at: new Date().toISOString(), 
+            updated_at: new Date().toISOString(),
+            created_by: 1,
+            updated_by: 1
         }
     ];
 
     DB.pedido_detalles = [
         { id: 1, pedido_id: 1, producto_id: 1, cantidad: 1, precio_unitario: 22.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
-        { id: 2, pedido_id: 1, producto_id: 3, cantidad: 1, precio_unitario: 36.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 }
+        { id: 2, pedido_id: 2, producto_id: 3, cantidad: 1, precio_unitario: 36.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 4, updated_by: 4 },
+        { id: 3, pedido_id: 3, producto_id: 2, cantidad: 1, precio_unitario: 32.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
+        { id: 4, pedido_id: 3, producto_id: 10, cantidad: 2, precio_unitario: 6.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
+        { id: 5, pedido_id: 4, producto_id: 6, cantidad: 1, precio_unitario: 44.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 }
     ];
 }
 
@@ -446,7 +543,9 @@ function setupEventListeners() {
 
     document.getElementById('btnHeaderLogout').addEventListener('click', handleLogout);
 
-    document.getElementById('toggleConnectedMode').addEventListener('change', (e) => {
+    // toggleConnectedMode removed — always connected to Python server
+    const _toggleEl = document.getElementById('toggleConnectedMode');
+    if (_toggleEl) _toggleEl.addEventListener('change', (e) => {
         config.connectedMode = e.target.checked;
         localStorage.setItem('connected_mode', config.connectedMode ? 'true' : 'false');
         const apiDot = document.getElementById('apiDot');
@@ -515,6 +614,34 @@ function setupEventListeners() {
 
     document.getElementById('btnFloatingCart').addEventListener('click', openCartDrawer);
     document.getElementById('btnCloseDrawer').addEventListener('click', closeCartDrawer);
+
+    const btnHeaderCart = document.getElementById('btnHeaderCart');
+    if (btnHeaderCart) btnHeaderCart.addEventListener('click', openCartDrawer);
+
+    const btnSidebarCart = document.getElementById('btnSidebarCart');
+    if (btnSidebarCart) btnSidebarCart.addEventListener('click', openCartDrawer);
+
+    const btnUseDefaultLoc = document.getElementById('btnUseDefaultLocation');
+    if (btnUseDefaultLoc) btnUseDefaultLoc.addEventListener('click', () => {
+        setCheckoutDeliveryCoords(-16.5090, -68.1340);
+        showToast('Ubicación fijada en Sopocachi Central.', 'info');
+    });
+
+    // Toggle para desplegar/plegar Acceso Rápido Demo
+    const qsHeader = document.getElementById('quickSwitchHeader');
+    const qsPanel = document.getElementById('devQuickSwitch');
+    const qsContent = document.getElementById('quickSwitchContent');
+    const qsToggleTxt = document.getElementById('quickSwitchToggleText');
+
+    if (qsHeader && qsPanel && qsContent) {
+        qsHeader.addEventListener('click', () => {
+            const isCollapsed = qsPanel.classList.toggle('collapsed');
+            qsContent.style.display = isCollapsed ? 'none' : 'flex';
+            if (qsToggleTxt) {
+                qsToggleTxt.innerText = isCollapsed ? '(Abrir ▴)' : '(Cerrar ▾)';
+            }
+        });
+    }
 
     document.getElementById('cartDrawerBody').addEventListener('click', (e) => {
         if (e.target.classList.contains('cart-qty-btn') || e.target.closest('.cart-qty-btn')) {
@@ -586,6 +713,8 @@ function setupEventListeners() {
                     if (config.connectedMode) syncProductsFromBackend();
                 } else if (tabId === 'approvals') {
                     renderAdminPendingApprovals();
+                } else if (tabId === 'users') {
+                    renderAdminAllUsers();
                 } else if (tabId === 'audit') {
                     renderAdminAuditLogs();
                 }
@@ -611,19 +740,19 @@ function updateUIForCurrentRole() {
         renderClienteAccountInfo();
         renderProducts();
         renderClienteActiveOrderTracker();
+        updateCartBadge();
     } else if (currentSession.rider) {
         renderRiderProfile();
         renderRiderOrderQueue();
         renderRiderActiveOrderPanel();
+        renderRiderOrderHistory();
     } else if (currentSession.admin) {
         renderAdminPendingApprovals();
         renderAdminProductsTable();
         renderAdminReports();
         renderAdminMonitoring();
         renderAdminAuditLogs();
-        if (config.connectedMode) {
-            syncProductsFromBackend();
-        }
+        syncProductsFromBackend();
     }
 }
 
@@ -1029,7 +1158,9 @@ function verifyPassword(password, hash) {
         'pedro': ['$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', '$2y$10$abc...'],
         'admin': ['$2a$10$yvebu1TvWJgj7wE7L1QCDuroqNwHJaELe4E.R3UNDIzwG06EFIJOq', '$2y$10$admin...'],
         'maria': ['$2b$12$TYK.4OXjw6rT6CvUeIUH3O6CawYZp4qyouHv1Urv5p9Gws9kkr8Ym', '$2y$10$maria...'],
-        'juan': ['$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6', '$2y$10$juan...']
+        'juan': ['$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6', '$2y$10$juan...'],
+        'roberto': ['$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e'],
+        'marcos': ['$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2']
     };
 
     if (demoHashes[password] && demoHashes[password].includes(hash)) {
@@ -1197,13 +1328,29 @@ function handleLogout(notify = true) {
     if (notify) {
         showToast('Sesión cerrada correctamente.', 'info');
     }
+    cart = [];
+    updateCartBadge();
     renderAuthCard('login');
 }
 
 // Global quick-login function for presentation
 window.quickLogin = function(email, password) {
-    document.getElementById('loginEmail').value = email;
-    document.getElementById('loginPassword').value = password;
+    // Make sure email/pass inputs exist (they're in loginScreen rendered via renderAuthCard)
+    const emailEl = document.getElementById('loginEmail');
+    const passEl = document.getElementById('loginPassword');
+    if (emailEl) emailEl.value = email;
+    if (passEl) passEl.value = password;
+
+    // Auto-plegar el panel demo al iniciar sesión para no interrumpir operaciones
+    const qsPanel = document.getElementById('devQuickSwitch');
+    const qsContent = document.getElementById('quickSwitchContent');
+    const qsToggleTxt = document.getElementById('quickSwitchToggleText');
+    if (qsPanel && qsContent) {
+        qsPanel.classList.add('collapsed');
+        qsContent.style.display = 'none';
+        if (qsToggleTxt) qsToggleTxt.innerText = '(Abrir ▴)';
+    }
+
     handleLogin(email, password);
 };
 
@@ -1226,6 +1373,17 @@ function renderClienteAccountInfo() {
         statusLabel = 'C.I. Rechazado';
     }
 
+    let pendingMsg = '';
+    if (u.ci_status === 'pending') {
+        pendingMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(245,158,11,0.1); border-radius:var(--radius-md); border:1px solid rgba(245,158,11,0.25); font-size:0.85rem; color:var(--accent-amber);">
+            ⏳ Tu C.I. está pendiente de aprobación. El administrador revisará tu documentación a la brevedad.
+        </div>`;
+    } else if (u.ci_status === 'rejected') {
+        pendingMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.25); font-size:0.85rem; color:var(--accent-red);">
+            ❌ Tu C.I. fue rechazado. Contacta al administrador o vuelve a registrarte con un documento más claro.
+        </div>`;
+    }
+
     box.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             <p><strong>Nombre:</strong> ${u.nombre}</p>
@@ -1234,23 +1392,9 @@ function renderClienteAccountInfo() {
             <div>
                 <span class="badge ${badgeClass}">${statusLabel}</span>
             </div>
-            
-            <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-                <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem; display:block;">Simular otro Cliente:</label>
-                <select class="form-control" id="selClientSwitcher" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
-                    ${DB.users.filter(usr => usr.role === 'cliente').map(usr => `
-                        <option value="${usr.id}" ${usr.id === u.id ? 'selected' : ''}>${usr.nombre} (${usr.ci_status})</option>
-                    `).join('')}
-                </select>
-            </div>
+            ${pendingMsg}
         </div>
     `;
-
-    document.getElementById('selClientSwitcher').addEventListener('change', (e) => {
-        const val = e.target.value;
-        const targetUsr = DB.users.find(usr => usr.id === parseInt(val));
-        onLoginSuccess(targetUsr, false);
-    });
 }
 
 async function renderProducts(category = 'todos', searchQuery = '') {
@@ -1377,11 +1521,31 @@ window.addToCart = function(productId) {
 
 function updateCartBadge() {
     const count = cart.reduce((acc, item) => acc + item.quantity, 0);
-    
     const u = currentSession.cliente;
-    const isVerified = u && u.ci_status === 'verified';
-    document.getElementById('btnFloatingCart').style.display = (isVerified && count > 0) ? 'flex' : 'none';
-    document.getElementById('cartCount').innerText = count;
+
+    // Floating cart button: show whenever client is active
+    const floatingBtn = document.getElementById('btnFloatingCart');
+    if (floatingBtn) {
+        floatingBtn.style.display = u ? 'flex' : 'none';
+    }
+    const cartCountEl = document.getElementById('cartCount');
+    if (cartCountEl) cartCountEl.innerText = count;
+
+    // Header cart button
+    const headerCartBtn = document.getElementById('btnHeaderCart');
+    const headerCartCountEl = document.getElementById('headerCartCount');
+    if (headerCartBtn) {
+        headerCartBtn.style.display = u ? 'inline-flex' : 'none';
+    }
+    if (headerCartCountEl) headerCartCountEl.innerText = count;
+
+    // Sidebar cart button
+    const sidebarCartBtn = document.getElementById('btnSidebarCart');
+    const sidebarCartCountEl = document.getElementById('sidebarCartCount');
+    if (sidebarCartBtn) {
+        sidebarCartBtn.style.display = u ? 'flex' : 'none';
+    }
+    if (sidebarCartCountEl) sidebarCartCountEl.innerText = count;
 }
 
 function openCartDrawer() {
@@ -1396,10 +1560,20 @@ function closeCartDrawer() {
 function renderCartItems() {
     const body = document.getElementById('cartDrawerBody');
     if (cart.length === 0) {
-        body.innerHTML = `<div style="text-align: center; color: var(--text-secondary); margin-top: 3rem;">El carrito está vacío.</div>`;
+        body.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary); padding: 3rem 1rem;">
+                <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(249, 115, 22, 0.1); color: #f97316; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <i data-lucide="shopping-basket" style="width: 28px; height: 28px;"></i>
+                </div>
+                <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Tu carrito está vacío</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Agrega deliciosas hamburguesas o combos para continuar.</p>
+                <button class="btn btn-primary btn-sm" onclick="closeCartDrawer()"><i data-lucide="utensils"></i> Explorar Menú</button>
+            </div>
+        `;
         document.getElementById('cartSubtotal').innerText = '0.00 Bs';
         document.getElementById('cartTotal').innerText = '0.00 Bs';
         document.getElementById('btnCheckout').disabled = true;
+        initLucide();
         return;
     }
 
@@ -1445,22 +1619,62 @@ function updateCartQuantity(index, action) {
 // ----------------------------------------------------
 // 8. CLIENT CHECKOUT & LEAFLET MAPS INTEGRATION
 // ----------------------------------------------------
+function setCheckoutDeliveryCoords(lat, lng) {
+    if (checkoutMarkerClient) {
+        checkoutMarkerClient.setLatLng([lat, lng]);
+    } else if (checkoutMapInstance) {
+        checkoutMarkerClient = L.marker([lat, lng], {
+            icon: L.divIcon({
+                className: 'node-client-wrap',
+                html: '<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+            })
+        }).addTo(checkoutMapInstance);
+    }
+    if (checkoutMapInstance) {
+        checkoutMapInstance.setView([lat, lng], 14);
+    }
+
+    const logistics = calculateLogistics(lat, lng);
+    selectedDeliveryCoords = logistics;
+
+    const lblDist = document.getElementById('lblDistance');
+    if (lblDist) lblDist.innerText = `${logistics.distanceKm} Km`;
+    const lblShip = document.getElementById('lblShippingCost');
+    if (lblShip) lblShip.innerText = `${logistics.costBs} Bs`;
+    const lblEta = document.getElementById('lblEta');
+    if (lblEta) lblEta.innerText = `${logistics.etaMin} min`;
+
+    updateCheckoutFinalTotal();
+}
+
 function openCheckoutModal() {
+    if (cart.length === 0) {
+        showToast('Agrega productos al carrito antes de proceder al pago.', 'warning');
+        return;
+    }
+
     closeCartDrawer();
     document.getElementById('checkoutModal').classList.add('active');
-    
-    selectedDeliveryCoords = null;
-    document.getElementById('lblDistance').innerText = 'Elige en el mapa';
-    document.getElementById('lblShippingCost').innerText = '-';
-    document.getElementById('lblEta').innerText = '-';
-    
-    document.getElementById('fileQrComprobante').value = '';
-    document.getElementById('qrUploadPreview').style.display = 'none';
 
-    const subtotal = cart.reduce((acc, item) => acc + (item.product.precio * item.quantity), 0);
-    document.getElementById('lblCheckoutTotal').innerText = `${subtotal.toFixed(2)} Bs`;
-    
-    validateCheckoutForm();
+    // Default payment method: Contraentrega
+    const payCash = document.getElementById('payOptCash');
+    const payQr = document.getElementById('payOptQr');
+    if (payCash) payCash.classList.add('active');
+    if (payQr) payQr.classList.remove('active');
+    const cashBlock = document.getElementById('cashDetailsBlock');
+    if (cashBlock) cashBlock.style.display = 'block';
+    const qrBlock = document.getElementById('qrUploadBlock');
+    if (qrBlock) qrBlock.style.display = 'none';
+
+    document.getElementById('fileQrComprobante').value = '';
+    const qrPrev = document.getElementById('qrUploadPreview');
+    if (qrPrev) qrPrev.style.display = 'none';
+
+    // Auto-select suggested coords (Sopocachi Sur)
+    setCheckoutDeliveryCoords(-16.5090, -68.1340);
+
     initCheckoutMap();
 }
 
@@ -1485,37 +1699,13 @@ function initCheckoutMap() {
             }).addTo(checkoutMapInstance).bindPopup("Burger 24/7 - Central Sopocachi (Cocina & Despacho)").openPopup();
 
             checkoutMapInstance.on('click', (e) => {
-                const { lat, lng } = e.latlng;
-
-                if (checkoutMarkerClient) {
-                    checkoutMarkerClient.setLatLng(e.latlng);
-                } else {
-                    checkoutMarkerClient = L.marker(e.latlng, {
-                        icon: L.divIcon({
-                            className: 'node-client-wrap',
-                            html: '<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
-                            iconSize: [14, 14],
-                            iconAnchor: [7, 7]
-                        })
-                    }).addTo(checkoutMapInstance);
-                }
-
-                const logistics = calculateLogistics(lat, lng);
-                selectedDeliveryCoords = logistics;
-
-                document.getElementById('lblDistance').innerText = `${logistics.distanceKm} Km`;
-                document.getElementById('lblShippingCost').innerText = `${logistics.costBs} Bs`;
-                document.getElementById('lblEta').innerText = `${logistics.etaMin} min`;
-
-                updateCheckoutFinalTotal();
+                setCheckoutDeliveryCoords(e.latlng.lat, e.latlng.lng);
             });
         } else {
             checkoutMapInstance.invalidateSize();
-            if (checkoutMarkerClient) {
-                checkoutMapInstance.removeLayer(checkoutMarkerClient);
-                checkoutMarkerClient = null;
+            if (selectedDeliveryCoords) {
+                setCheckoutDeliveryCoords(selectedDeliveryCoords.lat, selectedDeliveryCoords.lon);
             }
-            checkoutMapInstance.setView([STORE_COORDS.lat, STORE_COORDS.lon], 14);
         }
     }, 200);
 }
@@ -1529,6 +1719,18 @@ function updateCheckoutFinalTotal() {
     const shipping = selectedDeliveryCoords ? parseFloat(selectedDeliveryCoords.costBs) : 0;
     const finalTotal = subtotal + shipping;
     document.getElementById('lblCheckoutTotal').innerText = `${finalTotal.toFixed(2)} Bs`;
+
+    const isCash = document.getElementById('payOptCash').classList.contains('active');
+    const placeBtn = document.getElementById('btnPlaceOrder');
+    if (placeBtn) {
+        if (isCash) {
+            placeBtn.innerText = `Confirmar Pedido (Pagar en Efectivo al Recibir: ${finalTotal.toFixed(2)} Bs)`;
+            placeBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        } else {
+            placeBtn.innerText = `Confirmar Pedido (Pago con QR: ${finalTotal.toFixed(2)} Bs)`;
+            placeBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
+        }
+    }
     validateCheckoutForm();
 }
 
@@ -1538,7 +1740,11 @@ function validateCheckoutForm() {
     const hasQrFile = document.getElementById('fileQrComprobante').files.length > 0;
     
     const placeBtn = document.getElementById('btnPlaceOrder');
-    placeBtn.disabled = !(hasLocation && (!isQr || hasQrFile));
+    if (placeBtn) {
+        // For Contraentrega, location is enough! No file upload required!
+        // For QR, location and QR file are needed
+        placeBtn.disabled = !(hasLocation && (!isQr || hasQrFile));
+    }
 }
 
 async function submitOrderCheckout() {
@@ -1749,9 +1955,14 @@ function renderClienteActiveOrderTracker() {
         return `${d.cantidad}x ${p ? p.nombre : 'Producto'}`;
     }).join(', ');
 
-    document.getElementById('clientActiveOrderItems').innerHTML = `<strong>Items:</strong> ${detailsText}`;
-    document.getElementById('clientActiveOrderPayment').innerHTML = `<strong>Pago:</strong> ${activeOrder.estado_pago.toUpperCase()}`;
+    const isContra = activeOrder.estado_pago === 'contraentrega' || activeOrder.estado_pago === 'pagado_efectivo';
+    const payBadge = isContra
+        ? '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="banknote" style="width:13px;height:13px;vertical-align:middle;"></i> Contraentrega (Pagarás en efectivo al recibir)</span>'
+        : '<span class="badge" style="background:rgba(139,92,246,0.15); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR</span>';
+
+    document.getElementById('clientActiveOrderPayment').innerHTML = `<strong>Método de Pago:</strong> ${payBadge}`;
     document.getElementById('clientActiveOrderTotal').innerHTML = `<strong>Total a pagar:</strong> ${activeOrder.total.toFixed(2)} Bs`;
+    initLucide();
 
     const latCliente = activeOrder.latitud || -16.5090;
     const lonCliente = activeOrder.longitud || -68.1340;
@@ -1871,6 +2082,17 @@ function renderRiderProfile() {
         statusText = 'Expediente Rechazado';
     }
 
+    let riderStatusMsg = '';
+    if (doc && doc.estado_aprobacion === 'rechazado') {
+        riderStatusMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.25); font-size:0.85rem; color:var(--accent-red);">
+            ❌ Tu expediente fue rechazado por el Administrador. Contacta con la administración para más información.
+        </div>`;
+    } else if (!doc || doc.estado_aprobacion === 'pendiente') {
+        riderStatusMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(245,158,11,0.1); border-radius:var(--radius-md); border:1px solid rgba(245,158,11,0.25); font-size:0.85rem; color:var(--accent-amber);">
+            ⏳ Tu expediente está en revisión. Se te notificará cuando el administrador lo apruebe.
+        </div>`;
+    }
+
     box.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
             <p><strong>Nombre:</strong> ${r.nombre}</p>
@@ -1878,24 +2100,9 @@ function renderRiderProfile() {
             <div>
                 <span class="badge ${statusClass}">${statusText}</span>
             </div>
-            
-            <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-                <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem; display:block;">Simular otro Rider:</label>
-                <select class="form-control" id="selRiderSwitcher" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
-                    ${DB.users.filter(usr => usr.role === 'rider').map(usr => {
-                        const d = DB.documentacion_rider.find(docR => docR.rider_id === usr.id);
-                        const status = d ? d.estado_aprobacion : 'Sin Documentos';
-                        return `<option value="${usr.id}" ${usr.id === r.id ? 'selected' : ''}>${usr.nombre} (${status})</option>`;
-                    }).join('')}
-                </select>
-            </div>
+            ${riderStatusMsg}
         </div>
     `;
-
-    document.getElementById('selRiderSwitcher').addEventListener('change', (e) => {
-        const targetR = DB.users.find(usr => usr.id === parseInt(e.target.value));
-        onLoginSuccess(targetR, false);
-    });
 
     const docsContainer = document.getElementById('riderDocsContainer');
     docsContainer.innerHTML = `
@@ -2027,7 +2234,8 @@ async function renderRiderOrderQueue() {
                                     </div>
                                 </div>
                                 <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                                    <button class="btn btn-primary" onclick="acceptRiderOrder(${p.pedido_id})">Aceptar Pedido</button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectRiderAvailableOrder(${p.pedido_id})"><i data-lucide="x"></i> Rechazar</button>
+                                    <button class="btn btn-primary btn-sm" onclick="acceptRiderOrder(${p.pedido_id})"><i data-lucide="check"></i> Aceptar Pedido</button>
                                 </div>
                             </div>
                         `;
@@ -2100,7 +2308,8 @@ async function renderRiderOrderQueue() {
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                    <button class="btn btn-primary" onclick="acceptRiderOrder(${p.id})">Aceptar Pedido</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectRiderAvailableOrder(${p.id})"><i data-lucide="x"></i> Rechazar</button>
+                    <button class="btn btn-primary btn-sm" onclick="acceptRiderOrder(${p.id})"><i data-lucide="check"></i> Aceptar Pedido</button>
                 </div>
             </div>
         `;
@@ -2372,6 +2581,203 @@ function cancelRiderActiveOrder() {
 // ----------------------------------------------------
 // 10. ADMIN PORTAL LOGIC & LIVE OPERATIONS
 // ----------------------------------------------------
+
+// -------------------------------------------------------
+// RIDER: HISTORIAL DE PEDIDOS (Entregados, Rechazados, etc.)
+// -------------------------------------------------------
+async function renderRiderOrderHistory(filter = 'all') {
+    const listEl = document.getElementById('riderHistoryList');
+    if (!listEl) return;
+    const r = currentSession.rider;
+    if (!r) return;
+
+    let historyOrders = [];
+
+    if (config.connectedMode) {
+        const token = getAuthToken();
+        if (token) {
+            try {
+                const res = await apiGet('/Rider/assignment.php');
+                if (res.ok && res.data && Array.isArray(res.data.historial_pedidos)) {
+                    historyOrders = res.data.historial_pedidos;
+                }
+            } catch (err) {
+                console.warn('Fallo obteniendo historial de rider del backend:', err);
+            }
+        }
+    }
+
+    if (!historyOrders.length) {
+        // Fallback to local DB
+        const rOrders = DB.pedidos.filter(p => p.rider_id === r.id);
+        historyOrders = rOrders.map(p => {
+            const clientUser = DB.users.find(u => u.id === p.cliente_id);
+            const items = DB.pedido_detalles.filter(d => d.pedido_id === p.id);
+            const itemsFmt = items.map(d => {
+                const pr = DB.productos.find(prod => prod.id === d.producto_id);
+                return {
+                    nombre: pr ? pr.nombre : 'Producto',
+                    cantidad: d.cantidad,
+                    precio_unitario: d.precio_unitario
+                };
+            });
+            return {
+                pedido_id: p.id,
+                cliente_nombre: clientUser ? clientUser.nombre : 'Cliente',
+                cliente_email: clientUser ? clientUser.email : '',
+                total: p.total,
+                estado_pago: p.estado_pago,
+                estado_pedido: p.estado_pedido,
+                motivo_cancelacion: p.motivo_cancelacion || '',
+                fecha_creacion: p.created_at,
+                fecha_actualizacion: p.updated_at,
+                items: itemsFmt,
+                distancia_km: 1.5
+            };
+        }).reverse();
+    }
+
+    window._riderOrderHistory = historyOrders;
+    renderFilteredRiderHistory(filter);
+    setupRiderHistoryFilterListeners();
+}
+
+function renderFilteredRiderHistory(filter = 'all') {
+    const listEl = document.getElementById('riderHistoryList');
+    if (!listEl) return;
+    const all = window._riderOrderHistory || [];
+
+    let filtered = all;
+    if (filter === 'entregado') {
+        filtered = all.filter(o => o.estado_pedido === 'entregado');
+    } else if (filter === 'activo') {
+        filtered = all.filter(o => o.estado_pedido === 'asignado' || o.estado_pedido === 'en_camino');
+    } else if (filter === 'rechazado') {
+        filtered = all.filter(o => o.estado_pedido === 'rechazado' || o.estado_pedido === 'cancelado');
+    }
+
+    if (!filtered.length) {
+        listEl.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem; font-size: 0.9rem;">
+            No tienes pedidos registrados en la categoría seleccionada (${filter}).
+        </div>`;
+        return;
+    }
+
+    listEl.innerHTML = filtered.map(o => {
+        let badgeHtml = '';
+        if (o.estado_pedido === 'entregado') {
+            badgeHtml = '<span class="badge badge-verified"><i data-lucide="check-check"></i> Entregado</span>';
+        } else if (o.estado_pedido === 'rechazado') {
+            badgeHtml = '<span class="badge badge-rejected"><i data-lucide="x-circle"></i> Rechazado</span>';
+        } else if (o.estado_pedido === 'cancelado') {
+            badgeHtml = '<span class="badge badge-rejected"><i data-lucide="ban"></i> Cancelado</span>';
+        } else if (o.estado_pedido === 'en_camino') {
+            badgeHtml = '<span class="badge badge-pending"><i data-lucide="bike"></i> En Camino</span>';
+        } else {
+            badgeHtml = '<span class="badge badge-pending"><i data-lucide="clock"></i> Aceptado</span>';
+        }
+
+        const itemsText = (o.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(', ') || 'Productos varios';
+        const isContraentrega = o.estado_pago === 'contraentrega' || o.estado_pago === 'pagado_efectivo' || o.estado_pago === 'liquidado';
+        const payBadge = isContraentrega
+            ? '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">💵 Contraentrega (Efectivo)</span>'
+            : '<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3);">📱 Pago QR</span>';
+
+        const rawDate = o.fecha_actualizacion || o.fecha_creacion;
+        let dateStr = 'Reciente';
+        if (rawDate) {
+            try {
+                dateStr = new Date(rawDate).toLocaleString('es-BO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch(e) {}
+        }
+
+        const motivoHtml = (o.estado_pedido === 'rechazado' || o.estado_pedido === 'cancelado') && o.motivo_cancelacion
+            ? `<div style="margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--accent-red);">
+                <strong>Motivo:</strong> ${o.motivo_cancelacion}
+               </div>`
+            : '';
+
+        return `
+            <div class="order-card" style="border-left: 3px solid ${o.estado_pedido === 'entregado' ? '#10b981' : (o.estado_pedido === 'rechazado' || o.estado_pedido === 'cancelado' ? '#ef4444' : '#8b5cf6')};">
+                <div class="order-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                    <div>
+                        <span class="order-id" style="font-weight:700;">Pedido #${o.pedido_id}</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">${dateStr}</span>
+                    </div>
+                    <div style="display:flex; gap:0.4rem; align-items:center;">
+                        ${payBadge}
+                        ${badgeHtml}
+                    </div>
+                </div>
+                <div class="order-card-body" style="grid-template-columns: 1fr 1fr 1.5fr;">
+                    <div>
+                        <div class="order-meta-label">Cliente</div>
+                        <div class="order-meta-val">${o.cliente_nombre || 'Cliente'}</div>
+                    </div>
+                    <div>
+                        <div class="order-meta-label">Monto Cobrado / Total</div>
+                        <div class="order-meta-val" style="font-weight:700; color:var(--text-primary);">${Number(o.total).toFixed(2)} Bs</div>
+                    </div>
+                    <div>
+                        <div class="order-meta-label">Artículos del Pedido</div>
+                        <div class="order-meta-val" style="font-size:0.85rem;">${itemsText}</div>
+                    </div>
+                </div>
+                ${motivoHtml}
+            </div>
+        `;
+    }).join('');
+    initLucide();
+}
+
+function setupRiderHistoryFilterListeners() {
+    document.querySelectorAll('.rider-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.rider-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderFilteredRiderHistory(btn.dataset.filter);
+        });
+    });
+}
+
+window.rejectRiderAvailableOrder = async function(orderId) {
+    const r = currentSession.rider;
+    const motivo = prompt('Ingresa el motivo del rechazo del pedido:', 'Zona fuera de cobertura / Dificultad climática');
+    if (!motivo) return;
+
+    if (config.connectedMode) {
+        const token = getAuthToken();
+        if (token) {
+            try {
+                const res = await apiPost('/Rider/assignment.php', {
+                    pedido_id: orderId,
+                    action: 'reject',
+                    motivo: motivo
+                });
+                if (res.ok) {
+                    showToast('Pedido rechazado y archivado en tu historial.', 'info');
+                }
+            } catch (err) {
+                console.warn('Error enviando rechazo al backend:', err);
+            }
+        }
+    }
+
+    const order = DB.pedidos.find(p => p.id === orderId);
+    if (order) {
+        order.estado_pedido = 'rechazado';
+        order.rider_id = r.id;
+        order.motivo_cancelacion = motivo;
+        order.updated_at = new Date().toISOString();
+        order.updated_by = r.id;
+        logAuditoria('pedidos', order.id, 'UPDATE', { estado_pedido: 'pendiente' }, { estado_pedido: 'rechazado', motivo }, r.id);
+        saveDatabase();
+    }
+
+    showToast('Has rechazado el pedido. Se ha registrado en tu historial.', 'info');
+    updateUIForCurrentRole();
+};
+
 async function renderAdminPendingApprovals() {
     const custContainer = document.getElementById('pendingCustomersList');
     const riderContainer = document.getElementById('pendingRidersList');
@@ -2550,6 +2956,196 @@ window.openFileViewer = function(fileUrl, title) {
     modal.classList.add('active');
 };
 
+// -------------------------------------------------------
+// ADMIN: GESTIÓN COMPLETA DE USUARIOS (todos los estados)
+// -------------------------------------------------------
+async function renderAdminAllUsers() {
+    const compList = document.getElementById('compradoresList');
+    const riderListEl = document.getElementById('ridersList');
+    if (!compList || !riderListEl) return;
+
+    compList.innerHTML = '<div style="color:var(--text-secondary);padding:1rem;">Cargando compradores...</div>';
+    riderListEl.innerHTML = '<div style="color:var(--text-secondary);padding:1rem;">Cargando riders...</div>';
+
+    let compradores = [];
+    let riders = [];
+
+    // Fetch from backend
+    try {
+        const res = await apiGet('/Auth/admin_users.php');
+        if (res.ok && res.data) {
+            if (Array.isArray(res.data.compradores)) compradores = res.data.compradores;
+            if (Array.isArray(res.data.riders)) riders = res.data.riders;
+        }
+    } catch (err) {
+        console.warn('Fallo GET /Auth/admin_users, usando DB local:', err);
+    }
+
+    // Fallback to local DB
+    if (!compradores.length && !riders.length) {
+        compradores = DB.users
+            .filter(u => u.role === 'cliente')
+            .map(u => ({ id: u.id, nombre: u.nombre, email: u.email, ci_status: u.ci_status || 'pending', fecha_nacimiento: u.fecha_nacimiento || 'N/A', ci_url: u.ci_url || '' }));
+        riders = DB.documentacion_rider.map(d => {
+            const ru = DB.users.find(u => u.id === d.rider_id) || {};
+            return {
+                rider_id: d.rider_id, doc_id: d.id, nombre: ru.nombre || 'Rider', email: ru.email || '',
+                ci_status: ru.ci_status || 'pending', estado_aprobacion: d.estado_aprobacion,
+                licencia_url: d.licencia_url || '', seguro_url: d.seguro_url || '', cv_url: d.cv_url || '',
+                fecha_nacimiento: ru.fecha_nacimiento || 'N/A'
+            };
+        });
+    }
+
+    // ---- CACHED data for filtering ----
+    window._adminAllCompradores = compradores;
+    window._adminAllRiders = riders;
+
+    renderCompradoresList('all');
+    renderRidersList('all');
+    setupUsersFilterButtons();
+    initLucide();
+}
+
+function getStatusBadge(status, isRider = false) {
+    if (isRider) {
+        if (status === 'aprobado') return '<span class="badge badge-verified">Habilitado</span>';
+        if (status === 'rechazado') return '<span class="badge badge-rejected">Rechazado</span>';
+        return '<span class="badge badge-pending">Pendiente</span>';
+    }
+    if (status === 'verified') return '<span class="badge badge-verified">Habilitado</span>';
+    if (status === 'rejected') return '<span class="badge badge-rejected">Rechazado</span>';
+    return '<span class="badge badge-pending">Pendiente</span>';
+}
+
+function renderCompradoresList(filter) {
+    const el = document.getElementById('compradoresList');
+    if (!el) return;
+    const all = window._adminAllCompradores || [];
+    const filtered = filter === 'all' ? all : all.filter(u => u.ci_status === filter);
+
+    if (!filtered.length) {
+        el.innerHTML = '<div style="color:var(--text-secondary);font-size:0.9rem;padding:0.5rem;">No hay clientes en este estado.</div>';
+        return;
+    }
+
+    el.innerHTML = filtered.map(u => {
+        const canEnable = u.ci_status !== 'verified';
+        const canReject = u.ci_status !== 'rejected';
+        return `<div class="approval-card">
+            <div class="approval-card-header">
+                <div class="approval-user-info">
+                    <strong>${u.nombre}</strong>
+                    <span style="font-size:0.75rem;color:var(--text-secondary);">${u.email}</span>
+                </div>
+                ${getStatusBadge(u.ci_status)}
+            </div>
+            <div class="approval-details-row">
+                <span>Nacimiento: ${u.fecha_nacimiento || 'N/A'}</span>
+                <span>ID #${u.id}</span>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem;">
+                <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. - ${u.nombre}')"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
+                <div class="approval-actions">
+                    ${canReject ? `<button class="btn btn-danger btn-sm" onclick="adminUpdateUser(${u.id},'cliente','rejected')">Rechazar</button>` : ''}
+                    ${canEnable ? `<button class="btn btn-success btn-sm" onclick="adminUpdateUser(${u.id},'cliente','verified')">Habilitar</button>` : ''}
+                    ${!canReject && !canEnable ? '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin cambios posibles</span>' : ''}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    initLucide();
+}
+
+function renderRidersList(filter) {
+    const el = document.getElementById('ridersList');
+    if (!el) return;
+    const all = window._adminAllRiders || [];
+    const filtered = filter === 'all' ? all : all.filter(r => r.estado_aprobacion === filter);
+
+    if (!filtered.length) {
+        el.innerHTML = '<div style="color:var(--text-secondary);font-size:0.9rem;padding:0.5rem;">No hay riders en este estado.</div>';
+        return;
+    }
+
+    el.innerHTML = filtered.map(r => {
+        const canApprove = r.estado_aprobacion !== 'aprobado';
+        const canReject = r.estado_aprobacion !== 'rechazado';
+        return `<div class="approval-card">
+            <div class="approval-card-header">
+                <div class="approval-user-info">
+                    <strong>${r.nombre}</strong>
+                    <span style="font-size:0.75rem;color:var(--text-secondary);">${r.email}</span>
+                </div>
+                ${getStatusBadge(r.estado_aprobacion, true)}
+            </div>
+            <div class="approval-details-row">
+                <span>Nacimiento: ${r.fecha_nacimiento || 'N/A'}</span>
+                <span>Rider ID #${r.rider_id}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; border:1px solid var(--border-color); padding:0.5rem; border-radius:var(--radius-md); background:rgba(0,0,0,0.1); margin-top:0.5rem;">
+                <a class="file-view-trigger" onclick="openFileViewer('${r.licencia_url}','Licencia - ${r.nombre}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
+                <a class="file-view-trigger" onclick="openFileViewer('${r.seguro_url}','Seguro SOAT - ${r.nombre}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
+                <a class="file-view-trigger" onclick="openFileViewer('${r.cv_url}','CV - ${r.nombre}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Curriculum Vitae</a>
+            </div>
+            <div class="approval-actions" style="justify-content:flex-end; margin-top:0.5rem;">
+                ${canReject ? `<button class="btn btn-danger btn-sm" onclick="adminUpdateUser(${r.rider_id},'rider','rechazado')">Rechazar</button>` : ''}
+                ${canApprove ? `<button class="btn btn-success btn-sm" onclick="adminUpdateUser(${r.rider_id},'rider','aprobado')">Habilitar Rider</button>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+    initLucide();
+}
+
+function setupUsersFilterButtons() {
+    document.querySelectorAll('.users-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.target;
+            const filter = btn.dataset.filter;
+            // Update active class for this target's buttons
+            document.querySelectorAll(`.users-filter-btn[data-target="${target}"]`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (target === 'compradores') renderCompradoresList(filter);
+            else if (target === 'riders') renderRidersList(filter);
+        });
+    });
+}
+
+window.adminUpdateUser = async function(targetId, tipo, estado) {
+    const admin = currentSession.admin || { id: 3 };
+    try {
+        const res = await apiRequest('/Auth/admin_users.php', { method: 'PUT', data: { target_id: targetId, tipo, estado } });
+        if (res.ok) {
+            showToast('Estado actualizado correctamente.', 'success');
+        } else {
+            showToast(`Aviso: ${res.error || 'No se pudo actualizar.'}`, 'warning');
+        }
+    } catch (err) {
+        console.warn('Fallo PUT /Auth/admin_users:', err);
+    }
+    // Update local DB
+    if (tipo === 'cliente') {
+        const u = DB.users.find(u => u.id === targetId);
+        if (u) {
+            const ciMap = { verified: 'verified', aprobado: 'verified', rejected: 'rejected', rechazado: 'rejected', pending: 'pending', pendiente: 'pending' };
+            u.ci_status = ciMap[estado] || estado;
+            saveDatabase();
+        }
+    } else if (tipo === 'rider') {
+        const doc = DB.documentacion_rider.find(d => d.rider_id === targetId);
+        if (doc) {
+            doc.estado_aprobacion = estado;
+            const riderUser = DB.users.find(u => u.id === targetId);
+            if (riderUser) {
+                riderUser.ci_status = estado === 'aprobado' ? 'verified' : (estado === 'rechazado' ? 'rejected' : 'pending');
+            }
+            saveDatabase();
+        }
+    }
+    // Re-fetch and re-render
+    renderAdminAllUsers();
+};
+
 function renderAdminProductsTable() {
     const tbody = document.getElementById('adminProductsTableBody');
     tbody.innerHTML = DB.productos.map(p => `
@@ -2574,7 +3170,7 @@ function renderAdminProductsTable() {
 }
 
 async function syncProductsFromBackend() {
-    if (!config.connectedMode) return;
+    // Always connected to Python server — sync catalog
     try {
         const res = await apiGet('/Catalog/catalog.php');
         if (res.ok && res.data && Array.isArray(res.data.productos)) {

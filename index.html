@@ -48,12 +48,25 @@
         </div>
     </div>
 
-    <!-- Floating Dev Tools account quick-switcher -->
-    <div class="login-quick-switch" id="devQuickSwitch">
-        <h4 style="font-size: 0.8rem; text-transform: uppercase; color: var(--accent-purple); letter-spacing: 0.05em; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.25rem;"><i data-lucide="terminal" style="width:12px;height:12px;"></i> Acceso Rápido (Tesina)</h4>
-        <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('carlos@mail.com', 'carlos')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">👤 Cliente (Carlos)</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('pedro@mail.com', 'pedro')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">🛵 Repartidor Aprobado (Pedro)</button>
+    <!-- Acceso Rápido Flotante Plegable (Cuentas Demo para Tesina) -->
+    <div class="login-quick-switch collapsed" id="devQuickSwitch">
+        <div class="quick-switch-header" id="quickSwitchHeader" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; gap:0.5rem;" title="Haz clic para abrir o cerrar acceso demo">
+            <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--accent-purple); letter-spacing: 0.05em; margin: 0; display:flex; align-items:center; gap:0.35rem; font-weight:700;">
+                <i data-lucide="key" style="width:13px;height:13px;"></i>
+                <span>Cuentas Demo</span>
+            </h4>
+            <span id="quickSwitchToggleText" style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">(Abrir ▴)</span>
+        </div>
+        <div id="quickSwitchContent" style="display: none; margin-top: 0.65rem; flex-direction: column; gap: 0.35rem;">
+            <div style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:0.2rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.25rem;">
+                Haz clic en una cuenta para iniciar sesión directa:
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('carlos@mail.com', 'carlos')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">✅ Cliente Habilitado (Carlos)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('maria@mail.com', 'maria')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">⏳ Cliente Pendiente (María)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('roberto@mail.com', 'roberto')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">❌ Cliente Rechazado (Roberto)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('pedro@mail.com', 'pedro')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">✅ Rider Habilitado (Pedro)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('juan@mail.com', 'juan')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">⏳ Rider Pendiente (Juan)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('marcos@mail.com', 'marcos')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">❌ Rider Rechazado (Marcos)</button>
             <button class="btn btn-secondary btn-sm" onclick="quickLogin('admin@mail.com', 'admin')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">🔑 Administrador (Central)</button>
         </div>
     </div>
@@ -67,25 +80,23 @@
             </div>
 
             <!-- Header Active User Info -->
-            <div class="header-user-status" id="headerUserStatus" style="display: none; align-items: center; gap: 1rem;">
+            <div class="header-user-status" id="headerUserStatus" style="display: none; align-items: center; gap: 0.75rem;">
+                <!-- Botón directo de Carrito para el Cliente -->
+                <button class="btn btn-primary btn-sm" id="btnHeaderCart" style="display: none; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; font-weight: 600; background: linear-gradient(135deg, #f97316, #ef4444); border: none;">
+                    <i data-lucide="shopping-cart" style="width: 14px; height: 14px;"></i>
+                    <span>Mi Carrito (<span id="headerCartCount">0</span>)</span>
+                </button>
                 <span id="lblHeaderUserName" style="font-weight: 600; font-size: 0.85rem; color: var(--accent-purple);"></span>
                 <button class="btn btn-secondary btn-sm" id="btnHeaderLogout" style="padding: 0.35rem 0.65rem; display: inline-flex; align-items: center; gap: 0.25rem;">
                     <i data-lucide="log-out" style="width: 12px; height: 12px;"></i> Salir
                 </button>
             </div>
 
-            <!-- API Status & Connection Toggle -->
+            <!-- API Status -->
             <div class="status-badge-container">
-                <div class="api-toggle-container">
-                    <span>API PHP Backend</span>
-                    <label class="switch">
-                        <input type="checkbox" id="toggleConnectedMode">
-                        <span class="slider"></span>
-                    </label>
-                </div>
                 <div class="api-status-banner">
                     <span class="status-dot active" id="apiDot"></span>
-                    <span id="apiStatusText">Modo Simulado (Local)</span>
+                    <span id="apiStatusText">Conectado · localhost:8000</span>
                 </div>
             </div>
         </div>
@@ -106,6 +117,11 @@
                         <div id="clienteAuthContent">
                             <!-- Populated dynamically via JS -->
                         </div>
+                        <!-- Botón directo de Carrito en el Sidebar -->
+                        <button class="btn btn-primary btn-sm" id="btnSidebarCart" style="width: 100%; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; background: linear-gradient(135deg, #f97316, #ef4444); border: none; padding: 0.55rem;">
+                            <i data-lucide="shopping-bag" style="width: 15px; height: 15px;"></i>
+                            <span>Ver Mi Carrito (<span id="sidebarCartCount">0</span>)</span>
+                        </button>
                     </div>
 
                     <!-- Categories list -->
@@ -271,6 +287,22 @@
                             <!-- Populated dynamically via JS -->
                         </div>
                     </div>
+
+                    <!-- Rider Order History -->
+                    <div class="glass-card" style="margin-top: 1.5rem;" id="riderHistoryCard">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; margin-bottom:1rem;">
+                            <h2 style="margin:0;"><i data-lucide="history" style="color:var(--accent-purple);"></i> Historial de Pedidos del Rider</h2>
+                            <div style="display:flex; gap:0.4rem; flex-wrap:wrap;" id="riderHistoryFilters">
+                                <button class="btn btn-secondary btn-sm rider-filter-btn active" data-filter="all">Todos</button>
+                                <button class="btn btn-secondary btn-sm rider-filter-btn" data-filter="entregado">✅ Entregados</button>
+                                <button class="btn btn-secondary btn-sm rider-filter-btn" data-filter="activo">🚀 En Curso</button>
+                                <button class="btn btn-secondary btn-sm rider-filter-btn" data-filter="rechazado">❌ Rechazados / Cancelados</button>
+                            </div>
+                        </div>
+                        <div id="riderHistoryList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -281,6 +313,7 @@
             <!-- Navigation Sub-tabs -->
             <div class="admin-tabs">
                 <button class="admin-tab-btn active" data-tab="approvals" id="tabBtnApprovals">Aprobación C.I. & Expedientes</button>
+                <button class="admin-tab-btn" data-tab="users" id="tabBtnUsers">Gestión de Usuarios</button>
                 <button class="admin-tab-btn" data-tab="catalog" id="tabBtnCatalog">Control de Catálogo (CRUD)</button>
                 <button class="admin-tab-btn" data-tab="monitoring" id="tabBtnMonitoring">Monitoreo & Caja Central</button>
                 <button class="admin-tab-btn" data-tab="audit" id="tabBtnAudit">Ledger de Auditoría (BMAD)</button>
@@ -300,6 +333,42 @@
                         <h3>Aprobación de Expedientes (Riders)</h3>
                         <div class="approval-list" id="pendingRidersList">
                             <!-- Riders verifying insurance/license/cv -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Gestión de Usuarios -->
+            <div class="admin-subpanel" id="subpanelUsers">
+                <div style="display: flex; flex-direction: column; gap: 2rem;">
+                    <!-- Compradores Section -->
+                    <div class="glass-card">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+                            <h3 style="margin:0;">&#128101; Compradores / Clientes</h3>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button class="btn btn-secondary btn-sm users-filter-btn active" data-target="compradores" data-filter="all">Todos</button>
+                                <button class="btn btn-secondary btn-sm users-filter-btn" data-target="compradores" data-filter="verified">Habilitados</button>
+                                <button class="btn btn-secondary btn-sm users-filter-btn" data-target="compradores" data-filter="pending">Pendientes</button>
+                                <button class="btn btn-secondary btn-sm users-filter-btn" data-target="compradores" data-filter="rejected">Rechazados</button>
+                            </div>
+                        </div>
+                        <div id="compradoresList" style="display:flex; flex-direction:column; gap:0.75rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <!-- Riders Section -->
+                    <div class="glass-card">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+                            <h3 style="margin:0;">&#128695; Riders / Repartidores</h3>
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button class="btn btn-secondary btn-sm users-filter-btn active" data-target="riders" data-filter="all">Todos</button>
+                                <button class="btn btn-secondary btn-sm users-filter-btn" data-target="riders" data-filter="aprobado">Habilitados</button>
+                                <button class="btn btn-secondary btn-sm users-filter-btn" data-target="riders" data-filter="pendiente">Pendientes</button>
+                                <button class="btn btn-secondary btn-sm users-filter-btn" data-target="riders" data-filter="rechazado">Rechazados</button>
+                            </div>
+                        </div>
+                        <div id="ridersList" style="display:flex; flex-direction:column; gap:0.75rem;">
+                            <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
@@ -530,6 +599,10 @@
             <!-- Populated dynamically via JS -->
         </div>
         <div class="drawer-footer">
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.8rem; color: #10b981; margin-bottom: 0.75rem; text-align: center; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+                <span>Aceptamos <strong>Contraentrega</strong> (Efectivo) y <strong>QR Simple</strong></span>
+            </div>
             <div class="summary-row">
                 <span>Subtotal</span>
                 <span id="cartSubtotal">0.00 Bs</span>
@@ -542,7 +615,7 @@
                 <span>Total Estimado</span>
                 <span id="cartTotal">0.00 Bs</span>
             </div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" id="btnCheckout">Proceder al Checkout</button>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem; font-weight: 700; background: linear-gradient(135deg, #f97316, #ef4444); border: none;" id="btnCheckout">Proceder al Pago (Contraentrega o QR) ➔</button>
         </div>
     </div>
 
@@ -550,7 +623,7 @@
     <div class="modal" id="checkoutModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i data-lucide="credit-card"></i> Completar Pedido</h3>
+                <h3><i data-lucide="credit-card"></i> Completar Pedido y Seleccionar Pago</h3>
                 <button class="close-drawer" id="btnCancelCheckout" style="font-size: 1.5rem; background:none; border:none; color:var(--text-secondary); cursor:pointer;">&times;</button>
             </div>
             <div class="modal-body">
@@ -559,18 +632,21 @@
                     <div>
                         <h3>1. Ubicación de Entrega</h3>
                         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                            Haz clic en el mapa para simular tu dirección de entrega. Se calculará la distancia desde la tienda central (punto morado) en tiempo real.
+                            Haz clic en el mapa para marcar tu dirección o pulsa el botón para usar tu ubicación sugerida.
                         </p>
-                        <div class="gps-selector-box" style="height: 220px;">
+                        <div class="gps-selector-box" style="height: 200px;">
                             <div id="gpsSelectorMap" style="width: 100%; height: 100%;"></div>
                         </div>
-                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-top: 0.75rem; font-size: 0.85rem;" id="logisticsResults">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnUseDefaultLocation" style="width: 100%; margin-top: 0.4rem; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+                            <i data-lucide="map-pin"></i> Usar Dirección Sugerida (Sopocachi Central)
+                        </button>
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-top: 0.6rem; font-size: 0.85rem;" id="logisticsResults">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
                                 <span class="text-secondary">Distancia:</span>
                                 <span class="font-bold" id="lblDistance">Elige en el mapa</span>
                             </div>
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                                <span class="text-secondary">Envío:</span>
+                                <span class="text-secondary">Costo de Envío:</span>
                                 <span class="font-bold" id="lblShippingCost">-</span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
@@ -582,31 +658,42 @@
 
                     <!-- Right: Payment & Confirmation -->
                     <div>
-                        <h3>2. Método de Pago</h3>
-                        <div class="payment-method-selector">
-                            <div class="payment-option-card active" id="payOptQr">
-                                <i data-lucide="qr-code"></i>
-                                <span>Pago QR</span>
+                        <h3>2. Elige tu Método de Pago</h3>
+                        <div class="payment-method-selector" style="margin-bottom: 1rem;">
+                            <div class="payment-option-card active" id="payOptCash" style="cursor: pointer;">
+                                <i data-lucide="banknote" style="color: #10b981; width: 22px; height: 22px;"></i>
+                                <span style="font-size: 0.85rem; font-weight: 700; color: #10b981;">Contraentrega</span>
+                                <small style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Paga en efectivo al recibir</small>
                             </div>
-                            <div class="payment-option-card" id="payOptCash">
-                                <i data-lucide="hand-coins"></i>
-                                <span>Contraentrega</span>
+                            <div class="payment-option-card" id="payOptQr" style="cursor: pointer;">
+                                <i data-lucide="qr-code" style="color: var(--accent-purple); width: 22px; height: 22px;"></i>
+                                <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent-purple);">Pago con QR</span>
+                                <small style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">Transferencia bancaria</small>
                             </div>
                         </div>
 
+                        <!-- Cash on Delivery Details block (Default Active) -->
+                        <div id="cashDetailsBlock" style="display: block; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.85rem; border-radius: var(--radius-md); font-size: 0.82rem; margin-bottom: 1rem;">
+                            <p style="color: #10b981; font-weight: 700; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                                <i data-lucide="check-circle-2" style="width: 15px; height: 15px;"></i> Modalidad: Pago Contraentrega en Efectivo
+                            </p>
+                            <p class="text-secondary" style="margin-bottom: 0.35rem;">Pagas directamente al repartidor cuando toque tu puerta con tus hamburguesas calientes.</p>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">✓ Sin trámites ni comprobantes bancarios. Tu pedido se despacha de inmediato.</p>
+                        </div>
+
                         <!-- QR Image Upload Block -->
-                        <div id="qrUploadBlock">
-                            <label style="display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Escanea el QR o sube el Comprobante:</label>
+                        <div id="qrUploadBlock" style="display: none; background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.25); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 0.4rem;">
+                                <i data-lucide="scan" style="width:14px;height:14px;vertical-align:middle;"></i> Escanea el QR Oficial de Burger 24/7:
+                            </label>
                             
-                            <!-- Fake QR display to look good -->
-                            <div style="text-align: center; margin-bottom: 1rem; background: #fff; padding: 0.5rem; border-radius: var(--radius-md); width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 0 15px rgba(255,255,255,0.1);">
-                                <!-- Standard generic QR mock -->
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Burger247Checkout" alt="QR Code" style="display: block; width: 100px; height:100px;">
+                            <div style="text-align: center; margin-bottom: 0.75rem; background: #fff; padding: 0.4rem; border-radius: var(--radius-md); width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 0 15px rgba(255,255,255,0.1);">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=95x95&data=Burger247Checkout" alt="QR Code" style="display: block; width: 95px; height:95px;">
                             </div>
 
-                            <div class="file-upload-styled">
-                                <i data-lucide="upload-cloud"></i>
-                                <p>Sube tu comprobante bancario (JPG, PNG, PDF)</p>
+                            <div class="file-upload-styled" style="padding: 0.6rem;">
+                                <i data-lucide="upload-cloud" style="width: 18px; height: 18px; margin-bottom: 0.2rem;"></i>
+                                <p style="font-size: 0.78rem; margin: 0;">Sube captura de tu comprobante (JPG, PNG)</p>
                                 <input type="file" id="fileQrComprobante" accept="image/*,application/pdf">
                             </div>
                             <div class="file-upload-preview" id="qrUploadPreview" style="display: none;">
@@ -615,18 +702,14 @@
                             </div>
                         </div>
 
-                        <!-- Cash on Delivery Details block -->
-                        <div id="cashDetailsBlock" style="display: none; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); padding: 1rem; border-radius: var(--radius-md); font-size: 0.85rem;">
-                            <p style="color: var(--accent-amber); font-weight: 600; margin-bottom: 0.5rem;"><i data-lucide="info" style="width: 14px; height:14px; vertical-align: middle;"></i> Pago en Efectivo</p>
-                            <p class="text-secondary">Pagarás al Rider en efectivo una vez recibas tu pedido de hamburguesas. Por favor ten el monto exacto listo si es posible.</p>
-                        </div>
-
-                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                            <div class="summary-row total" style="margin-top: 0; padding-top: 0; border: none; margin-bottom: 1rem;">
-                                <span>Total Final:</span>
+                        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                            <div class="summary-row total" style="margin-top: 0; padding-top: 0; border: none; margin-bottom: 0.75rem;">
+                                <span>Total Final a Pagar:</span>
                                 <span id="lblCheckoutTotal">0.00 Bs</span>
                             </div>
-                            <button class="btn btn-primary" style="width: 100%;" id="btnPlaceOrder" disabled>Confirmar y Enviar Pedido</button>
+                            <button class="btn btn-primary" style="width: 100%; font-weight: 700; padding: 0.75rem; background: linear-gradient(135deg, #10b981, #059669); border: none;" id="btnPlaceOrder" disabled>
+                                Confirmar Pedido (Pagar Contraentrega)
+                            </button>
                         </div>
                     </div>
                 </div>

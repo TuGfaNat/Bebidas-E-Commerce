@@ -16,7 +16,7 @@ import hashlib
 import base64
 import math
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
@@ -147,11 +147,60 @@ ORDERS_DB = [
         "total": 45.00,
         "latitud": -16.5020,
         "longitud": -68.1310,
+        "motivo_cancelacion": None,
+        "qr_comprobante_url": None,
+        "created_at": (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat(),
+        "updated_at": (datetime.now(timezone.utc) - timedelta(hours=5)).isoformat(),
+        "created_by": 1,
+        "updated_by": 3
+    },
+    {
+        "id": 2,
+        "cliente_id": 4,
+        "rider_id": 2,
+        "estado_pago": "contraentrega",
+        "estado_pedido": "rechazado",
+        "total": 36.00,
+        "latitud": -16.5120,
+        "longitud": -68.1250,
+        "motivo_cancelacion": "Rider reportó imposibilidad de despacho (Zona fuera de cobertura / lluvia)",
+        "qr_comprobante_url": None,
+        "created_at": (datetime.now(timezone.utc) - timedelta(hours=4)).isoformat(),
+        "updated_at": (datetime.now(timezone.utc) - timedelta(hours=3, minutes=30)).isoformat(),
+        "created_by": 4,
+        "updated_by": 2
+    },
+    {
+        "id": 3,
+        "cliente_id": 1,
+        "rider_id": 2,
+        "estado_pago": "pagado_qr",
+        "estado_pedido": "entregado",
+        "total": 58.00,
+        "latitud": -16.5080,
+        "longitud": -68.1330,
+        "motivo_cancelacion": None,
+        "qr_comprobante_url": "/uploads/qr/comprobante_carlos1.jpg",
+        "created_at": (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat(),
+        "updated_at": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
+        "created_by": 1,
+        "updated_by": 2
+    },
+    {
+        "id": 4,
+        "cliente_id": 1,
+        "rider_id": None,
+        "estado_pago": "contraentrega",
+        "estado_pedido": "pendiente",
+        "total": 44.00,
+        "latitud": -16.5090,
+        "longitud": -68.1340,
+        "motivo_cancelacion": None,
         "qr_comprobante_url": None,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "created_by": 1,
-        "updated_by": 3
+        "updated_by": 1
     }
 ]
 
@@ -162,6 +211,46 @@ ORDER_DETAILS_DB = [
         "producto_id": 1,
         "cantidad": 1,
         "precio_unitario": 22.00,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 1,
+        "updated_by": 1
+    },
+    {
+        "id": 2,
+        "pedido_id": 2,
+        "producto_id": 3,
+        "cantidad": 1,
+        "precio_unitario": 36.00,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 4,
+        "updated_by": 4
+    },
+    {
+        "id": 3,
+        "pedido_id": 3,
+        "producto_id": 2,
+        "cantidad": 1,
+        "precio_unitario": 32.00,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 1,
+        "updated_by": 1
+    },
+    {
+        "id": 4,
+        "pedido_id": 3,
+        "producto_id": 10,
+        "cantidad": 2,
+        "precio_unitario": 6.00,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 1,
+        "updated_by": 1
+    },
+    {
+        "id": 5,
+        "pedido_id": 4,
+        "producto_id": 6,
+        "cantidad": 1,
+        "precio_unitario": 44.00,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "created_by": 1,
         "updated_by": 1
@@ -185,13 +274,15 @@ AUDIT_LOGS = [
 
 USERS_DB = {
     'admin@mail.com': {'pass': 'admin', 'id': 3, 'nombre': 'Admin Central', 'role': 'super_usuario', 'ci_status': 'verified'},
-    'pedro@mail.com': {'pass': 'pedro', 'id': 2, 'nombre': 'Pedro Gómez', 'role': 'rider', 'ci_status': 'verified'},
-    'carlos@mail.com': {'pass': 'carlos', 'id': 1, 'nombre': 'Carlos Pérez', 'role': 'cliente', 'ci_status': 'verified'},
-    'maria@mail.com': {'pass': 'maria', 'id': 4, 'nombre': 'María López (Pendiente)', 'role': 'cliente', 'ci_status': 'pending'},
-    'juan@mail.com': {'pass': 'juan', 'id': 5, 'nombre': 'Juan Rodríguez (Pendiente)', 'role': 'rider', 'ci_status': 'pending'}
+    'pedro@mail.com': {'pass': 'pedro', 'id': 2, 'nombre': 'Pedro Gómez', 'role': 'rider', 'ci_status': 'verified', 'fecha_nacimiento': '1995-10-22', 'ci_url': '/uploads/ci/ci_pedro.jpg'},
+    'carlos@mail.com': {'pass': 'carlos', 'id': 1, 'nombre': 'Carlos Pérez', 'role': 'cliente', 'ci_status': 'verified', 'fecha_nacimiento': '1992-05-15', 'ci_url': '/uploads/ci/ci_carlos.jpg'},
+    'maria@mail.com': {'pass': 'maria', 'id': 4, 'nombre': 'María López', 'role': 'cliente', 'ci_status': 'pending', 'fecha_nacimiento': '2000-09-12', 'ci_url': '/uploads/ci/ci_maria.jpg'},
+    'juan@mail.com': {'pass': 'juan', 'id': 5, 'nombre': 'Juan Rodríguez', 'role': 'rider', 'ci_status': 'pending', 'fecha_nacimiento': '1996-03-08', 'ci_url': '/uploads/ci/ci_juan.jpg'},
+    'roberto@mail.com': {'pass': 'roberto', 'id': 6, 'nombre': 'Roberto Flores', 'role': 'cliente', 'ci_status': 'rejected', 'fecha_nacimiento': '1998-07-20', 'ci_url': '/uploads/ci/ci_roberto.jpg'},
+    'marcos@mail.com': {'pass': 'marcos', 'id': 7, 'nombre': 'Marcos Vargas', 'role': 'rider', 'ci_status': 'rejected', 'fecha_nacimiento': '1993-11-14', 'ci_url': '/uploads/ci/ci_marcos.jpg'},
 }
 
-# Documentación de riders (Pedro aprobado, Juan pendiente)
+# Documentación de riders (Pedro aprobado, Juan pendiente, Marcos rechazado)
 RIDER_DOCS_DB = [
     {
         "id": 1,
@@ -216,6 +307,18 @@ RIDER_DOCS_DB = [
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "created_by": 5,
         "updated_by": 5
+    },
+    {
+        "id": 3,
+        "rider_id": 7,
+        "licencia_url": "/uploads/docs/licencia_marcos.jpg",
+        "seguro_url": "/uploads/docs/seguro_marcos.jpg",
+        "cv_url": "/uploads/docs/cv_marcos.pdf",
+        "estado_aprobacion": "rechazado",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": 3,
+        "updated_by": 3
     }
 ]
 
@@ -423,8 +526,55 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             }, user_id=payload.get('user_id'), action="GET_PENDING_APPROVALS"))
             return
 
+        # Microservice: Admin All Users (GET) — compradores + riders por estado
+        if path in ['/microservices/Auth/admin_users.php', '/microservices/Auth/admin_users']:
+            payload, status, err = self.check_admin_auth()
+            if not payload:
+                self.send_json(get_audit_envelope("error", None, None, err, action="ADMIN_USERS_AUTH"), status=status)
+                return
+
+            compradores = []
+            for email_k, u in USERS_DB.items():
+                if u.get('role') == 'cliente':
+                    compradores.append({
+                        "id": u['id'],
+                        "nombre": u['nombre'],
+                        "email": email_k,
+                        "fecha_nacimiento": u.get('fecha_nacimiento', 'N/A'),
+                        "ci_url": u.get('ci_url', '/uploads/ci/default.jpg'),
+                        "ci_status": u['ci_status']
+                    })
+            compradores.sort(key=lambda x: x['id'])
+
+            riders_all = []
+            for d in RIDER_DOCS_DB:
+                r_user = next((u for u in USERS_DB.values() if u['id'] == d.get('rider_id')), None)
+                r_email = next((k for k, v in USERS_DB.items() if v['id'] == d.get('rider_id')), '')
+                if r_user:
+                    riders_all.append({
+                        "doc_id": d['id'],
+                        "rider_id": d.get('rider_id'),
+                        "nombre": r_user['nombre'],
+                        "email": r_email,
+                        "fecha_nacimiento": r_user.get('fecha_nacimiento', 'N/A'),
+                        "ci_url": r_user.get('ci_url', ''),
+                        "licencia_url": d.get('licencia_url', ''),
+                        "seguro_url": d.get('seguro_url', ''),
+                        "cv_url": d.get('cv_url', ''),
+                        "estado_aprobacion": d.get('estado_aprobacion'),
+                        "ci_status": r_user.get('ci_status', 'pending')
+                    })
+            riders_all.sort(key=lambda x: x['rider_id'])
+
+            self.send_json(get_audit_envelope("success", {
+                "compradores": compradores,
+                "riders": riders_all
+            }, user_id=payload.get('user_id'), action="GET_ALL_USERS"))
+            return
+
         # Microservice: Catalog REST (GET)
         if path in ['/microservices/Catalog/catalog.php', '/microservices/Catalog/catalog']:
+
             prod_id = query_params.get('id', [None])[0]
             cat_filter = query_params.get('categoria', [None])[0]
 
@@ -1092,7 +1242,85 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             self.handle_rider_delivery(data, query_params)
             return
 
+        # Microservice: Admin User Status Update (PUT) — habilitar / rechazar / poner pendiente
+        if path in ['/microservices/Auth/admin_users.php', '/microservices/Auth/admin_users']:
+            payload, status_code, err = self.check_admin_auth()
+            if not payload:
+                self.send_json(get_audit_envelope("error", None, None, err, action="ADMIN_USERS_AUTH"), status=status_code)
+                return
+
+            admin_id = payload.get('user_id')
+            target_id = data.get('target_id')
+            tipo = data.get('tipo')  # 'cliente' or 'rider'
+            nuevo_estado = data.get('estado')  # 'verified', 'pending', 'rejected' / 'aprobado', 'pendiente', 'rechazado'
+
+            if not target_id or not tipo or not nuevo_estado:
+                self.send_json(get_audit_envelope("error", None, admin_id, "Faltan parámetros: target_id, tipo, estado.", action="ADMIN_USERS_UPDATE"), status=400)
+                return
+
+            try:
+                target_id = int(target_id)
+            except (ValueError, TypeError):
+                self.send_json(get_audit_envelope("error", None, admin_id, "target_id inválido.", action="ADMIN_USERS_UPDATE"), status=400)
+                return
+
+            if tipo == 'cliente':
+                ci_map = {'verified': 'verified', 'aprobado': 'verified', 'pending': 'pending', 'pendiente': 'pending', 'rejected': 'rejected', 'rechazado': 'rejected'}
+                mapped = ci_map.get(nuevo_estado, 'pending')
+                user_found = next((u for u in USERS_DB.values() if u['id'] == target_id), None)
+                if not user_found:
+                    self.send_json(get_audit_envelope("error", None, admin_id, "Cliente no encontrado.", action="ADMIN_USERS_UPDATE"), status=404)
+                    return
+                old = user_found.get('ci_status')
+                user_found['ci_status'] = mapped
+                AUDIT_LOGS.append({
+                    "id": len(AUDIT_LOGS) + 1, "tabla_afectada": "users", "registro_id": target_id,
+                    "accion": "UPDATE", "datos_anteriores": json.dumps({"ci_status": old}),
+                    "datos_nuevos": json.dumps({"ci_status": mapped}), "ip_address": self.get_client_ip(),
+                    "created_at": datetime.now(timezone.utc).isoformat(), "created_by": admin_id, "updated_by": admin_id
+                })
+                self.send_json(get_audit_envelope("success", {"mensaje": "Estado del cliente actualizado.", "target_id": target_id, "nuevo_estado": mapped}, user_id=admin_id, action="UPDATE_CLIENTE_STATUS"))
+                return
+
+            elif tipo == 'rider':
+                doc_map = {'aprobado': 'aprobado', 'verified': 'aprobado', 'pendiente': 'pendiente', 'pending': 'pendiente', 'rechazado': 'rechazado', 'rejected': 'rechazado'}
+                mapped_doc = doc_map.get(nuevo_estado, 'pendiente')
+                ci_map_r = {'aprobado': 'verified', 'pendiente': 'pending', 'rechazado': 'rejected'}
+                mapped_ci = ci_map_r.get(mapped_doc, 'pending')
+
+                doc_found = next((d for d in RIDER_DOCS_DB if d.get('rider_id') == target_id), None)
+                if not doc_found:
+                    self.send_json(get_audit_envelope("error", None, admin_id, "Expediente del rider no encontrado.", action="ADMIN_USERS_UPDATE"), status=404)
+                    return
+                old_doc = doc_found.get('estado_aprobacion')
+                doc_found['estado_aprobacion'] = mapped_doc
+                doc_found['updated_at'] = datetime.now(timezone.utc).isoformat()
+                doc_found['updated_by'] = admin_id
+
+                user_rider = next((u for u in USERS_DB.values() if u['id'] == target_id), None)
+                if user_rider:
+                    old_ci = user_rider.get('ci_status')
+                    user_rider['ci_status'] = mapped_ci
+                    AUDIT_LOGS.append({
+                        "id": len(AUDIT_LOGS) + 1, "tabla_afectada": "users", "registro_id": target_id,
+                        "accion": "UPDATE", "datos_anteriores": json.dumps({"ci_status": old_ci}),
+                        "datos_nuevos": json.dumps({"ci_status": mapped_ci}), "ip_address": self.get_client_ip(),
+                        "created_at": datetime.now(timezone.utc).isoformat(), "created_by": admin_id, "updated_by": admin_id
+                    })
+                AUDIT_LOGS.append({
+                    "id": len(AUDIT_LOGS) + 1, "tabla_afectada": "documentacion_rider", "registro_id": doc_found['id'],
+                    "accion": "UPDATE", "datos_anteriores": json.dumps({"estado_aprobacion": old_doc}),
+                    "datos_nuevos": json.dumps({"estado_aprobacion": mapped_doc}), "ip_address": self.get_client_ip(),
+                    "created_at": datetime.now(timezone.utc).isoformat(), "created_by": admin_id, "updated_by": admin_id
+                })
+                self.send_json(get_audit_envelope("success", {"mensaje": "Estado del rider actualizado.", "target_id": target_id, "nuevo_estado": mapped_doc}, user_id=admin_id, action="UPDATE_RIDER_STATUS"))
+                return
+            else:
+                self.send_json(get_audit_envelope("error", None, admin_id, "tipo inválido. Use 'cliente' o 'rider'.", action="ADMIN_USERS_UPDATE"), status=400)
+                return
+
         self.send_json(get_audit_envelope("error", None, None, "Método HTTP no soportado para este endpoint.", action="METHOD_NOT_ALLOWED"), status=405)
+
 
     def do_DELETE(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -1676,9 +1904,45 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 }
             })
 
+        # Historial de pedidos atendidos o gestionados por este rider
+        historial = []
+        rider_orders = [o for o in ORDERS_DB if o.get('rider_id') == user_id]
+        for p in reversed(rider_orders):
+            lat_c = float(p.get('latitud', -16.5000))
+            lon_c = float(p.get('longitud', -68.1193))
+            dist_km = haversine_km(lat_c, lon_c, lat_store, lon_store)
+            client_user = next((u for u in USERS_DB.values() if u['id'] == p.get('cliente_id')), None)
+            order_items = [d for d in ORDER_DETAILS_DB if d.get('pedido_id') == p['id']]
+            items_fmt = []
+            for item in order_items:
+                prod = next((pr for pr in CATALOG_PRODUCTS if pr['id'] == item.get('producto_id')), None)
+                items_fmt.append({
+                    'producto_id': item.get('producto_id'),
+                    'nombre': prod['nombre'] if prod else 'Producto',
+                    'cantidad': item.get('cantidad', 1),
+                    'precio_unitario': item.get('precio_unitario', 0.0)
+                })
+
+            historial.append({
+                'pedido_id': p['id'],
+                'cliente_id': p.get('cliente_id'),
+                'cliente_nombre': client_user['nombre'] if client_user else 'Cliente',
+                'cliente_email': client_user.get('email', '') if client_user else '',
+                'total': float(p.get('total', 0.0)),
+                'estado_pago': p.get('estado_pago'),
+                'estado_pedido': p.get('estado_pedido'),
+                'motivo_cancelacion': p.get('motivo_cancelacion', ''),
+                'fecha_creacion': p.get('created_at'),
+                'fecha_actualizacion': p.get('updated_at'),
+                'items': items_fmt,
+                'distancia_km': round(dist_km, 2)
+            })
+
         self.send_json(get_audit_envelope("success", {
             "pedidos_disponibles": disponibles,
-            "total": len(disponibles)
+            "historial_pedidos": historial,
+            "total": len(disponibles),
+            "total_historial": len(historial)
         }, user_id=user_id, action="LIST_PENDING_ORDERS"))
 
     def handle_rider_assignment_post(self, data, query_params):
@@ -1689,6 +1953,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
 
         user_id = payload.get('user_id')
         role = payload.get('role')
+        action = data.get('action') or query_params.get('action', ['accept'])[0]
         pedido_id_val = data.get('pedido_id') or query_params.get('pedido_id', [None])[0]
         if not pedido_id_val:
             self.send_json(get_audit_envelope("error", None, user_id, "Falta el parámetro obligatorio 'pedido_id'.", action="ASSIGNMENT"), status=400)
@@ -1698,6 +1963,40 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             pedido_id = int(pedido_id_val)
         except ValueError:
             self.send_json(get_audit_envelope("error", None, user_id, "ID de pedido inválido.", action="ASSIGNMENT"), status=400)
+            return
+
+        # Acción de rechazo directo de pedido por parte del rider
+        if action == 'reject':
+            motivo = data.get('motivo', 'Rechazado por el repartidor (Imposibilidad de despacho)')
+            order = next((o for o in ORDERS_DB if o['id'] == pedido_id), None)
+            if not order:
+                self.send_json(get_audit_envelope("error", None, user_id, f"Pedido #{pedido_id} no encontrado.", action="REJECT_ORDER"), status=404)
+                return
+            now_iso = datetime.now(timezone.utc).isoformat()
+            old_st = order.get('estado_pedido')
+            order['rider_id'] = user_id
+            order['estado_pedido'] = 'rechazado'
+            order['motivo_cancelacion'] = motivo
+            order['updated_at'] = now_iso
+            order['updated_by'] = user_id
+            AUDIT_LOGS.append({
+                "id": len(AUDIT_LOGS) + 1,
+                "tabla_afectada": "pedidos",
+                "registro_id": pedido_id,
+                "accion": "UPDATE",
+                "datos_anteriores": json.dumps({"estado_pedido": old_st}),
+                "datos_nuevos": json.dumps({"estado_pedido": "rechazado", "motivo": motivo, "rider_id": user_id}),
+                "ip_address": self.get_client_ip(),
+                "created_at": now_iso,
+                "created_by": user_id,
+                "updated_by": user_id
+            })
+            self.send_json(get_audit_envelope("success", {
+                "mensaje": f"Pedido #{pedido_id} registrado como rechazado en tu historial.",
+                "pedido_id": pedido_id,
+                "estado_pedido": "rechazado",
+                "rider_id": user_id
+            }, user_id=user_id, action="REJECT_ORDER"))
             return
 
         # Restricción: Max 1 pedido activo simultáneamente
@@ -1741,6 +2040,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             "estado_pedido": "asignado",
             "rider_id": user_id
         }, user_id=user_id, action="ACCEPT_ORDER"))
+
 
     def handle_rider_delivery(self, data, query_params):
         payload, status, err = self.check_jwt_auth()

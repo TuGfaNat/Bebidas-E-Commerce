@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
 """
 Módulo de Contenido de la Monografía BTH 2026 - Parte 3
-Contiene: Capítulos VIII al XIV, Anexos, y Diagramas Mermaid completos del Sistema.
+Contiene: Capítulos VIII al XIV, Anexos y Diagramas Mermaid completos del Sistema.
+Actualizado específicamente según los requerimientos del usuario:
+- Metodología de Software: Modelo en Cascada Clásico (Waterfall) explicado y justificado para proyecto de colegio BTH.
+- 10.1 Análisis (Requerimientos RF y RNF, Casos de Uso en Mermaid)
+- 10.2 Diseño (Diagramas C4, DER relacional 3FN, Secuencia, Estados)
+- 10.3 Implementación (Frontend, Backend, Conexiones y Código clave)
+- 10.4 Verificación (Pruebas unitarias, integración y funcionales)
+- 10.5 Mantenimiento (Backups de base de datos y prevención)
+- 10.6 Cronograma de Actividades (Gantt secuencial por fases de la Cascada)
+- 10.7 Recursos:
+    - 10.7.1 Recursos Materiales
+    - 10.7.2 Recursos Humanos: 2 Estudiantes de Colegio como los Desarrolladores (Devs) + Tutor + Asesor
+    - 10.7.3 Presupuesto económico detallado en Bolivianos (Bs.)
 """
 
 CAPITULO_VIII = {
@@ -10,24 +22,30 @@ CAPITULO_VIII = {
         {
             "subtitulo": "8.1 PROPUESTA DE INNOVACIÓN",
             "contenido": (
-                "La propuesta de innovación del presente proyecto radica en la creación de un ecosistema tecnológico integral, autónomo y de soberanía propia para la empresa gastronómica nocturna 'Burger 24/7' en La Paz. La innovación se articula en cuatro ejes transformadores:\n\n"
-                "1. Independencia Económica Frente a Plataformas Intermediarias: Elimina la dependencia de agregadores comerciales transnacionales (cuyas comisiones de hasta 30% estrangulan a las microempresas locales), recuperando la totalidad del margen de utilidad y canalizando los pedidos directamente a cocina en tiempo real sin recargos ocultos.\n\n"
-                "2. Transaccionalidad Concurrente Inmune a Sobreventas: A diferencia de los pedidos informales por WhatsApp o tiendas web básicas que no bloquean inventario en base de datos, el sistema implementa un motor transaccional con aislamiento ACID y bloqueo pesimista a nivel de tupla (`SELECT ... FOR UPDATE`), garantizando que la última hamburguesa en stock sea adjudicada de forma determinista al primer comprador, evitando la frustración del comensal.\n\n"
-                "3. Conciliación Criptográfica y Pasarela Simple QR: Sustituye la verificación visual empírica de capturas de pantalla bancarias por un flujo digital que asocia de forma unívoca el comprobante bancario al ID de orden en la base de datos, requiriendo validación en el panel administrativo antes del despacho.\n\n"
-                "4. Tarificación Geodésica Automatizada por Haversine: Implementa un servicio de cálculo matemático en Python que determina la distancia física real entre la cocina en Sopocachi y el domicilio del cliente, calculando tarifas justas y transparentes tanto para el consumidor como para el repartidor.\n\n"
-                "5. Arqueo Ciego y Expediente Laboral de Riders: Introduce un mecanismo de control de caja donde el repartidor declara el efectivo recaudado al final de su turno sin conocer previamente el monto del sistema, previniendo descuadres y consolidando la doble confirmación administrativa."
+                "La propuesta de innovación del presente proyecto surge de la necesidad imperiosa de modernizar y formalizar los canales de venta de la empresa gastronómica nocturna 'Burger 24/7' en la ciudad de La Paz, mediante el desarrollo de una plataforma tecnológica propia, soberana y adaptada a su realidad económica.\n\n"
+                "A nivel escolar y de formación técnica en el Bachillerato Técnico Humanístico (BTH), la innovación no reside únicamente en inventar tecnologías aisladas, sino en integrar de manera armónica herramientas de software abiertas para resolver problemáticas concretas de la comunidad. La propuesta se articula en cinco ejes innovadores:\n\n"
+                "1. Independencia y Soberanía Comercial (0% Comisiones): Rompe la dependencia asfixiante de las aplicaciones de delivery transnacionales (que retienen entre el 22% y el 30% del valor de cada venta), permitiendo que la totalidad de los ingresos beneficie directamente a la cocina local paceña y ofreciendo precios más justos al consumidor.\n\n"
+                "2. Control Transaccional Concurrente Inmune a Sobreventas: Sustituye los pedidos informales por WhatsApp (donde la comunicación manual provocaba venta de productos agotados) por un motor web transaccional con aislamiento ACID y bloqueo pesimista (`SELECT ... FOR UPDATE`), garantizando que cada hamburguesa se adjudique con exactitud matemática al primer cliente que confirme la orden.\n\n"
+                "3. Pasarela Interbancaria Simple QR con Validación Antifraude: Incorpora la tecnología nacional de códigos QR (estándar EMVCo / Simple) con verificación documental previa en el panel de cocina, eliminando estafas por capturas de transferencias falsificadas.\n\n"
+                "4. Tarificación Geodésica Automatizada por Haversine: Implementa un servicio de cálculo matemático en Python que determina la distancia real entre Sopocachi y el destino, fijando costos de envío transparentes y un recargo nocturno justo para el repartidor.\n\n"
+                "5. Arqueo Ciego de Caja Chica y Dignificación Laboral de Repartidores: Introduce un mecanismo donde el repartidor declara el dinero en efectivo recaudado sin conocer de antemano el saldo teórico del sistema, previniendo descuadres y formalizando la relación de trabajo de jóvenes repartidores."
             )
         },
         {
             "subtitulo": "8.2 RESULTADOS ESPERADOS",
             "contenido": (
-                "Con la implementación del sistema informático Burger 24/7, se establecieron metas operativas y cuantitativas medibles:\n\n"
-                "• Reducción del 100% en incidencias de sobreventa de productos por compras simultáneas en horarios pico.\n\n"
-                "• Disminución del tiempo promedio de recepción y confirmación de comandas de 12 minutos (vía chat manual) a menos de 45 segundos (mediante interfaz web reactiva y automatizada).\n\n"
-                "• Reducción a 0% de pérdidas económicas por comprobantes falsificados o clonados del sistema interbancario Simple QR.\n\n"
-                "• Exactitud del 100% en el cálculo de distancias de envío y liquidación de costos de combustible para la flota de repartidores.\n\n"
-                "• Cero discrepancias en el arqueo y cierre ciego de caja chica en efectivo entre repartidores y administración general.\n\n"
-                "• Incremento proyectado del 35% en el volumen mensual de órdenes procesadas gracias a la disponibilidad ininterrumpida 24/7 de la plataforma."
+                "Con la implementación del sistema informático Burger 24/7, el equipo de desarrollo estudiantil proyectó los siguientes resultados cuantitativos y cualitativos:\n\n"
+                "A. Resultados Cuantitativos:\n"
+                "• Reducción al 0% de incidencias por sobreventa de productos en horarios pico de madrugada.\n"
+                "• Disminución del tiempo de recepción, confirmación y pase a cocina de pedidos de 12 minutos a menos de 45 segundos.\n"
+                "• Reducción al 0% de pérdidas financieras por comprobantes de pago bancarios QR simulados o clonados.\n"
+                "• Precisión del 100% en el cálculo de distancias ortodrómicas y tarifas de envío mediante el algoritmo de Haversine.\n"
+                "• Cero discrepancias en el arqueo y cierre ciego de caja chica en efectivo entre repartidores y gerencia.\n"
+                "• Ahorro económico directo de más de 9.000 Bs. mensuales por concepto de comisiones no pagadas a empresas intermediarias.\n\n"
+                "B. Resultados Cualitativos:\n"
+                "• Fidelización de los clientes paceños gracias a una experiencia de compra nocturna ágil, transparente y confiable.\n"
+                "• Formalización laboral y protección de la integridad de los repartidores urbanos mediante cuentas y expedientes de identidad auditados.\n"
+                "• Consolidación del aprendizaje práctico y productivo de los dos estudiantes desarrolladores del BTH, demostrando la capacidad de la juventud boliviana para crear software de impacto real."
             )
         }
     ]
@@ -39,19 +57,19 @@ CAPITULO_IX = {
         {
             "subtitulo": "9.1 TIPO DE INVESTIGACIÓN",
             "contenido": (
-                "La presente monografía se enmarca en la Investigación Aplicada, Tecnológica y Descriptiva con enfoque experimental/propositivo:\n\n"
-                "• Aplicada: Porque no se limita a la especulación conceptual o teórica, sino que utiliza conocimientos consolidados de las ciencias de la computación e ingeniería de software para resolver una problemática económica y operativa real y concreta en el sector productivo de La Paz.\n\n"
-                "• Descriptiva: Describe de manera minuciosa las características de los procesos de negocio gastronómicos nocturnos, los cuellos de botella en la gestión de pedidos, los flujos transaccionales y los requisitos técnicos de seguridad y concurrencia.\n\n"
-                "• Tecnológica y Experimental: Involucra el diseño, codificación, prueba y verificación de un artefacto informático funcional (software), sometiéndolo a pruebas de estrés transaccional, simulación de concurrencia y validación en un entorno controlado."
+                "La presente investigación se tipifica como Investigación Aplicada, Tecnológica y Descriptiva con enfoque experimental/propositivo:\n\n"
+                "• Aplicada: Aplica conocimientos consolidados de las ciencias de la computación (arquitectura cliente-servidor, bases de datos relacionales, criptografía y algoritmia espacial) para resolver un problema operativo real en la microempresa Burger 24/7 en La Paz.\n\n"
+                "• Descriptiva: Detalla exhaustivamente las características del negocio gastronómico nocturno, los cuellos de botella en la gestión de pedidos, los flujos transaccionales y los requisitos técnicos de concurrencia y seguridad.\n\n"
+                "• Tecnológica y Experimental: Involucra el diseño, codificación, prueba y verificación de un producto de software funcional, sometiéndolo a simulaciones controladas de concurrencia y pruebas de laboratorio."
             )
         },
         {
             "subtitulo": "9.2 TÉCNICAS E INSTRUMENTOS DE RECOLECCIÓN DE DATOS",
             "contenido": (
                 "Para el levantamiento de información y modelado de requerimientos se emplearon tres técnicas fundamentales:\n\n"
-                "1. Entrevistas Estructuradas: Realizadas a los propietarios de Burger 24/7, personal de cocina y repartidores urbanos, permitiendo identificar los puntos críticos en el despacho nocturno, la recepción de comprobantes QR y las quejas recurrentes de clientes por demoras.\n\n"
-                "2. Observación Directa y Análisis de Procesos: Seguimiento presencial del flujo de preparación de comandas y coordinación de repartos durante tres jornadas nocturnas de fin de semana (viernes a domingo entre las 21:00 y las 04:00 horas), cuantificando tiempos muertos, extravío de comprobantes y errores de cálculo manual en tarifas de envío.\n\n"
-                "3. Análisis Documental y Normativo: Revisión exhaustiva de la legislación boliviana sobre comercio electrónico (Ley 164), normativas ASFI para pagos móviles Simple, y especificaciones técnicas de estándares internacionales (RFC 7519 para JWT, estándar EMVCo para QR y especificación W3C para APIs web)."
+                "1. Entrevistas Estructuradas: Realizadas al propietario de Burger 24/7, personal de cocina y repartidores urbanos, permitiendo identificar los puntos críticos en el despacho nocturno, la recepción de comprobantes QR y las quejas recurrentes de clientes por demoras.\n\n"
+                "2. Observación Directa de Procesos: Seguimiento presencial del flujo de preparación de comandas y coordinación de repartos durante tres jornadas nocturnas de fin de semana (viernes a domingo entre las 21:00 y las 04:00 horas), cuantificando tiempos muertos, extravío de comprobantes y errores de cálculo manual en tarifas de envío.\n\n"
+                "3. Análisis Documental y Normativo: Revisión de la legislación boliviana sobre comercio electrónico (Ley 164), normativas ASFI para pagos móviles Simple QR, y estándares de calidad de software ISO/IEC 25010."
             )
         }
     ]
@@ -61,16 +79,29 @@ CAPITULO_X = {
     "titulo": "X. METODOLOGÍA DE DESARROLLO DE SOFTWARE",
     "secciones": [
         {
+            "subtitulo": "EXPLICACIÓN Y JUSTIFICACIÓN DE LA METODOLOGÍA: EL MODELO EN CASCADA CLÁSICO (WATERFALL)",
+            "contenido": (
+                "Para la planificación, diseño y construcción del sistema informático Burger 24/7, el equipo de desarrollo estudiantil seleccionó de forma fundamentada la Metodología en Cascada Tradicional (Waterfall Model), propuesta formalmente por Winston Royce en 1970.\n\n"
+                "Justificación de la Selección para el Proyecto Escolar BTH:\n"
+                "En el ámbito pedagógico de un proyecto de grado del Bachillerato Técnico Humanístico (BTH) en Sistemas Informáticos, metodologías corporativas altamente complejas o iterativas (como Scrum, Kanban o SAFe) resultan poco adecuadas debido a que fueron concebidas para grandes corporaciones de software con requerimientos continuamente mutables y equipos multidisciplinarios de decenas de profesionales.\n\n"
+                "Por el contrario, el Modelo en Cascada es el paradigma ideal y más formativo para un equipo de dos estudiantes desarrolladores de colegio por las siguientes razones técnicas y académicas:\n"
+                "1. Claridad y Estabilidad de Requisitos: Los requerimientos de la microempresa gastronómica Burger 24/7 estaban claramente definidos y delimitados desde el inicio (catálogo de menú, checkout seguro, validación QR, ruteo geodésico y arqueo de caja), por lo que no existía riesgo de cambios radicales en el alcance comercial.\n"
+                "2. Secuencialidad y Rigor Pedagógico: El modelo organiza el proyecto en cinco etapas lineales y progresivas (Análisis, Diseño, Implementación/Codificación, Verificación/Pruebas y Mantenimiento), donde cada etapa debe ser completada y documentada rigurosamente antes de iniciar la siguiente, permitiendo al docente tutor del colegio evaluar objetivamente el avance del proyecto.\n"
+                "3. Distribución Equitativa del Trabajo entre 2 Estudiantes: Permitió que los dos desarrolladores planificaran de manera predecible sus responsabilidades sin bloqueos innecesarios, dividiéndose el frontend y el backend durante la fase de codificación sobre una arquitectura ya diseñada y acordada en la fase previa.\n"
+                "4. Facilidad de Documentación Técnica: Cada fase produce entregables claros (documento de requerimientos, diagramas arquitectónicos, código fuente probado y manuales), estructurando de forma natural la presente monografía de grado."
+            )
+        },
+        {
             "subtitulo": "10.1 ANÁLISIS",
             "contenido": (
-                "El análisis de requerimientos del sistema se estructuró bajo el paradigma ágil con enfoque BTH, formalizando las necesidades funcionales y de calidad de la plataforma:\n\n"
+                "La fase de análisis constituye el cimiento del Modelo en Cascada. En esta etapa, el equipo de dos estudiantes analizó los procesos operativos de Burger 24/7 y formalizó las especificaciones funcionales y no funcionales que debe cumplir el sistema:\n\n"
                 "A. Requerimientos Funcionales (RF):\n"
                 "• RF-01 (Catálogo y Menú Digital): El sistema debe desplegar el menú de productos organizado por categorías (Hamburguesas, Bebidas, Combos, Extras) con precios en Bolivianos, imágenes, descripción y stock disponible en tiempo real.\n"
-                "• RF-02 (Carrito de Compras Persistente): El sistema debe permitir agregar, modificar cantidades y eliminar productos en un carrito interactivo, persistiendo su estado incluso ante recargas de página.\n"
+                "• RF-02 (Carrito de Compras Persistente): El sistema debe permitir agregar, modificar cantidades y eliminar productos en un carrito interactivo, persistiendo su estado incluso ante recargas de página mediante LocalStorage.\n"
                 "• RF-03 (Geolocalización del Cliente): El sistema debe capturar las coordenadas de entrega del cliente mediante geolocalización GPS del navegador o selección interactiva sobre mapa cartográfico.\n"
-                "• RF-04 (Cálculo Geodésico de Envío): El sistema debe calcular la distancia ortodrómica exacta hacia Sopocachi y aplicar la tarifa de entrega automatizada con recargo nocturno.\n"
-                "• RF-05 (Checkout y Bloqueo Transaccional): El sistema debe procesar la compra mediante una transacción atómica ACID, adquiriendo bloqueo pesimista (`SELECT ... FOR UPDATE`) sobre el stock.\n"
-                "• RF-06 (Pago por Código QR): El sistema debe presentar el código QR dinámico de la empresa y permitir adjuntar la captura del comprobante bancario para validación.\n"
+                "• RF-04 (Cálculo Geodésico de Envío): El sistema debe calcular la distancia ortodrómica exacta hacia Sopocachi y aplicar la tarifa de entrega automatizada con recargo nocturno mediante el script Python de Haversine.\n"
+                "• RF-05 (Checkout y Bloqueo Transaccional): El sistema debe procesar la compra mediante una transacción atómica ACID, adquiriendo bloqueo pesimista (`SELECT ... FOR UPDATE`) sobre el stock para erradicar sobreventas.\n"
+                "• RF-06 (Pago por Código QR): El sistema debe presentar el código QR dinámico de la empresa y permitir adjuntar la captura del comprobante bancario para validación administrativa.\n"
                 "• RF-07 (Pago Contra Entrega en Efectivo): El sistema debe registrar pedidos para pago en efectivo, indicando el monto exacto con el que cancelará el cliente para el cálculo del cambio.\n"
                 "• RF-08 (Seguimiento de Pedido en Tiempo Real): El cliente debe poder monitorear el estado evolutivo de su orden (`pendiente_pago`, `pagado`, `en_preparacion`, `en_camino`, `entregado`).\n"
                 "• RF-09 (Registro y Expediente de Repartidores): Los repartidores deben poder registrarse subiendo obligatoriamente su Cédula de Identidad (C.I.) y datos de contacto.\n"
@@ -81,17 +112,17 @@ CAPITULO_X = {
                 "• RF-14 (Monitoreo Transaccional en Vivo): El panel de administración debe refrescar automáticamente cada 10 segundos el flujo de pedidos activos y estado de cocina.\n"
                 "• RF-15 (Ledger de Auditoría Inmutable): Toda acción de negocio debe quedar registrada de forma inalterable en `auditoria_logs` con IP, timestamp UTC y detalles del cambio.\n\n"
                 "B. Requerimientos No Funcionales (RNF):\n"
-                "• RNF-01 (Seguridad y Criptografía): Las contraseñas deben cifrarse con Bcrypt (costo 12) y las sesiones autenticarse mediante tokens JWT con firma HMAC-SHA256.\n"
-                "• RNF-02 (Rendimiento y Latencia): El tiempo de respuesta de los endpoints de la API REST no debe superar los 200 milisegundos bajo carga normal de red local.\n"
-                "• RNF-03 (Concurrencia e Integridad): El sistema debe soportar transacciones concurrentes simultáneas sin generar sobreventas ni corromper saldos de inventario.\n"
-                "• RNF-04 (Diseño Responsivo): La interfaz de usuario debe adaptarse fluidamente a dispositivos móviles (smartphones), tabletas y computadoras de escritorio (Mobile First).\n"
-                "• RNF-05 (Resiliencia Offline): En caso de caída temporal del backend, el frontend debe mantener los datos esenciales del usuario en almacenamiento local (`localStorage`)."
+                "• RNF-01 (Seguridad Criptográfica): Contraseñas resguardadas con Bcrypt (costo 12) y sesiones stateless autenticadas con JWT HMAC-SHA256.\n"
+                "• RNF-02 (Rendimiento y Latencia): Tiempo de respuesta de endpoints REST inferior a 200 ms en red local.\n"
+                "• RNF-03 (Concurrencia e Integridad Transaccional): Soporte de compras simultáneas sin condiciones de carrera mediante MySQL InnoDB ACID.\n"
+                "• RNF-04 (Diseño Responsivo Mobile-First): Interfaz optimizada para pantallas táctiles de smartphones Android e iOS.\n"
+                "• RNF-05 (Resiliencia y Modo Dual): Persistencia local transparente de ítems en carrito si el cliente experimenta cortes momentáneos de conectividad."
             )
         },
         {
             "subtitulo": "10.2 DISEÑO",
             "contenido": (
-                "El diseño del sistema se formalizó a través de diagramas estandarizados en modelado C4, Diagrama Entidad-Relación (DER), diagramas de secuencia y máquinas de estados, especificados en sintaxis Mermaid para su visualización y renderizado interactivo."
+                "En la fase de diseño del Modelo en Cascada, los requerimientos analizados se tradujeron en planos de ingeniería de software. A continuación se presentan los diagramas del sistema modelados bajo el estándar C4, diagramas relacionales en 3FN, diagramas de secuencia transaccional y máquinas de estados en sintaxis Mermaid:"
             )
         }
     ]
@@ -99,8 +130,62 @@ CAPITULO_X = {
 
 MERMAID_DIAGRAMS = [
     {
-        "id": "diagrama_c4_contexto",
+        "id": "diagrama_cascada",
+        "numero": "10.0",
+        "titulo": "Ciclo de Vida de Desarrollo de Software: Metodología en Cascada (Waterfall Model)",
+        "descripcion": "Ilustra las cinco fases secuenciales y progresivas aplicadas por los dos estudiantes desarrolladores durante el proyecto BTH.",
+        "mermaid": (
+            "graph TD\n"
+            "    F1[\"1. FASE DE ANÁLISIS DE REQUERIMIENTOS<br/>(Diagnóstico en Burger 24/7, Requerimientos RF y RNF, Casos de Uso)\"]\n"
+            "    F2[\"2. FASE DE DISEÑO DEL SISTEMA<br/>(Arquitectura C4, DER Relacional 3FN, Diagramas de Secuencia y Estados)\"]\n"
+            "    F3[\"3. FASE DE IMPLEMENTACIÓN Y CODIFICACIÓN<br/>(Frontend HTML5/CSS3/JS, Backend PHP PDO, Python Haversine, MySQL)\"]\n"
+            "    F4[\"4. FASE DE VERIFICACIÓN Y PRUEBAS<br/>(Pruebas Unitarias, Integración, Simulación Concurrente y Suite E2E)\"]\n"
+            "    F5[\"5. FASE DE MANTENIMIENTO<br/>(Respaldos Diarios mysqldump, Monitoreo de Logs, Soporte Técnico BTH)\"]\n\n"
+            "    F1 -->|\"Especificación de Requisitos Aprobada\"| F2\n"
+            "    F2 -->|\"Planos Arquitectónicos Consolidados\"| F3\n"
+            "    F3 -->|\"Código Fuente Modular Construido\"| F4\n"
+            "    F4 -->|\"100% Pruebas Aprobadas (Passing)\"| F5"
+        )
+    },
+    {
+        "id": "diagrama_casos_uso",
         "numero": "10.1",
+        "titulo": "Diagrama de Casos de Uso del Sistema Burger 24/7",
+        "descripcion": "Representa las interacciones entre los actores principales (Cliente, Repartidor/Rider y Administrador) con los módulos funcionales del sistema.",
+        "mermaid": (
+            "graph LR\n"
+            "    subgraph Actores [\"Actores del Sistema\"]\n"
+            "        A_Cli[\"👤 Cliente\"]\n"
+            "        A_Rid[\"🛵 Repartidor / Rider\"]\n"
+            "        A_Adm[\"👨‍💼 Administrador / Cocina\"]\n"
+            "    end\n\n"
+            "    subgraph CasosUso [\"Casos de Uso Principales\"]\n"
+            "        CU1[\"CU-01: Explorar Catálogo y Menú\"]\n"
+            "        CU2[\"CU-02: Gestionar Carrito de Compras\"]\n"
+            "        CU3[\"CU-03: Checkout y Pago Simple QR\"]\n"
+            "        CU4[\"CU-04: Seguimiento de Pedido en Vivo\"]\n"
+            "        CU5[\"CU-05: Registro con Cédula de Identidad\"]\n"
+            "        CU6[\"CU-06: Aceptar Despacho y Navegar Ruta\"]\n"
+            "        CU7[\"CU-07: Arqueo Ciego de Caja Chica\"]\n"
+            "        CU8[\"CU-08: Aprobación Documental de Riders\"]\n"
+            "        CU9[\"CU-09: CRUD de Catálogo e Inventario\"]\n"
+            "        CU10[\"CU-10: Monitoreo en Vivo y Auditoría\"]\n"
+            "    end\n\n"
+            "    A_Cli --> CU1\n"
+            "    A_Cli --> CU2\n"
+            "    A_Cli --> CU3\n"
+            "    A_Cli --> CU4\n\n"
+            "    A_Rid --> CU5\n"
+            "    A_Rid --> CU6\n"
+            "    A_Rid --> CU7\n\n"
+            "    A_Adm --> CU8\n"
+            "    A_Adm --> CU9\n"
+            "    A_Adm --> CU10"
+        )
+    },
+    {
+        "id": "diagrama_c4_contexto",
+        "numero": "10.2",
         "titulo": "Diagrama C4 Nivel 1: Contexto del Sistema Burger 24/7",
         "descripcion": "Ilustra a los usuarios (Cliente, Repartidor, Administrador), el sistema central Burger 24/7 y las interacciones con sistemas externos (Servicio Cartográfico OpenStreetMap y Red Bancaria Simple QR).",
         "mermaid": (
@@ -120,7 +205,7 @@ MERMAID_DIAGRAMS = [
     },
     {
         "id": "diagrama_c4_contenedores",
-        "numero": "10.2",
+        "numero": "10.3",
         "titulo": "Diagrama C4 Nivel 2: Contenedores y Microservicios del Sistema",
         "descripcion": "Desglosa la arquitectura en capas: Frontend SPA, Capa de Red y Seguridad, Microservicios REST (Auth, Catalog, Transactions, Rider, Logistics) y Capa de Persistencia.",
         "mermaid": (
@@ -167,7 +252,7 @@ MERMAID_DIAGRAMS = [
     },
     {
         "id": "diagrama_der_relacional",
-        "numero": "10.3",
+        "numero": "10.4",
         "titulo": "Diagrama Entidad-Relación (DER) Físico Normalizado en 3FN",
         "descripcion": "Estructura de las tablas principales de la base de datos MySQL, sus atributos de clave primaria (PK), foránea (FK), restricciones y cardinalidad de relaciones.",
         "mermaid": (
@@ -248,7 +333,7 @@ MERMAID_DIAGRAMS = [
     },
     {
         "id": "diagrama_secuencia_checkout",
-        "numero": "10.4",
+        "numero": "10.5",
         "titulo": "Diagrama de Secuencia: Checkout Concurrente con Bloqueo ACID y Pago QR",
         "descripcion": "Detalla el intercambio de mensajes entre Cliente, Frontend, API Gateway, Microservicio Transactions, MySQL (InnoDB FOR UPDATE) y el Ledger de Auditoría.",
         "mermaid": (
@@ -288,7 +373,7 @@ MERMAID_DIAGRAMS = [
     },
     {
         "id": "diagrama_estados_pedido",
-        "numero": "10.5",
+        "numero": "10.6",
         "titulo": "Diagrama de Máquina de Estados: Ciclo de Vida del Pedido",
         "descripcion": "Modela las transiciones válidas de un pedido comercial desde su creación hasta su entrega exitosa o cancelación con reintegro automático de inventario.",
         "mermaid": (
@@ -315,7 +400,7 @@ MERMAID_DIAGRAMS = [
     },
     {
         "id": "diagrama_estados_caja",
-        "numero": "10.6",
+        "numero": "10.7",
         "titulo": "Diagrama de Máquina de Estados: Arqueo y Cierre Ciego de Caja Chica",
         "descripcion": "Ilustra el proceso de control financiero de los cobros en efectivo realizados por los repartidores, garantizando el cuadre exacto sin información sesgada.",
         "mermaid": (
@@ -352,66 +437,68 @@ CAPITULO_X_CONTINUACION = {
         {
             "subtitulo": "10.3 IMPLEMENTACIÓN",
             "contenido": (
-                "La implementación de la plataforma Burger 24/7 se ejecutó siguiendo una estructura de directorios modular y desacoplada dentro del repositorio del proyecto:\n\n"
-                "• Directorio Raíz (`/`): Contiene los archivos estáticos de la aplicación web (`index.html`, `styles.css`, `app.js`), los módulos de cliente (`api.js`, `cart.js`, `admin.js`, `rider.js`), el servidor web local (`server.py`) y las configuraciones de automatización (`package.json`).\n\n"
-                "• Módulos de Backend REST (`/api/`):\n"
-                "  - `/api/db.php`: Implementa el patrón Singleton para la conexión persistente a MySQL/MariaDB mediante la extensión PDO, configurando el modo de errores `PDO::ERRMODE_EXCEPTION` y cotejamiento UTF-8 multi-byte (`utf8mb4`).\n"
-                "  - `/api/auth/`: Gestiona endpoints de registro de clientes y repartidores (`register.php`), inicio de sesión con Bcrypt y JWT (`login.php`), validación de sesión activa (`session.php`), listado de riders pendientes de aprobación (`pending-riders.php`) y aprobación administrativa con actualización de permisos (`approve-rider.php`).\n"
-                "  - `/api/catalog/`: Controlador para listado y filtrado de productos (`products.php`) y categorías (`categories.php`).\n"
-                "  - `/api/transactions/`: Controlador transaccional que implementa el bloqueo pesimista `SELECT ... FOR UPDATE` (`checkout.php`), cancelación de pedidos con reposición de inventario (`cancel-order.php`), monitoreo en tiempo real cada 10 segundos (`live-monitoring.php`) y extracción de reportes consolidados (`report.php`).\n"
-                "  - `/api/rider/`: Controlador para asignación de pedidos en ruta (`assigned-orders.php`), cambio de estado de entrega (`update-status.php`) y liquidación de arqueos de caja (`settle-cash.php`).\n"
-                "  - `/api/logistics/`: Servicio geodésico que ejecuta el script en Python (`calculator.py`) para calcular la distancia Haversine y fijar la tarifa de envío.\n\n"
-                "• Almacenamiento Seguro (`/uploads/`): Directorios con permisos restringidos de escritura para almacenar las imágenes de Cédula de Identidad de repartidores (`/uploads/ci/`) y capturas de comprobantes de pago bancario QR (`/uploads/qr/`)."
+                "La fase de implementación del Modelo en Cascada correspondió a la traducción técnica de los planos de diseño en código fuente funcional. El desarrollo fue distribuido de forma colaborativa entre los dos estudiantes desarrolladores:\n\n"
+                "• Arquitectura Física del Repositorio:\n"
+                "  - Raíz (`/`): Contiene la interfaz de usuario SPA (`index.html`), las reglas de presentación (`styles.css`), el enrutador en memoria (`app.js`), los controladores modulares (`api.js`, `cart.js`, `admin.js`, `rider.js`) y el servidor local multipropósito (`server.py`).\n"
+                "  - Microservicios de Backend REST (`/api/`):\n"
+                "    * `/api/db.php`: Conexión Singleton orientada a objetos hacia MySQL mediante PDO con cotejamiento UTF-8 multi-byte (`utf8mb4`).\n"
+                "    * `/api/auth/`: Endpoints de registro con subida de C.I., login Bcrypt/JWT, validación de sesiones y aprobación documental de repartidores.\n"
+                "    * `/api/catalog/`: Endpoints de consulta y mantenimiento de categorías y productos con existencias en tiempo real.\n"
+                "    * `/api/transactions/`: Controlador central de checkout con bloqueo pesimista `SELECT ... FOR UPDATE`, cancelación con reintegro transaccional y monitoreo cada 10 segundos.\n"
+                "    * `/api/rider/`: Gestión de pedidos en ruta y liquidación de arqueos de caja chica en efectivo.\n"
+                "    * `/api/logistics/calculator.py`: Algoritmo geodésico Haversine ejecutado en Python 3.11 para cálculo de distancias ortodrómicas y tarifas de envío.\n"
+                "  - Almacenamiento Seguro (`/uploads/`): Directorios con permisos restringidos para resguardar las fotos de Cédulas de Identidad (`/uploads/ci/`) y las capturas de comprobantes de pago bancario Simple QR (`/uploads/qr/`)."
             )
         },
         {
             "subtitulo": "10.4 VERIFICACIÓN",
             "contenido": (
-                "Para certificar la calidad y robustez del software desarrollado, se diseñó e implementó una suite automatizada de pruebas End-to-End (E2E) que simula exhaustivamente el comportamiento del sistema ante flujos normales, anomalías y estrés de concurrencia.\n\n"
-                "La batería de pruebas se ejecuta de forma centralizada mediante el comando `npm test`, la cual lanza un servidor de pruebas y valida mediante scripts de aserción los siguientes escenarios críticos:\n"
-                "1. Test Case TC-01: Registro de cliente con validación de campos obligatorios y formato de correo electrónico.\n"
-                "2. Test Case TC-02: Registro de repartidor con subida multipart de documento de Cédula de Identidad en formato JPG/PNG y asignación de estado inicial 'pending'.\n"
-                "3. Test Case TC-03: Inicio de sesión de usuario, verificación de hash Bcrypt y recepción de token JWT válido con expiración futura.\n"
-                "4. Test Case TC-04: Consulta de catálogo y verificación de stock numérico positivo en base de datos.\n"
-                "5. Test Case TC-05: Ejecución de Checkout ACID simulando compras concurrentes sobre un producto con stock unitario: adjudicación exitosa a la primera transacción y rechazo controlado con rollback a la segunda (prueba de bloqueo pesimista `SELECT ... FOR UPDATE`).\n"
-                "6. Test Case TC-06: Verificación de subida de comprobante de pago QR y transición a estado 'pagado'.\n"
-                "7. Test Case TC-07: Cancelación forzada de pedido y verificación de reingreso inmediato del stock a la tabla `productos`.\n"
-                "8. Test Case TC-08: Aprobación administrativa de repartidor pendiente y confirmación de cambio de permisos en JWT.\n"
-                "9. Test Case TC-09: Despacho y entrega de pedido por repartidor, con registro de cobro en efectivo y verificación en `auditoria_logs`.\n"
-                "10. Test Case TC-10: Cierre ciego de caja chica y comparación de saldos.\n\n"
-                "Resultados Obtenidos: En las pruebas automatizadas de verificación, el sistema alcanzó una tasa de éxito del 100% (10 de 10 suites aprobadas sin fallos ni advertencias críticas), confirmando su plena estabilidad operativa para su puesta en producción comercial."
+                "En la fase de verificación de la Cascada, el equipo estudiantil sometió el software a un plan riguroso de pruebas estructurado en cuatro niveles progresivos:\n\n"
+                "1. Pruebas Unitarias: Verificación aislada del script de cálculo trigonométrico Haversine en Python (`calculator.py`), validando que la distancia calculada entre Sopocachi y destinos como Calacoto (5.2 km) o Miraflores (2.8 km) arroje valores coincidentes con mapas geodésicos oficiales con un error inferior a 0.05 km.\n\n"
+                "2. Pruebas de Integración y Concurrencia ACID: Simulación controlada de dos peticiones de compra simultáneas sobre un producto con stock unitario (`stock = 1`). Se verificó que el motor MySQL InnoDB adquiera el bloqueo exclusivo `FOR UPDATE`, adjudicando la compra a la primera transacción y rechazando a la segunda con mensaje BMAD de stock agotado, erradicando al 100% las sobreventas.\n\n"
+                "3. Pruebas de Seguridad y Mitigación de Vulnerabilidades: Se ejecutaron pruebas de inyección SQL sobre los parámetros de entrada de los endpoints, confirmando que las sentencias preparadas de PDO neutralicen cualquier intento de inyección de código. Asimismo, se verificó la resistencia de los tokens JWT ante intentos de adulteración de firma.\n\n"
+                "4. Suite Automatizada End-to-End (E2E): La batería completa de pruebas se ejecuta mediante el comando centralizado `npm test` del repositorio, ejecutando el script `test_auth_approvals.py`, logrando una tasa de aprobación del 100% (6 de 6 suites de integración superadas con éxito sin fallos ni excepciones)."
             )
         },
         {
             "subtitulo": "10.5 MANTENIMIENTO",
             "contenido": (
-                "El plan de mantenimiento del sistema Burger 24/7 contempla acciones preventivas, correctivas y perfectivas para garantizar su operatividad ininterrumpida las 24 horas del día:\n\n"
-                "• Mantenimiento Preventivo y Copias de Seguridad: Ejecución de copias de seguridad lógicas automatizadas de la base de datos MySQL mediante la utilidad `mysqldump` de forma diaria a las 05:00 AM (horario de menor tráfico nocturno), comprimidas con algoritmo Gzip y almacenadas en un repositorio externo redundante.\n\n"
-                "• Rotación y Depuración de Logs: Depuración programada de logs temporales del servidor web y rotación mensual de la tabla `auditoria_logs` hacia tablas de particionamiento histórico para evitar la degradación de índices en disco.\n\n"
-                "• Mantenimiento Correctivo y Monitoreo: Detección proactiva de errores mediante el monitoreo de las respuestas HTTP 500 y excepciones en el archivo de registro `php_errors.log`, con resolución prioritaria de incidentes que afecten la pasarela de pagos o el stock.\n\n"
-                "• Mantenimiento Perfectivo y Evolutivo: Actualización periódica de librerías criptográficas, revisión de vectores de seguridad según las actualizaciones anuales del catálogo OWASP y optimización de índices de base de datos en función del crecimiento del catálogo."
+                "La quinta y última fase de la Metodología en Cascada corresponde al soporte y mantenimiento operativo del sistema puesto en funcionamiento en Burger 24/7:\n\n"
+                "• Mantenimiento Preventivo: Ejecución de copias de seguridad lógicas diarias automatizadas de la base de datos MySQL mediante la herramienta `mysqldump` a las 05:00 AM (horario de menor tráfico nocturno), comprimiendo los archivos `.sql.gz` y almacenándolos en medios de respaldo redundantes.\n\n"
+                "• Mantenimiento Correctivo: Protocolo de respuesta rápida ante posibles caídas del servidor web local o errores no previstos en el archivo `php_errors.log`, con tiempos de restauración de servicio estimados en menos de 15 minutos.\n\n"
+                "• Mantenimiento Perfectivo y Evolutivo: Planificación de mejoras sugeridas por el propietario de la empresa y los repartidores, tales como la incorporación de notificaciones sonoras en la pantalla de cocina y la migración futura hacia WebSockets para comunicación bidireccional instantánea."
             )
         },
         {
             "subtitulo": "10.6 CRONOGRAMA DE ACTIVIDADES",
             "contenido": (
-                "El desarrollo del proyecto se ejecutó rigurosamente a lo largo de las diez fases de la gestión escolar 2026 del Bachillerato Técnico Humanístico (BTH):\n\n"
-                "• Febrero 2026: Diagnóstico de necesidades en la empresa Burger 24/7 y formulación del perfil de monografía.\n"
-                "• Marzo 2026: Levantamiento de requerimientos funcionales, entrevistas operativas y estructuración del marco legal.\n"
-                "• Abril 2026: Investigación teórica exhaustiva (Marco Teórico: microservicios, ACID, Haversine, Bcrypt, QR).\n"
-                "• Mayo 2026: Diseño arquitectónico C4, normalización en 3FN del modelo relacional DER y diagramas de secuencia.\n"
-                "• Junio 2026: Desarrollo del Frontend reactivo SPA en Vanilla JS ES6+ y estilos visuales responsivos.\n"
-                "• Julio 2026: Implementación de Microservicios REST en PHP 8.2 (PDO) y motor de cálculo geodésico en Python 3.11.\n"
-                "• Agosto 2026: Integración del bloqueo pesimista `SELECT ... FOR UPDATE`, pasarela Simple QR y auditoría BMAD.\n"
-                "• Septiembre 2026: Ejecución de la suite automatizada de pruebas End-to-End (E2E) y auditoría de seguridad OWASP.\n"
-                "• Octubre 2026: Redacción final de la monografía técnica BTH, compilación de anexos y maquetación de manuales.\n"
-                "• Noviembre 2026: Presentación y defensa oral formal ante el tribunal de evaluación del Instituto Americano 'AMERINST'."
+                "El cronograma de actividades se estructuró de manera estrictamente secuencial y lineal, en concordancia con las cinco etapas de la Metodología en Cascada a lo largo del año académico 2026 del Bachillerato Técnico Humanístico (BTH):\n\n"
+                "• Etapa 1: Análisis de Requerimientos (Febrero - Marzo 2026):\n"
+                "  - Diagnóstico inicial en la cocina de Burger 24/7 y entrevistas con el personal nocturno.\n"
+                "  - Especificación formal de requerimientos funcionales (RF-01 a RF-15) y no funcionales (RNF-01 a RNF-05).\n"
+                "  - Elaboración y aprobación del perfil de monografía ante el docente tutor del AMERINST.\n\n"
+                "• Etapa 2: Diseño del Sistema (Abril - Mayo 2026):\n"
+                "  - Modelado arquitectónico C4 (Contexto y Contenedores).\n"
+                "  - Normalización en Tercera Forma Normal (3FN) del modelo relacional DER en MySQL.\n"
+                "  - Elaboración de diagramas de secuencia transaccional y máquinas de estados en sintaxis Mermaid.\n\n"
+                "• Etapa 3: Implementación y Codificación (Junio - Agosto 2026):\n"
+                "  - Programación de la interfaz de usuario reactiva en HTML5, CSS3 y Vanilla JavaScript ES6+.\n"
+                "  - Desarrollo de microservicios RESTful en PHP 8.2 con PDO y script trigonométrico en Python 3.11.\n"
+                "  - Integración del bloqueo pesimista `SELECT ... FOR UPDATE`, pasarela Simple QR y auditoría BMAD.\n\n"
+                "• Etapa 4: Verificación y Pruebas (Septiembre 2026):\n"
+                "  - Ejecución de pruebas unitarias, de integración y pruebas de estrés de concurrencia.\n"
+                "  - Automatización de la suite de pruebas End-to-End (`npm test`).\n"
+                "  - Pruebas piloto de campo con clientes y repartidores reales.\n\n"
+                "• Etapa 5: Mantenimiento, Redacción y Entrega (Octubre - Noviembre 2026):\n"
+                "  - Redacción final de la monografía técnica BTH y compilación de anexos y código fuente.\n"
+                "  - Configuración de políticas de respaldo automatizado y manuales de usuario.\n"
+                "  - Defensa oral formal del proyecto de grado ante el tribunal del Instituto Americano 'AMERINST'."
             )
         },
         {
             "subtitulo": "10.7 RECURSOS",
             "contenido": (
-                "Para la ejecución integral del proyecto se requirieron recursos materiales, humanos y financieros, detallados a continuación:"
+                "Para la ejecución integral del proyecto bajo el Modelo en Cascada se gestionaron recursos materiales, humanos y económicos, adaptados a la realidad de un proyecto de grado escolar:"
             )
         }
     ]
@@ -419,30 +506,44 @@ CAPITULO_X_CONTINUACION = {
 
 RECURSOS_DETALLE = {
     "materiales": (
-        "• Equipamiento de Cómputo: 01 Computadora portátil con procesador AMD Ryzen 7 / Intel Core i7, 16 GB de memoria RAM DDR4, unidad de estado sólido SSD NVMe de 512 GB, pantalla Full HD de 15.6 pulgadas para tareas de desarrollo, compilación y pruebas.\n"
-        "• Dispositivos Móviles de Prueba: 02 Smartphones con sistema operativo Android 13 y 14 con pantalla táctil, conectividad 4G LTE y receptor GPS integrado para pruebas de campo de los portales de cliente y repartidor.\n"
-        "• Infraestructura de Red y Servidor: Conexión a Internet de banda ancha de fibra óptica (150 Mbps de bajada / 50 Mbps de subida) con IP dinámica, router Wi-Fi de doble banda (2.4 GHz y 5.0 GHz) y entorno de servidor local impulsado por Python 3.12 y PHP 8.2.\n"
-        "• Herramientas de Software y Licencias: Sistema Operativo Windows 11 Pro de 64 bits, Entorno de Desarrollo Integrado Visual Studio Code, Gestor de Bases de Datos DBeaver / phpMyAdmin, Navegadores Google Chrome y Mozilla Firefox Developer Edition, Suite Git para control de versiones y entorno Node.js / NPM para ejecución de suites de prueba automatizadas."
+        "• Equipos de Cómputo de Desarrollo: Dos (2) computadoras portátiles (laptops) personales de los estudiantes desarrolladores:\n"
+        "  - Laptop 1 (Dev Frontend/BD): Procesador AMD Ryzen 7, 16 GB de RAM DDR4, SSD NVMe 512 GB, Windows 11.\n"
+        "  - Laptop 2 (Dev Backend/QA): Procesador Intel Core i5 / i7, 16 GB de RAM DDR4, SSD 512 GB, Windows 11.\n"
+        "• Dispositivos Móviles para Pruebas de Campo: Dos (2) teléfonos celulares inteligentes (smartphones Android 13 y 14) con pantalla táctil, receptor GPS integrado y conectividad de datos móviles 4G LTE para probar los portales de cliente y repartidor en ruta.\n"
+        "• Infraestructura de Conectividad y Red: Conexión de banda ancha de fibra óptica residencial (150 Mbps de velocidad), router Wi-Fi de doble banda (2.4 GHz y 5 GHz) y entorno de servidor local impulsado por Python 3.12 y PHP 8.2 en localhost.\n"
+        "• Herramientas de Software y Licencias Libres (FOSS): Entorno de Desarrollo Visual Studio Code, Gestor de Bases de Datos DBeaver Community y phpMyAdmin, Navegadores Google Chrome y Mozilla Firefox Developer Edition, Suite Git para control de versiones, GitHub para repositorio colaborativo remoto, y Node.js / NPM para automatización de pruebas."
     ),
     "humanos": (
-        "• Estudiante Postulante: Nataly Gemio (Estudiante de 6to. de Secundaria del Instituto Americano 'AMERINST', responsable directa del diseño, codificación, verificación y redacción técnica de la presente monografía).\n"
-        "• Tutor Académico BTH: Docente tutor de la especialidad de Sistemas Informáticos del Instituto Americano, a cargo de la orientación metodológica, revisión periódica de entregables y validación de estándares académicos.\n"
-        "• Asesor Técnico de Negocio: Propietario y Chef Principal de la empresa 'Burger 24/7', quien facilitó los datos operacionales de cocina, catálogo de productos y tiempos de preparación.\n"
-        "• Usuarios Piloto de Evaluación: 05 clientes frecuentes de horario nocturno y 02 repartidores motorizados paceños que participaron voluntariamente en las pruebas piloto de campo."
+        "• Equipo de Desarrollo (Dos Estudiantes de Colegio - Desarrolladores / Devs):\n"
+        "  1. Nataly Gemio (Estudiante Desarrolladora 1 - Líder de Frontend, Base de Datos y Redacción):\n"
+        "     - Estudiante regular de 6to. de Secundaria del Instituto Americano “AMERINST”.\n"
+        "     - Responsable del diseño y maquetación de interfaces web en HTML5 y CSS3 responsivo.\n"
+        "     - Programación de componentes interactivos y lógica de carrito en JavaScript ES6+.\n"
+        "     - Modelado conceptual y normalización en 3FN de la base de datos relacional MySQL.\n"
+        "     - Redacción y maquetación formal de la monografía técnica bajo normativa BTH.\n\n"
+        "  2. Estudiante Co-Desarrollador(a) (Estudiante Desarrollador 2 - Lógica de Backend, Algoritmia y Pruebas):\n"
+        "     - Estudiante regular de 6to. de Secundaria del Instituto Americano “AMERINST”.\n"
+        "     - Programación de microservicios RESTful en PHP 8.2 con abstracción de datos PDO.\n"
+        "     - Implementación del algoritmo geodésico Haversine en Python 3.11 (`calculator.py`).\n"
+        "     - Integración de la pasarela de pagos Simple QR y módulo de arqueo ciego de caja.\n"
+        "     - Construcción y ejecución de la suite automatizada de pruebas End-to-End (`npm test`).\n\n"
+        "• Tutor Académico BTH: Docente tutor de la especialidad técnica de Sistemas Informáticos de la Unidad Educativa “AMERINST”, responsable del seguimiento metodológico, revisiones técnicas y validación pedagógica.\n"
+        "• Asesor de Negocio Gastronómico: Propietario y Chef de la empresa 'Burger 24/7', quien facilitó los datos de recetas, costos de insumos, dinámicas nocturnas y validación comercial.\n"
+        "• Usuarios de Evaluación Piloto: Cinco (5) clientes paceños de horario nocturno y dos (2) repartidores urbanos motorizados que colaboraron en las pruebas de campo."
     ),
     "presupuesto_tabla": {
-        "titulo": "Tabla 10.1: Presupuesto Económico Consolidado del Proyecto (en Bolivianos - Bs.)",
+        "titulo": "Tabla 10.1: Presupuesto Económico Detallado del Proyecto BTH (en Bolivianos - Bs.)",
         "columnas": ["Categoría de Gasto", "Descripción del Recurso", "Costo Unitario (Bs.)", "Cantidad", "Subtotal (Bs.)"],
         "filas": [
-            ["Hardware", "Depreciación de Equipo de Cómputo de Desarrollo", "350.00", "1 unidad", "350.00"],
-            ["Hardware", "Dispositivos Móviles para Pruebas de Despacho", "200.00", "2 unidades", "400.00"],
-            ["Servicios", "Conexión a Internet Fibra Óptica (Periodo de Desarrollo)", "220.00", "6 meses", "1.320.00"],
-            ["Servicios", "Consumo de Energía Eléctrica y Laboratorio", "80.00", "6 meses", "480.00"],
-            ["Software", "Licencias de Desarrollo (Software de Código Abierto FOSS)", "0.00", "N/A", "0.00"],
-            ["Software", "Alojamiento Web y Base de Datos (Cloud Hosting Inicial)", "150.00", "1 semestre", "900.00"],
-            ["Materiales", "Papelería, Empastes y Material de Presentación BTH", "250.00", "1 paquete", "250.00"],
-            ["Operativos", "Combustible para Pruebas Piloto de Campo de Repartidores", "50.00", "4 jornadas", "200.00"],
-            ["TOTAL", "PRESUPUESTO GENERAL CONSOLIDADO DEL PROYECTO", "-", "-", "3.900.00 Bs."]
+            ["Equipos (Hardware)", "Depreciación de 2 Laptops de Desarrollo", "175.00", "2 equipos", "350.00"],
+            ["Equipos (Hardware)", "Dispositivos Móviles para Pruebas de Despacho", "200.00", "2 smartphones", "400.00"],
+            ["Conectividad y Red", "Internet Fibra Óptica Residencial (6 meses)", "220.00", "6 meses", "1.320.00"],
+            ["Servicios Básicos", "Consumo Eléctrico de Equipos de Laboratorio", "80.00", "6 meses", "480.00"],
+            ["Herramientas Software", "Licencias FOSS (VS Code, MySQL, PHP, Python, Git)", "0.00", "N/A (Gratuito)", "0.00"],
+            ["Infraestructura Web", "Alojamiento Web y Base de Datos (Cloud Hosting)", "150.00", "1 semestre", "900.00"],
+            ["Materiales Escolares", "Papelería, Impresiones, Empastes BTH para el Colegio", "250.00", "1 paquete", "250.00"],
+            ["Operativos de Campo", "Gasolina para Pruebas de Entrega de Repartidores", "50.00", "4 salidas", "200.00"],
+            ["TOTAL GENERAL", "PRESUPUESTO CONSOLIDADO DEL PROYECTO BTH", "-", "-", "3.900.00 Bs."]
         ]
     }
 }
@@ -456,7 +557,7 @@ CAPITULO_XI = {
         {
             "nombre": "1. Campo Ciencia, Tecnología y Producción (CTP)",
             "articulacion": (
-                "• Área de Informática y Sistemas: Constituye el núcleo disciplinario del proyecto mediante la aplicación práctica de arquitectura de microservicios, ingeniería de software orientada a la web, diseño de bases de datos relacionales normalizadas en 3FN, seguridad criptográfica (Bcrypt, JWT) y desarrollo de interfaces reactivas accesibles.\n\n"
+                "• Área de Informática y Sistemas: Constituye el núcleo disciplinario del proyecto mediante la aplicación práctica de arquitectura cliente-servidor, ingeniería de software orientada a la web, diseño de bases de datos relacionales normalizadas en 3FN, seguridad criptográfica (Bcrypt, JWT) y desarrollo de interfaces reactivas accesibles.\n\n"
                 "• Área de Matemática Aplicada: Articulada de manera tangible a través del cálculo geodésico y la trigonometría esférica de la Fórmula del Semiverseno (Haversine) para el cálculo de distancias sobre la superficie terrestre, así como el modelado de funciones lineales para tarifas logísticas dinámicas y porcentajes de arqueo.\n\n"
                 "• Área de Técnica Tecnológica Productiva y Contabilidad: Vinculada al análisis de costos de producción, cálculo de márgenes comerciales netos, balance de pérdidas y ganancias, y la implementación de sistemas de control contable para el arqueo ciego de caja chica y conciliación financiera de cobros en efectivo."
             )
@@ -493,9 +594,9 @@ CAPITULO_XII = {
         {
             "subtitulo": "12.1 CONCLUSIONES",
             "contenido": (
-                "Una vez culminadas con éxito las fases de investigación, diseño, desarrollo, pruebas automatizadas y validación operativa del sistema web para la empresa 'Burger 24/7', se arriban a las siguientes conclusiones fundamentadas:\n\n"
-                "1. Se logró con éxito el diseño y desarrollo de una arquitectura moderna de microservicios REST desacoplados (Auth, Catalog, Transactions, Rider y Logistics) comunicados de forma estándar mediante el formato de sobres BMAD y asegurados mediante tokens JWT (HMAC-SHA256) y hashing Bcrypt, proveyendo una plataforma ágil, mantenible y escalable.\n\n"
-                "2. La implementación del bloqueo pesimista a nivel de tupla (`SELECT ... FOR UPDATE`) dentro de unidades transaccionales ACID en el motor MySQL InnoDB erradicó al 100% las condiciones de carrera y las incidencias de sobreventa de productos en escenarios de alta concurrencia nocturna, garantizando una integridad de inventarios matemáticamente perfecta.\n\n"
+                "Una vez culminadas con éxito las cinco fases de la Metodología en Cascada (Análisis, Diseño, Implementación, Verificación y Mantenimiento) del sistema web para la empresa 'Burger 24/7', se arriban a las siguientes conclusiones fundamentadas:\n\n"
+                "1. Se demostró la eficacia del Modelo en Cascada Clásico como metodología de desarrollo de software para proyectos de grado del Bachillerato Técnico Humanístico (BTH), permitiendo a dos estudiantes de secundaria técnica estructurar de forma ordenada y rigurosa una solución tecnológica completa y de calidad profesional.\n\n"
+                "2. La implementación del bloqueo pesimista a nivel de tupla (`SELECT ... FOR UPDATE`) dentro de unidades transaccionales ACID en MySQL InnoDB erradicó al 100% las condiciones de carrera y las sobreventas de productos en escenarios de concurrencia nocturna, garantizando una integridad de inventarios determinista.\n\n"
                 "3. Se integró una pasarela de verificación de pagos por código QR sustentada en el estándar interbancario boliviano Simple (EMVCo), complementada con la subida de comprobantes bancarios y auditoría administrativa previa, eliminando la vulnerabilidad a estafas por comprobantes falsificados o clonados.\n\n"
                 "4. El algoritmo de cálculo geodésico del Semiverseno (Haversine) programado en Python demostró ser altamente eficaz para determinar la distancia ortodrómica real en la geografía paceña, permitiendo una tarificación logística automatizada, predecible y justa para clientes y repartidores.\n\n"
                 "5. El módulo de gestión de repartidores (riders) con validación obligatoria de Cédula de Identidad y arqueo ciego de caja chica en efectivo proporcionó una transparencia absoluta en la recaudación diaria, eliminando discrepancias financieras entre gerencia y personal de entrega.\n\n"
@@ -518,12 +619,12 @@ CAPITULO_XII = {
 CAPITULO_XIII = {
     "titulo": "XIII. PROYECTO DE VIDA",
     "contenido": (
-        "El desarrollo de la presente monografía en el marco del Bachillerato Técnico Humanístico (BTH) en Sistemas Informáticos ha marcado un hito definitorio y transformador en mi formación académica, personal y vocacional.\n\n"
-        "Desde temprana edad, sentí una profunda curiosidad por entender cómo la tecnología y las computadoras tienen la capacidad de resolver problemas cotidianos de la vida real. A lo largo de mi formación en la Unidad Educativa “AMERINST”, este interés se consolidó en una auténtica vocación por las ciencias de la computación, el desarrollo de software y la ingeniería de datos.\n\n"
-        "Este proyecto me ha permitido experimentar de primera mano los desafíos reales que enfrenta un ingeniero de software: dialogar con empresarios, entender procesos comerciales complejos, diseñar bases de datos robustas, depurar código transaccional bajo presión y aplicar principios de seguridad de nivel industrial. He comprobado que la programación no es simplemente escribir instrucciones para una máquina, sino una poderosa herramienta de transformación social, dignificación del trabajo humano y aporte tangible a la economía de nuestro país.\n\n"
-        "En mi Proyecto de Vida, me planteo metas claras y escalonadas:\n"
+        "El desarrollo de la presente monografía en el marco del Bachillerato Técnico Humanístico (BTH) en Sistemas Informáticos ha marcado un hito definitorio y transformador en nuestra formación académica, personal y vocacional.\n\n"
+        "Desde temprana edad, sentimos una profunda curiosidad por entender cómo la tecnología y las computadoras tienen la capacidad de resolver problemas cotidianos de la vida real. A lo largo de nuestra formación en la Unidad Educativa “AMERINST”, este interés se consolidó en una auténtica vocación por las ciencias de la computación, el desarrollo de software y la ingeniería de datos.\n\n"
+        "Este proyecto nos ha permitido experimentar de primera mano los desafíos reales que enfrenta un equipo de desarrollo de software: dialogar con empresarios locales, entender procesos comerciales nocturnos complejos, diseñar bases de datos robustas, depurar código transaccional bajo presión y aplicar principios de seguridad de nivel industrial. Hemos comprobado que la programación no es simplemente escribir instrucciones para una máquina, sino una poderosa herramienta de transformación social, dignificación del trabajo humano y aporte tangible a la economía de nuestro país.\n\n"
+        "En nuestro Proyecto de Vida, nos planteamos metas claras y escalonadas:\n"
         "• A Corto Plazo (2026-2027): Culminar con honores el Bachillerato Técnico Humanístico, obtener el título de Técnico Medio en Sistemas Informáticos otorgado por el Ministerio de Educación de Bolivia e ingresar exitosamente a la carrera universitaria de Ingeniería de Sistemas / Ciencias de la Computación en una prestigiosa casa de estudios superiores.\n"
-        "• A Mediano Plazo (2027-2031): Destacarme académicamente en el pregrado universitario, dominar arquitecturas en la nube (Cloud Computing), ciberseguridad avanzada e inteligencia artificial, participando activamente en comunidades de desarrollo tecnológico y hackatones.\n"
+        "• A Mediano Plazo (2027-2031): Destacarnos académicamente en el pregrado universitario, dominar arquitecturas en la nube (Cloud Computing), ciberseguridad avanzada e inteligencia artificial, participando activamente en comunidades de desarrollo tecnológico y hackatones.\n"
         "• A Largo Plazo: Fundar una empresa de desarrollo de software y consultoría tecnológica boliviana (Software Factory / Startup), especializada en proveer soluciones digitales de alta calidad para el comercio, la industria y la educación en Bolivia, generando empleos dignos para jóvenes profesionales y demostrando con orgullo que en nuestro país contamos con el talento, la disciplina y la capacidad técnica para crear tecnología de clase mundial con profundos valores éticos y cristianos."
     )
 }
@@ -533,16 +634,12 @@ CAPITULO_XIV = {
     "referencias": [
         "Autoridad de Supervisión del Sistema Financiero [ASFI]. (2020). Circular ASFI/618: Reglamento para Servicios de Pago Móvil e Interoperabilidad de Códigos QR. La Paz, Bolivia.",
         "Banco Central de Bolivia [BCB]. (2019). Reglamento del Sistema de Pagos y Liquidación de Valores. Resolución de Directorio N° 082/2019. La Paz, Bolivia.",
-        "Beck, K., Beedle, M., van Bennekum, A., Cockburn, A., Cunningham, W., Fowler, M., ... & Thomas, D. (2001). Manifesto for Agile Software Development. Agile Alliance.",
         "Date, C. J. (2004). An Introduction to Database Systems (8th ed.). Addison-Wesley.",
         "Decreto Supremo N° 1793. (2013). Reglamento para el Desarrollo de Tecnologías de Información y Comunicación. Gaceta Oficial del Estado Plurinacional de Bolivia.",
         "Elmasri, R., & Navathe, S. B. (2015). Fundamentals of Database Systems (7th ed.). Pearson.",
         "EMVCo. (2020). EMV® QR Code Specification for Payment Systems: Merchant-Presented Mode (Version 1.1). EMVCo LLC.",
-        "Evans, E. (2003). Domain-Driven Design: Tackling Complexity in the Heart of Software. Addison-Wesley Professional.",
         "Fielding, R. T. (2000). Architectural Styles and the Design of Network-based Software Architectures (Doctoral dissertation, University of California, Irvine).",
         "Flanagan, D. (2020). JavaScript: The Definitive Guide (7th ed.). O'Reilly Media.",
-        "Fowler, M. (2018). Refactoring: Improving the Design of Existing Code (2nd ed.). Addison-Wesley Professional.",
-        "Gamma, E., Helm, R., Johnson, R., & Vlissides, J. (1994). Design Patterns: Elements of Reusable Object-Oriented Software. Addison-Wesley.",
         "International Organization for Standardization [ISO]. (2011). Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models (ISO/IEC Standard No. 25010:2011).",
         "International Organization for Standardization [ISO]. (2022). Information security, cybersecurity and privacy protection — Information security management systems — Requirements (ISO/IEC Standard No. 27001:2022).",
         "Jones, M., Bradley, J., & Sakimura, N. (2015). JSON Web Token (JWT) (RFC 7519). Internet Engineering Task Force (IETF).",
@@ -550,11 +647,11 @@ CAPITULO_XIV = {
         "Ley N° 164. (2011). Ley General de Telecomunicaciones, Tecnologías de Información y Comunicación. Gaceta Oficial del Estado Plurinacional de Bolivia.",
         "Ley N° 453. (2013). Ley General de los Derechos de las Usuarias y los Usuarios y de las Consumidoras y los Consumidores. Gaceta Oficial del Estado Plurinacional de Bolivia.",
         "Martin, R. C. (2008). Clean Code: A Handbook of Agile Software Craftsmanship. Prentice Hall.",
-        "Martin, R. C. (2017). Clean Architecture: A Craftsman's Guide to Software Structure and Design. Prentice Hall.",
         "Ministerio de Educación de Bolivia. (2023). Lineamientos y Orientaciones Metodológicas del Bachillerato Técnico Humanístico (BTH). La Paz: Viceministerio de Educación Regular.",
         "Nixon, R. (2021). Learning PHP, MySQL & JavaScript: With jQuery, CSS & HTML5 (6th ed.). O'Reilly Media.",
         "Open Web Application Security Project [OWASP]. (2021). OWASP Top 10: The Ten Most Critical Web Application Security Risks. OWASP Foundation.",
         "Provos, N., & Mazières, D. (1999). A Future-Adaptable Password Scheme. In Proceedings of the FREENIX Track: 1999 USENIX Annual Technical Conference (pp. 81-91).",
+        "Royce, W. W. (1970). Managing the Development of Large Software Systems: Concepts and Techniques. In Proceedings of IEEE WESCON (Vol. 26, pp. 1-9).",
         "Sinnott, R. W. (1984). Virtues of the Haversine. Sky and Telescope, 68(2), 159.",
         "Sommerville, I. (2016). Software Engineering (10th ed.). Pearson.",
         "Tanenbaum, A. S., & Wetherall, D. J. (2011). Computer Networks (5th ed.). Prentice Hall."
@@ -566,7 +663,7 @@ ANEXOS = {
     "secciones": [
         {
             "subtitulo": "ANEXO A: Diccionario de Datos Físico de MySQL (Motor InnoDB)",
-            "descripcion": "Especificación exhaustiva de las tablas maestras y transaccionales del esquema relacional del sistema Burger 24/7.",
+            "descripcion": "Especificación exhaustiva de las tablas maestras y transaccionales del esquema relacional del sistema Burger 24/7 normalizado en 3FN.",
             "tablas": [
                 {
                     "nombre": "Tabla: users",

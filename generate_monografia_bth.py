@@ -322,12 +322,17 @@ def build_monografia_docx():
     r_tit.bold = True
     r_tit.font.color.rgb = RGBColor(15, 23, 42)
 
-    # Datos del postulante y tutor
+    # Datos de los postulantes y tutor
     p_post = doc.add_paragraph()
     p_post.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_post.paragraph_format.space_before = Pt(36)
     p_post.paragraph_format.space_after = Pt(4)
-    r_post = p_post.add_run(f"Postulante: {meta['postulante']}\n")
+    post_txt = meta.get("postulantes", meta.get("postulante", "Nataly Gemio"))
+    if not post_txt.startswith("Postulante"):
+        post_label = "Postulantes" if (" y " in post_txt or "Equipo" in post_txt) else "Postulante"
+        r_post = p_post.add_run(f"{post_label}: {post_txt}\n")
+    else:
+        r_post = p_post.add_run(f"{post_txt}\n")
     r_post.font.name = "Arial"
     r_post.font.size = Pt(12)
     r_post.bold = True
@@ -424,7 +429,7 @@ def build_monografia_docx():
         ("VI. OBJETIVOS", "11"),
         ("    6.1 OBJETIVO GENERAL", "11"),
         ("    6.2 OBJETIVOS ESPECÍFICOS", "11"),
-        ("VII. MARCO TEÓRICO", "12"),
+        ("VII. MARCO TEÓRICO (CONCEPTOS Y SUSTENTO TÉCNICO)", "12"),
         ("    7.1 SUSTENTO LEGAL", "12"),
         ("        7.1.1 CPE Bolivia (Arts. 103, 47, 75)", "12"),
         ("        7.1.2 Ley N° 164 de Telecomunicaciones y Comercio Electrónico", "13"),
@@ -434,33 +439,34 @@ def build_monografia_docx():
         ("        7.1.6 Normativa ASFI para Pagos Móviles y Códigos Simple QR", "17"),
         ("        7.1.7 Ley de Educación N° 070 y Lineamientos BTH", "18"),
         ("        7.1.8 Estándares Internacionales ISO/IEC 25010 e ISO/IEC 27001", "19"),
-        ("    7.2 DESARROLLO DEL MARCO TEÓRICO", "20"),
-        ("        7.2.1 E-Commerce y Modelo Dark Kitchen Nocturna 24/7", "20"),
-        ("        7.2.2 Arquitecturas Monolíticas vs Microservicios y DDD", "22"),
-        ("        7.2.3 Tecnologías Frontend: Vanilla JS ES6+ y Arquitectura SPA", "24"),
-        ("        7.2.4 Backend REST, PHP 8.2 PDO, Python 3.11 y Sobres BMAD", "26"),
-        ("        7.2.5 RDBMS MySQL InnoDB, 3FN, ACID y Bloqueo FOR UPDATE", "28"),
-        ("        7.2.6 Criptografía, Hashing Bcrypt, Tokens JWT y OWASP Top 10", "31"),
-        ("        7.2.7 GIS y Algoritmia Geodésica: Fórmula del Semiverseno (Haversine)", "34"),
-        ("        7.2.8 Pasarelas de Pago Digital, Norma EMVCo y Simple QR Bolivia", "37"),
-        ("        7.2.9 Auditoría de Sistemas, Logs Inmutables y Trazabilidad Forense", "39"),
-        ("        7.2.10 Metodologías de Calidad de Software y Testing E2E", "41"),
-        ("        7.2.11 Modelado Matemático de Cadena de Suministro y Mermas", "43"),
-        ("        7.2.12 Estudio del Arte y Comparativa Tecnológica Gastronómica", "45"),
-        ("VIII. MARCO PROCEDIMENTAL", "47"),
-        ("    8.1 PROPUESTA DE INNOVACIÓN", "47"),
-        ("    8.2 RESULTADOS ESPERADOS", "48"),
-        ("IX. METODOLOGÍA", "49"),
-        ("    9.1 TIPO DE INVESTIGACIÓN", "49"),
-        ("    9.2 TÉCNICAS E INSTRUMENTOS DE RECOLECCIÓN DE DATOS", "50"),
-        ("X. METODOLOGÍA DE DESARROLLO DE SOFTWARE", "51"),
-        ("    10.1 ANÁLISIS (Requerimientos RF y RNF)", "51"),
+        ("    7.2 DESARROLLO DEL MARCO TEÓRICO (CONCEPTOS DEL SISTEMA)", "20"),
+        ("        7.2.1 Arquitectura Cliente-Servidor y Conexiones Web (HTTP, REST, JSON)", "20"),
+        ("        7.2.2 Tecnologías Frontend: HTML5, CSS3 y Vanilla JavaScript ES6+", "22"),
+        ("        7.2.3 Tecnologías Backend: PHP 8.2 y Abstracción de Datos con PDO", "24"),
+        ("        7.2.4 Tecnologías de Computación Matemática: Python 3.11 en Logística", "26"),
+        ("        7.2.5 Sistemas Gestores de BD: MySQL/MariaDB, InnoDB y 3FN", "28"),
+        ("        7.2.6 Control de Concurrencia: Bloqueo Pesimista (SELECT ... FOR UPDATE)", "31"),
+        ("        7.2.7 Criptografía y Seguridad Web: Bcrypt, Tokens JWT y OWASP", "33"),
+        ("        7.2.8 Sistemas de Información Geográfica: Leaflet, OSM y Fórmula Haversine", "35"),
+        ("        7.2.9 Pasarelas de Pago Digitales y Códigos QR: EMVCo y Simple QR", "38"),
+        ("        7.2.10 Control de Versiones y Trabajo en Equipo: Git y GitHub", "40"),
+        ("        7.2.11 Auditoría de Sistemas, Logs Inmutables y Sobres BMAD", "42"),
+        ("        7.2.12 Metodologías de Calidad de Software y Verificación E2E", "44"),
+        ("VIII. MARCO PROCEDIMENTAL", "46"),
+        ("    8.1 PROPUESTA DE INNOVACIÓN", "46"),
+        ("    8.2 RESULTADOS ESPERADOS", "47"),
+        ("IX. METODOLOGÍA", "48"),
+        ("    9.1 TIPO DE INVESTIGACIÓN", "48"),
+        ("    9.2 TÉCNICAS E INSTRUMENTOS DE RECOLECCIÓN DE DATOS", "49"),
+        ("X. METODOLOGÍA DE DESARROLLO DE SOFTWARE", "50"),
+        ("    Explicación de la Metodología en Cascada Clásica (Waterfall)", "50"),
+        ("    10.1 ANÁLISIS (Requerimientos RF y RNF, Casos de Uso)", "51"),
         ("    10.2 DISEÑO (Modelado C4, DER Físico 3FN, Secuencia, Estados)", "53"),
-        ("    10.3 IMPLEMENTACIÓN (Microservicios REST, Estructura de Código)", "60"),
-        ("    10.4 VERIFICACIÓN (Matriz de Pruebas Automatizadas E2E)", "62"),
+        ("    10.3 IMPLEMENTACIÓN (Codificación Frontend/Backend)", "60"),
+        ("    10.4 VERIFICACIÓN (Pruebas Unitarias, Integración y E2E)", "62"),
         ("    10.5 MANTENIMIENTO (Políticas de Backup y Seguridad)", "64"),
-        ("    10.6 CRONOGRAMA DE ACTIVIDADES (Diagrama de Gantt 2026)", "65"),
-        ("    10.7 RECURSOS (Materiales, Humanos y Presupuesto Económico)", "66"),
+        ("    10.6 CRONOGRAMA DE ACTIVIDADES (Diagrama de Gantt Cascada 2026)", "65"),
+        ("    10.7 RECURSOS (Materiales, 2 Estudiantes Devs y Presupuesto)", "66"),
         ("XI. ARTICULACIÓN CON CAMPOS Y ÁREAS DE SABERES Y CONOCIMIENTOS", "68"),
         ("XII. CONCLUSIONES Y RECOMENDACIONES", "71"),
         ("XIII. PROYECTO DE VIDA", "73"),
@@ -825,10 +831,30 @@ def build_monografia_docx():
     r_c10.bold = True
     r_c10.font.color.rgb = RGBColor(30, 58, 138)
 
+    # Explicación y Justificación de la Metodología en Cascada
+    sec_cascada = part3.CAPITULO_X["secciones"][0]
+    p_sc = doc.add_paragraph()
+    p_sc.paragraph_format.space_before = Pt(14)
+    p_sc.paragraph_format.space_after = Pt(6)
+    p_sc.paragraph_format.keep_with_next = True
+    r_sc = p_sc.add_run(sec_cascada["subtitulo"])
+    r_sc.font.name = "Arial"
+    r_sc.font.size = Pt(12.5)
+    r_sc.bold = True
+    r_sc.font.color.rgb = RGBColor(15, 23, 42)
+
+    for parrafo in sec_cascada["contenido"].split("\n\n"):
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        add_inline_formatted_text(p, parrafo.strip())
+
+    # Diagrama 10.0: Ciclo de Vida en Cascada
+    render_mermaid_diagram(doc, part3.MERMAID_DIAGRAMS[0])
+
     # 10.1 Análisis
-    sec_10_1 = part3.CAPITULO_X["secciones"][0]
+    sec_10_1 = part3.CAPITULO_X["secciones"][1]
     p_s101 = doc.add_paragraph()
-    p_s101.paragraph_format.space_before = Pt(12)
+    p_s101.paragraph_format.space_before = Pt(14)
     p_s101.paragraph_format.space_after = Pt(6)
     p_s101.paragraph_format.keep_with_next = True
     r_s101 = p_s101.add_run(sec_10_1["subtitulo"])
@@ -842,8 +868,11 @@ def build_monografia_docx():
         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
         add_inline_formatted_text(p, parrafo.strip())
 
+    # Diagrama 10.1: Casos de Uso
+    render_mermaid_diagram(doc, part3.MERMAID_DIAGRAMS[1])
+
     # 10.2 Diseño con Diagramas Mermaid
-    sec_10_2 = part3.CAPITULO_X["secciones"][1]
+    sec_10_2 = part3.CAPITULO_X["secciones"][2]
     p_s102 = doc.add_paragraph()
     p_s102.paragraph_format.space_before = Pt(14)
     p_s102.paragraph_format.space_after = Pt(6)
@@ -858,7 +887,8 @@ def build_monografia_docx():
     p_d102.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     add_inline_formatted_text(p_d102, sec_10_2["contenido"])
 
-    for diag in part3.MERMAID_DIAGRAMS:
+    # Renderizar restantes diagramas Mermaid (C4, DER, Secuencia, Estados)
+    for diag in part3.MERMAID_DIAGRAMS[2:]:
         render_mermaid_diagram(doc, diag)
 
     # 10.3 a 10.7
@@ -1258,7 +1288,7 @@ def build_monografia_html():
             <div class="subtitle">{meta['especialidad']} - {meta['subtitulo_bth']}</div>
             <div class="title-box">{meta['titulo']}</div>
             <div class="meta-box">
-                <strong>Postulante:</strong> {meta['postulante']}<br>
+                <strong>Postulantes:</strong> {meta.get('postulantes', meta.get('postulante', 'Nataly Gemio'))}<br>
                 <strong>Tutor:</strong> {meta['tutor']}<br>
                 <strong>Curso:</strong> {meta['curso']}<br>
                 <strong>{meta['lugar']} &bull; {meta['gestion']}</strong>
@@ -1267,6 +1297,12 @@ def build_monografia_html():
 
         <h2 class="chap-title">I. INTRODUCCIÓN</h2>
         {"".join(f"<p>{html.escape(p)}</p>" for p in part1.CAPITULO_I['contenido'].split(chr(10)+chr(10)) if p.strip())}
+
+        <h2 class="chap-title">VIII. MARCO PROCEDIMENTAL</h2>
+        <h3 class="sec-title">8.1 PROPUESTA DE INNOVACIÓN</h3>
+        {"".join(f"<p>{html.escape(p)}</p>" for p in part3.CAPITULO_VIII['secciones'][0]['contenido'].split(chr(10)+chr(10)) if p.strip())}
+        <h3 class="sec-title">8.2 RESULTADOS ESPERADOS</h3>
+        {"".join(f"<p>{html.escape(p)}</p>" for p in part3.CAPITULO_VIII['secciones'][1]['contenido'].split(chr(10)+chr(10)) if p.strip())}
 
         <h2 class="chap-title">VII. MARCO TEÓRICO</h2>
         <h3 class="sec-title">7.1 SUSTENTO LEGAL</h3>

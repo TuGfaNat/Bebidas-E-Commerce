@@ -11,7 +11,7 @@ METADATA = {
     "especialidad": "SISTEMAS INFORMÁTICOS",
     "subtitulo_bth": "BACHILLERATO TÉCNICO HUMANÍSTICO (BTH) - GESTIÓN 2026",
     "titulo": "SISTEMA WEB DE COMERCIO ELECTRÓNICO Y DESPACHO LOGÍSTICO EN TIEMPO REAL CON CONTROL DE INVENTARIOS APLICANDO CÓDIGOS QR Y GEORREFERENCIACIÓN PARA LA EMPRESA \"BURGER 24/7\"",
-    "postulante": "Nataly Gemio",
+    "postulantes": "Nataly Gemio y Co-Desarrollador(a) Estudiantil\n(Equipo de Desarrollo BTH - Sistemas Informáticos)",
     "tutor": "Lic. Tutor Académico de Sistemas Informáticos",
     "curso": "6to. de Secundaria",
     "lugar": "La Paz – Bolivia",

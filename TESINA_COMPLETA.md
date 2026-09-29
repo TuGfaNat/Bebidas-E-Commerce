@@ -1,0 +1,1571 @@
+# MONOGRAFÍA Y TESINA TÉCNICA DE GRADO
+## Sistema E-commerce y Plataforma de Logística en Tiempo Real Burger 24/7
+
+**Proyecto:** Burger 24/7 - Plataforma E-Commerce Multi-Actor con Arquitectura de Microservicios
+
+**Fecha de Compilación:** 29/09/2026
+
+**Versión de Documentación:** 1.0.1 (Revisión Final de Integración)
+
+---
+
+## Tabla de Contenido General
+
+1. [Capítulo 1: Infraestructura, Arquitectura y Despliegue](#capítulo-1-infraestructura-arquitectura-y-despliegue)
+2. [Capítulo 2: Diagramas del Sistema y Modelado C4](#capítulo-2-diagramas-del-sistema-y-modelado-c4)
+3. [Capítulo 3: Arquitectura de Seguridad y Criptografía](#capítulo-3-arquitectura-de-seguridad-y-criptografía)
+4. [Capítulo 4: Transacciones, Máquinas de Estados y Reglas de Negocio](#capítulo-4-transacciones-máquinas-de-estados-y-reglas-de-negocio)
+5. [Capítulo 5: Manual de Integración Frontend-Backend y Catálogo de APIs](#capítulo-5-manual-de-integración-frontend-backend-y-catálogo-de-apis)
+6. [Capítulo 6: Interfaz de Usuario y Componentes Frontend](#capítulo-6-interfaz-de-usuario-y-componentes-frontend)
+7. [Capítulo 7: Manual de Usuario, Pruebas Operativas y Conclusiones](#capítulo-7-manual-de-usuario-pruebas-operativas-y-conclusiones)
+
+---
+
+
+
+<!-- PAGE_BREAK -->
+
+# Capítulo 1: Infraestructura, Arquitectura y Despliegue
+
+# Infraestructura, Arquitectura y Despliegue - Tesina Técnica
+
+## 1. Stack Tecnológico de la Plataforma
+
+La plataforma **Burger 24/7** ha sido construida seleccionando tecnologías robustas, abiertas y de alto rendimiento que garantizan disponibilidad continua en un entorno de comercio electrónico y reparto 24/7:
+
+| Capa | Tecnología | Versión | Rol en el Ecosistema |
+|---|---|---|---|
+| **Frontend UI / UX** | HTML5 Semántico + CSS3 Glassmorphism | Estándar W3C | Interfaz responsiva multi-actor (Cliente, Rider, Admin) sin frameworks pesados para minimizar la sobrecarga de red y optimizar tiempos de carga. |
+| **Lógica Frontend** | Vanilla JavaScript (ES6+) | ECMAScript 2022+ | Gestión reactiva del estado, renderizado dinámico del DOM, validaciones del cliente y capa de abstracción de red `api.js`. |
+| **Mapeo & Georreferenciación** | Leaflet.js | v1.9.4 | Renderizado de mapas interactivos, selección de puntos GPS de entrega, cálculo de rutas visuales y monitoreo de repartidores con capas oscuras CartoDB. |
+| **Iconografía** | Lucide Icons | v0.344.0 | Conjunto vectorial moderno y consistente para botones, estados y alertas. |
+| **Criptografía Cliente** | Bcrypt.js | v2.4.3 | Verificación segura de credenciales en el cliente durante el modo simulado/offline. |
+| **Backend Primario (REST)** | PHP (con extensión PDO) | v8.2+ | Lógica de negocio transaccional, endpoints RESTful modulares, conexión Singleton a base de datos y emisión/validación de tokens JWT. |
+| **Procesamiento Geoespacial** | Python | v3.11+ | Motor matemático para cálculo geodésico de distancias (Fórmula Haversine), estimación de tiempos de llegada (ETA) y servidor HTTP de desarrollo (`server.py`). |
+| **Motor de Base de Datos** | MySQL Server / MariaDB | v8.0+ / v10.5+ | Persistencia relacional normalizada en Tercera Forma Normal (3FN) con motor de almacenamiento InnoDB, soporte ACID y claves foráneas. |
+| **Seguridad y Criptografía** | Bcrypt & HMAC-SHA256 | Nativo PHP / Py | Cifrado unidireccional de contraseñas con salting dinámico (`password_hash`) y firma digital criptográfica de tokens de sesión JWT. |
+
+---
+
+## 2. Arquitectura de Microservicios y Estándar de Comunicación
+
+El backend está organizado como una constelación de **microservicios orientados a dominio (Domain-Driven Design)**, donde cada servicio encapsula su propia lógica y reglas de negocio:
+
+```
+microservices/
+├── Auth/              # Autenticación, registro con C.I., JWT, sesiones y aprobaciones
+│   ├── connection.php      # Verificación de conectividad (Heartbeat)
+│   ├── jwt.php             # Generación y validación estricta de tokens JWT
+│   ├── login.php           # Autenticación de credenciales con password_hash
+│   ├── register.php        # Registro seguro de clientes con verificación C.I.
+│   ├── register_rider.php  # Registro de repartidores con expediente digital
+│   ├── session.php         # Verificación y restauración de sesión por Bearer Token
+│   ├── admin_approval.php  # Aprobación o rechazo administrativo de identidades
+│   └── security.php        # Helpers de sanitización y control de headers
+├── Catalog/           # Catálogo comercial e inventario
+│   ├── Database.php        # Conexión Singleton PDO con transacciones preparadas
+│   └── catalog.php         # CRUD REST (GET, POST, PUT, DELETE) con control de roles
+├── Transactions/      # Ciclo comercial y financiero
+│   ├── checkout.php        # Creación atómica de pedidos con bloqueo FOR UPDATE
+│   ├── cancel_order.php    # Cancelación de pedidos con restitución de inventario
+│   ├── live_monitoring.php # Monitoreo en vivo, interpolación y recaudación
+│   └── report.php          # Métricas de facturación, métodos de pago y rendimiento
+├── Rider/             # Flujo operativo del transportista
+│   ├── assignment.php      # Asignación y aceptación de órdenes en espera
+│   ├── delivery.php        # Transiciones de estado (asignado -> en_camino -> entregado)
+│   └── settle_cash.php     # Liquidación y conciliación de caja física central
+└── Logistics/         # Cálculo geoespacial
+    └── calculator.py       # Algoritmo Haversine de cálculo de distancia, flete y ETA
+```
+
+### Estándar de Respuesta Unificada BMAD
+
+Todos los microservicios devuelven sus respuestas en formato JSON bajo una envolvente estándar obligatoria (**BMAD Response Envelope**), facilitando el consumo determinístico en el frontend y garantizando trazabilidad:
+
+```json
+{
+  "status": "success | error",
+  "data": {
+    /* Carga útil de la respuesta (entidades, identificadores, listas) */
+  },
+  "audit": {
+    "user_id": "3",
+    "timestamp": "2026-09-15T05:04:04.428667+00:00",
+    "action": "LIVE_MONITORING"
+  },
+  "error_details": null
+}
+```
+
+* **`status`**: Código de estado semántico (`success` para códigos HTTP 2xx, `error` para 4xx y 5xx).
+* **`data`**: Objeto o arreglo con los datos procesados. Nulo en caso de error.
+* **`audit`**: Firma de auditoría obligatoria generada por el backend, vinculando el ID del operador, la marca temporal UTC y la acción ejecutada.
+* **`error_details`**: Mensaje explicativo de la falla o motivo de rechazo cuando `status = error`.
+
+---
+
+## 3. Diccionario de Datos Completo (MySQL InnoDB)
+
+El modelo de datos relacional se compone de 6 tablas normalizadas. Todas las tablas incluyen campos obligatorios de auditoría (`created_at`, `updated_at`, `created_by`, `updated_by`) en conformidad con la Regla de Oro de trazabilidad.
+
+### Tabla: `users`
+Almacena las cuentas de usuario y credenciales de acceso para los tres roles del sistema.
+
+| Columna | Tipo de Dato | Nulo | Restricciones / Claves | Descripción |
+|---|---|---|---|---|
+| `id` | `INT` | NO | `PRIMARY KEY, AUTO_INCREMENT` | Identificador único del usuario. |
+| `role` | `ENUM('cliente', 'rider', 'super_usuario', 'admin')` | NO | `DEFAULT 'cliente'` | Perfil de acceso y privilegios en el sistema. |
+| `nombre` | `VARCHAR(150)` | NO | - | Nombre completo o razón social del usuario. |
+| `email` | `VARCHAR(150)` | NO | `UNIQUE INDEX` | Correo electrónico principal para autenticación. |
+| `password_hash` | `VARCHAR(255)` | NO | - | Contraseña encriptada con Bcrypt (costo 10). |
+| `fecha_nacimiento` | `DATE` | SÍ | - | Fecha de nacimiento para control de mayoría de edad ($\ge 18$). |
+| `ci_url` | `VARCHAR(255)` | SÍ | - | Ruta de almacenamiento del archivo digital del C.I. |
+| `ci_status` | `ENUM('pending', 'verified', 'rejected')` | NO | `DEFAULT 'pending'` | Estado de verificación de identidad por el administrador. |
+| `created_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP` | Fecha y hora de creación de la cuenta. |
+| `updated_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP ON UPDATE` | Fecha y hora de la última modificación. |
+| `created_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | ID del usuario o administrador que creó la cuenta. |
+| `updated_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | ID del usuario o administrador que modificó la cuenta. |
+
+---
+
+### Tabla: `productos`
+Almacena el catálogo de hamburguesas, combos, bebidas y acompañamientos disponibles para la venta.
+
+| Columna | Tipo de Dato | Nulo | Restricciones / Claves | Descripción |
+|---|---|---|---|---|
+| `id` | `INT` | NO | `PRIMARY KEY, AUTO_INCREMENT` | Identificador único del producto. |
+| `categoria` | `VARCHAR(50)` | NO | `INDEX` | Categoría: `Hamburguesas`, `Combos`, `Acompañamientos`, `Bebidas`. |
+| `nombre` | `VARCHAR(150)` | NO | - | Nombre comercial del producto. |
+| `marca` | `VARCHAR(100)` | SÍ | - | Línea o procedencia (Gourmet, Artesanal, Clásica). |
+| `sabor` | `VARCHAR(255)` | SÍ | - | Descripción de ingredientes, presentación o tamaño. |
+| `precio` | `DECIMAL(10,2)` | NO | `CHECK (precio >= 0)` | Precio unitario de venta al público en Bolivianos (Bs). |
+| `stock` | `INT` | NO | `DEFAULT 0, CHECK (stock >= 0)` | Existencias disponibles en el inventario físico. |
+| `created_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP` | Fecha y hora de registro en catálogo. |
+| `updated_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP ON UPDATE` | Fecha y hora de última modificación de precio/stock. |
+| `created_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | Administrador responsable del alta. |
+| `updated_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | Administrador responsable de la edición. |
+
+---
+
+### Tabla: `pedidos`
+Cabecera de las órdenes de compra, controlando el ciclo logístico, financiero y geográfico.
+
+| Columna | Tipo de Dato | Nulo | Restricciones / Claves | Descripción |
+|---|---|---|---|---|
+| `id` | `INT` | NO | `PRIMARY KEY, AUTO_INCREMENT` | Identificador único del pedido. |
+| `cliente_id` | `INT` | NO | `FOREIGN KEY (users.id) ON DELETE RESTRICT` | Cliente que realizó la compra. |
+| `rider_id` | `INT` | SÍ | `FOREIGN KEY (users.id) ON DELETE SET NULL` | Repartidor asignado a la entrega. |
+| `total` | `DECIMAL(10,2)` | NO | `CHECK (total >= 0)` | Monto final cobrado al cliente (subtotal + envío). |
+| `subtotal` | `DECIMAL(10,2)` | SÍ | `DEFAULT 0.00` | Sumatoria de precios de los productos adquiridos. |
+| `costo_envio` | `DECIMAL(10,2)` | SÍ | `DEFAULT 5.00` | Tarifa calculada de flete según distancia GPS. |
+| `distancia_km` | `DECIMAL(6,2)` | SÍ | `DEFAULT 0.00` | Distancia geodésica tienda-cliente en kilómetros. |
+| `latitud` | `DECIMAL(10,8)` | SÍ | - | Latitud geográfica de entrega seleccionada por el cliente. |
+| `longitud` | `DECIMAL(11,8)` | SÍ | - | Longitud geográfica de entrega seleccionada por el cliente. |
+| `metodo_pago` | `ENUM('qr', 'contraentrega_efectivo')` | NO | `DEFAULT 'contraentrega_efectivo'` | Método de pago convenido para la transacción. |
+| `estado_pago` | `ENUM('esperando_pago', 'pagado_qr', 'pagado_efectivo', 'contraentrega', 'liquidado', 'cancelado')` | NO | `DEFAULT 'contraentrega'` | Estado de liquidación del pago. |
+| `estado_pedido` | `ENUM('pendiente', 'asignado', 'en_camino', 'entregado', 'cancelado')` | NO | `DEFAULT 'pendiente'` | Fase en la máquina de estados del pedido. |
+| `qr_comprobante_url`| `VARCHAR(255)` | SÍ | - | Ruta de almacenamiento de la foto del comprobante QR. |
+| `created_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP` | Fecha y hora en que se confirmó el checkout. |
+| `updated_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP ON UPDATE` | Fecha y hora del último cambio de estado. |
+| `created_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | ID del cliente creador. |
+| `updated_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | ID del usuario que modificó el estado. |
+
+---
+
+### Tabla: `pedido_detalles`
+Tabla relacional de rompimiento que desglosa los ítems incluidos en cada pedido.
+
+| Columna | Tipo de Dato | Nulo | Restricciones / Claves | Descripción |
+|---|---|---|---|---|
+| `id` | `INT` | NO | `PRIMARY KEY, AUTO_INCREMENT` | Identificador del renglón de detalle. |
+| `pedido_id` | `INT` | NO | `FOREIGN KEY (pedidos.id) ON DELETE CASCADE` | Pedido al que pertenece el ítem. |
+| `producto_id` | `INT` | NO | `FOREIGN KEY (productos.id) ON DELETE RESTRICT` | Producto adquirido. |
+| `cantidad` | `INT` | NO | `CHECK (cantidad > 0)` | Número de unidades adquiridas. |
+| `precio_unitario` | `DECIMAL(10,2)`| NO | `CHECK (precio_unitario >= 0)` | Precio unitario congelado al momento de la compra. |
+| `subtotal` | `DECIMAL(10,2)`| SÍ | `CHECK (subtotal >= 0)` | Total por renglón (`cantidad * precio_unitario`). |
+| `created_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP` | Fecha de creación del ítem. |
+| `updated_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP ON UPDATE` | Fecha de actualización del ítem. |
+| `created_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | Usuario creador. |
+| `updated_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | Usuario modificador. |
+
+---
+
+### Tabla: `documentacion_rider`
+Contiene el expediente legal y vehicular del repartidor requerido para su habilitación en plataforma.
+
+| Columna | Tipo de Dato | Nulo | Restricciones / Claves | Descripción |
+|---|---|---|---|---|
+| `id` | `INT` | NO | `PRIMARY KEY, AUTO_INCREMENT` | Identificador único del expediente. |
+| `rider_id` | `INT` | NO | `UNIQUE, FOREIGN KEY (users.id) ON DELETE CASCADE` | Relación unívoca 1:1 con el usuario repartidor. |
+| `licencia_url` | `VARCHAR(255)` | NO | - | Archivo de licencia de conducir vigente. |
+| `seguro_url` | `VARCHAR(255)` | NO | - | Archivo de póliza de seguro automotor / SOAT. |
+| `cv_url` | `VARCHAR(255)` | NO | - | Archivo de Hoja de Vida / Curriculum Vitae. |
+| `estado_aprobacion`| `ENUM('pendiente', 'aprobado', 'rechazado')` | NO | `DEFAULT 'pendiente'` | Dictamen administrativo del expediente. |
+| `created_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP` | Fecha de postulación y carga de documentos. |
+| `updated_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP ON UPDATE` | Fecha de dictamen o renovación. |
+| `created_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | ID del rider postulante. |
+| `updated_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | ID del administrador evaluador. |
+
+---
+
+### Tabla: `auditoria_logs`
+Ledger inmutable del sistema que registra de manera permanente cada operación de mutación de datos.
+
+| Columna | Tipo de Dato | Nulo | Restricciones / Claves | Descripción |
+|---|---|---|---|---|
+| `id` | `INT` | NO | `PRIMARY KEY, AUTO_INCREMENT` | Identificador correlativo del log. |
+| `tabla_afectada` | `VARCHAR(100)` | NO | `INDEX` | Nombre de la tabla sobre la que operó el cambio. |
+| `registro_id` | `INT` | NO | `INDEX` | Clave primaria del registro alterado. |
+| `accion` | `ENUM('INSERT', 'UPDATE', 'DELETE')` | NO | - | Naturaleza de la operación DML. |
+| `datos_anteriores`| `JSON` | SÍ | - | Snapshot del registro previo a la modificación. |
+| `datos_nuevos` | `JSON` | SÍ | - | Snapshot del registro resultante tras la modificación. |
+| `ip_address` | `VARCHAR(45)` | SÍ | - | Dirección IPv4 o IPv6 del cliente solicitante. |
+| `created_at` | `TIMESTAMP` | NO | `DEFAULT CURRENT_TIMESTAMP` | Marca temporal UTC inmutable del suceso. |
+| `created_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | Operador responsable de la mutación. |
+| `updated_by` | `INT` | SÍ | `FOREIGN KEY (users.id)` | Reservado para integridad referencial. |
+
+---
+
+## 4. Guía de Despliegue y Puesta en Producción
+
+### Requisitos del Sistema
+- **Sistema Operativo:** Windows 10/11, Linux (Ubuntu 20.04+, Debian 11+) o macOS.
+- **Servidor Web:** Apache 2.4+ (con módulos `mod_rewrite`, `mod_headers`) o Nginx 1.18+.
+- **Intérprete PHP:** PHP 8.2 o superior con extensiones activadas: `pdo`, `pdo_mysql`, `json`, `mbstring`, `openssl`, `fileinfo`.
+- **Servidor de Base de Datos:** MySQL 8.0+ o MariaDB 10.5+ con soporte UTF8mb4.
+- **Intérprete Python:** Python 3.10 o superior (para soporte de scripts de cálculo y servidor local).
+
+### Pasos de Despliegue con Apache / XAMPP
+1. **Clonación del Repositorio:**
+   Copiar la carpeta del proyecto dentro del directorio raíz de documentos del servidor web:
+   - En XAMPP (Windows): `C:\xampp\htdocs\Bebidas-E-Commerce`
+   - En Linux (Apache): `/var/www/html/Bebidas-E-Commerce`
+
+2. **Inicialización de la Base de Datos:**
+   Importar los archivos de esquema SQL en orden utilizando MySQL Workbench, phpMyAdmin o consola de comandos:
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS burger_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   mysql -u root -p burger_shop < init_schema.sql
+   mysql -u root -p burger_shop < init_users.sql
+   ```
+
+3. **Configuración de Permisos de Archivos:**
+   Garantizar que el servidor web posea permisos de escritura sobre las carpetas de subida de archivos:
+   - `microservices/Auth/uploads/ci/` (Documentos de identidad de clientes y riders).
+   - `microservices/Auth/uploads/qr/` (Comprobantes de transferencias bancarias QR).
+   - `microservices/Auth/uploads/riders/` (Expedientes vehiculares de conductores).
+
+4. **Configuración de Parámetros de Conexión:**
+   Verificar las credenciales de base de datos en [`microservices/Catalog/Database.php`](file:///F:/Bebidas-E-Commerce/microservices/Catalog/Database.php):
+   ```php
+   private $host = "localhost";
+   private $db_name = "burger_shop";
+   private $username = "root";
+   private $password = "";
+   ```
+
+### Despliegue Rápido en Entorno de Desarrollo (Servidor Autónomo Python)
+El proyecto incluye un servidor HTTP multipropósito escrito en Python (`server.py`) que implementa la emulación completa de los microservicios sin requerir una instalación pesada de Apache:
+```powershell
+# Ejecución directa en consola:
+python server.py 8000
+
+# O mediante el script por lotes incluido:
+./start_services.bat
+```
+El servidor quedará disponible en `http://localhost:8000`, ofreciendo soporte simultáneo para servir los activos estáticos del frontend (`index.html`, `style.css`, `app.js`, `api.js`) y atender las peticiones REST con persistencia en memoria y verificación de tokens JWT.
+
+
+
+---
+
+
+
+<!-- PAGE_BREAK -->
+
+# Capítulo 2: Diagramas del Sistema y Modelado C4
+
+# Diagramas del Sistema - Tesina Técnica
+
+## 1. Arquitectura General del Sistema y Microservicios
+
+El sistema **Burger 24/7** opera bajo una arquitectura distribuida de microservicios desacoplados, comunicados mediante el protocolo HTTP REST bajo el estándar de sobres **BMAD** (`status`, `data`, `audit`, `error_details`). El frontend es una Single Page Application (SPA) responsiva con soporte de modo dual (conectado vía API REST y simulado con `localStorage` como fallback resiliente).
+
+```mermaid
+graph TD
+    subgraph Frontend ["Capa Frontend (SPA Vanilla JS ES6+)"]
+        UI_Client["Portal Cliente (Catálogo, Carrito, GPS Checkout, Tracking)"]
+        UI_Rider["Portal Rider (Expediente, Cola Pedidos, GPS Ruta)"]
+        UI_Admin["Centro de Control Admin (Aprobaciones, CRUD, Monitoreo 10s, Cajas, Auditoría, Reportes)"]
+        APILayer["Capa de Red Centralizada (api.js - apiGet, apiPost, apiPut, apiDelete)"]
+        LocalDB[("Motor Fallback LocalStorage")]
+    end
+
+    subgraph Gateway ["Seguridad & Autenticación"]
+        AuthHeader["Bearer JWT Token (HMAC-SHA256)"]
+        CORS["Cabeceras CORS & Rate Limiting"]
+    end
+
+    subgraph Backend ["Microservicios REST (PHP 8.2 & Python 3.11)"]
+        MS_Auth["Microservicio Auth (login, register, session, admin_approval)"]
+        MS_Catalog["Microservicio Catalog (CRUD Productos, Singleton PDO Database)"]
+        MS_Trans["Microservicio Transactions (checkout ACID, cancel_order, live_monitoring, report)"]
+        MS_Rider["Microservicio Rider (assignment, delivery, settle_cash)"]
+        MS_Logistics["Microservicio Logistics (calculator.py - Haversine GPS)"]
+    end
+
+    subgraph Data ["Capa de Persistencia & Almacenamiento"]
+        MySQL[("Base de Datos Relacional MySQL 8.0 (3FN)")]
+        Storage["Almacenamiento Seguro Archivos (/uploads/ci/, /uploads/qr/, /uploads/riders/)"]
+        AuditLedger[("Ledger Inmutable de Auditoría (auditoria_logs)")]
+    end
+
+    UI_Client --> APILayer
+    UI_Rider --> APILayer
+    UI_Admin --> APILayer
+    APILayer -.->|Fallback Offline| LocalDB
+
+    APILayer --> AuthHeader
+    AuthHeader --> CORS
+    CORS --> MS_Auth
+    CORS --> MS_Catalog
+    CORS --> MS_Trans
+    CORS --> MS_Rider
+    CORS --> MS_Logistics
+
+    MS_Auth --> MySQL
+    MS_Auth --> Storage
+    MS_Catalog --> MySQL
+    MS_Trans --> MySQL
+    MS_Rider --> MySQL
+    MS_Logistics -.-> MS_Trans
+
+    MS_Auth --> AuditLedger
+    MS_Catalog --> AuditLedger
+    MS_Trans --> AuditLedger
+    MS_Rider --> AuditLedger
+```
+
+---
+
+## 2. Diagrama Entidad-Relación (DER) Físico
+
+Estructura normalizada en Tercera Forma Normal (3FN) que soporta el ciclo de vida completo de usuarios, catálogo comercial, transacciones financieras, expedientes de repartidores y auditoría inalterable.
+
+```mermaid
+erDiagram
+    users {
+        INT id PK
+        ENUM role "cliente, rider, admin, super_usuario"
+        VARCHAR nombre "Nombre completo"
+        VARCHAR email "Email único"
+        VARCHAR password_hash "Hash Bcrypt seguro"
+        DATE fecha_nacimiento "Control mayoría de edad"
+        VARCHAR ci_url "Ruta privada del documento C.I."
+        ENUM ci_status "pending, verified, rejected"
+        TIMESTAMP created_at "Marca de tiempo de registro"
+        TIMESTAMP updated_at "Última actualización"
+        INT created_by FK "Usuario creador"
+        INT updated_by FK "Usuario modificador"
+    }
+
+    productos {
+        INT id PK
+        VARCHAR categoria "Hamburguesas, Combos, Acompañamientos, Bebidas"
+        VARCHAR nombre "Nombre comercial"
+        VARCHAR marca "Línea o procedencia"
+        VARCHAR sabor "Descripción / presentación"
+        DECIMAL precio "Precio de venta en Bs"
+        INT stock "Inventario físico disponible"
+        TIMESTAMP created_at "Fecha de alta"
+        TIMESTAMP updated_at "Fecha de modificación"
+        INT created_by FK "Admin responsable"
+        INT updated_by FK "Admin modificador"
+    }
+
+    pedidos {
+        INT id PK
+        INT cliente_id FK "Usuario cliente"
+        INT rider_id FK "Usuario rider asignado (opcional)"
+        DECIMAL total "Total de la transacción en Bs"
+        DECIMAL subtotal "Subtotal de productos"
+        DECIMAL costo_envio "Tarifa de flete logístico"
+        DECIMAL distancia_km "Distancia tienda-destino"
+        DECIMAL latitud "Coordenada latitud destino GPS"
+        DECIMAL longitud "Coordenada longitud destino GPS"
+        ENUM metodo_pago "qr, contraentrega_efectivo"
+        ENUM estado_pago "esperando_pago, pagado_qr, pagado_efectivo, liquidado, cancelado"
+        ENUM estado_pedido "pendiente, asignado, en_camino, entregado, cancelado"
+        VARCHAR qr_comprobante_url "Comprobante de transferencia"
+        TIMESTAMP created_at "Creación del pedido"
+        TIMESTAMP updated_at "Última transición"
+        INT created_by FK "Cliente creador"
+        INT updated_by FK "Usuario modificador"
+    }
+
+    pedido_detalles {
+        INT id PK
+        INT pedido_id FK "Pedido cabecera"
+        INT producto_id FK "Producto enlazado"
+        INT cantidad "Unidades vendidas"
+        DECIMAL precio_unitario "Precio unitario fijado"
+        DECIMAL subtotal "Monto por ítem"
+        TIMESTAMP created_at "Fecha registro"
+        TIMESTAMP updated_at "Fecha modificación"
+        INT created_by FK "Usuario creador"
+        INT updated_by FK "Usuario modificador"
+    }
+
+    documentacion_rider {
+        INT id PK
+        INT rider_id FK "Usuario repartidor (1:1)"
+        VARCHAR licencia_url "Ruta privada de licencia de conducir"
+        VARCHAR seguro_url "Ruta de póliza SOAT/seguro"
+        VARCHAR cv_url "Ruta de Curriculum Vitae"
+        ENUM estado_aprobacion "pendiente, aprobado, rechazado"
+        TIMESTAMP created_at "Fecha de envío"
+        TIMESTAMP updated_at "Fecha de evaluación"
+        INT created_by FK "Rider propietario"
+        INT updated_by FK "Admin evaluador"
+    }
+
+    auditoria_logs {
+        INT id PK
+        VARCHAR tabla_afectada "Nombre de la tabla mutada"
+        INT registro_id "ID del registro afectado"
+        ENUM accion "INSERT, UPDATE, DELETE"
+        JSON datos_anteriores "Estado previo del registro"
+        JSON datos_nuevos "Estado resultante del registro"
+        VARCHAR ip_address "Dirección IP origen"
+        VARCHAR endpoint "Ruta API invocada"
+        TIMESTAMP created_at "Fecha y hora exacta UTC"
+        INT created_by FK "Operador responsable"
+    }
+
+    users ||--o{ productos : "crea/administra"
+    users ||--o{ pedidos : "realiza como cliente"
+    users ||--o{ pedidos : "despacha como rider"
+    users ||--o{ documentacion_rider : "presenta expediente"
+    users ||--o{ auditoria_logs : "genera acción de auditoría"
+
+    pedidos ||--o{ pedido_detalles : "contiene renglones"
+    productos ||--o{ pedido_detalles : "referenciado en renglones"
+```
+
+---
+
+## 3. Diagrama de Flujo: Autenticación, Registro y Control de Identidad
+
+Describe el ciclo de vida de autenticación mediante JWT (HMAC-SHA256) y el flujo de verificación de mayoría de edad y expediente de identidad.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario as Cliente / Rider
+    participant Frontend as Frontend SPA (app.js / api.js)
+    participant AuthAPI as Microservicio Auth (login.php / register.php)
+    participant JWT as Validador JWT (jwt.php)
+    participant DB as MySQL & auditoria_logs
+    actor Admin as Super Usuario / Central
+
+    Note over Usuario,Admin: Flujo de Registro con C.I.
+    Usuario->>Frontend: Completa formulario de registro + Foto C.I. + Fecha de Nacimiento
+    Frontend->>Frontend: Validación frontend: edad >= 18 años
+    Frontend->>AuthAPI: POST /Auth/register.php (multipart/form-data)
+    AuthAPI->>AuthAPI: Valida edad >= 18 y extensiones permitidas (JPG, PNG, PDF)
+    AuthAPI->>AuthAPI: Hashea contraseña con Bcrypt (costo 10)
+    AuthAPI->>DB: INSERT en users (ci_status='pending')
+    AuthAPI->>DB: INSERT en auditoria_logs (accion='INSERT', tabla='users')
+    AuthAPI-->>Frontend: JSON 201: Registro exitoso (Estado: Pendiente)
+
+    Note over Usuario,Admin: Flujo de Autenticación (Login)
+    Usuario->>Frontend: Ingresa Email y Contraseña
+    Frontend->>AuthAPI: POST /Auth/login.php { email, password }
+    AuthAPI->>DB: SELECT * FROM users WHERE email = ?
+    AuthAPI->>AuthAPI: password_verify(password, password_hash)
+    alt Contraseña inválida o usuario no existe
+        AuthAPI-->>Frontend: JSON 401: Credenciales inválidas
+    else Credenciales válidas
+        AuthAPI->>JWT: generateToken(user_id, role, email, ci_status)
+        JWT-->>AuthAPI: Retorna Bearer Token firmado HMAC-SHA256 (exp=24h)
+        AuthAPI->>DB: INSERT auditoria_logs (LOGIN_SUCCESS)
+        AuthAPI-->>Frontend: JSON 200 { token, user }
+        Frontend->>Frontend: Guarda token en localStorage y configura cabecera Authorization
+    end
+
+    Note over Usuario,Admin: Aprobación Administrativa de C.I.
+    Admin->>Frontend: Ingresa a pestaña "Aprobación C.I. & Expedientes"
+    Frontend->>AuthAPI: POST /Auth/admin_approval.php { accion: 'aprobar', id: usuarioId } [Bearer Admin]
+    AuthAPI->>JWT: validateToken() -> Requiere role = 'admin' / 'super_usuario'
+    AuthAPI->>DB: UPDATE users SET ci_status = 'verified' WHERE id = ?
+    AuthAPI->>DB: INSERT auditoria_logs (accion='UPDATE', datos_anteriores, datos_nuevos)
+    AuthAPI-->>Frontend: JSON 200: Usuario verificado
+    Frontend->>Frontend: Desbloquea catálogo comercial y compras
+```
+
+---
+
+## 4. Diagrama de Flujo: Checkout Atómico y Gestión de Inventario
+
+Describe el proceso de compra con validación geoespacial, cálculo de flete logístico, reserva atómica de stock mediante transacción MySQL ACID (`BEGIN` $\rightarrow$ `COMMIT` / `ROLLBACK`) y cancelación con devolución de mercancía.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Cliente
+    participant Frontend as Frontend SPA (app.js)
+    participant CheckoutAPI as /Transactions/checkout.php
+    participant Logistics as Logistics (calculator.py)
+    participant DB as MySQL (Engine InnoDB)
+    participant Audit as auditoria_logs
+
+    Cliente->>Frontend: Selecciona hamburguesas/combos y hace clic en Checkout
+    Cliente->>Frontend: Clic en mapa Leaflet para fijar coordenadas GPS destino
+    Frontend->>Logistics: Envía coordenadas GPS (origen Sopocachi, destino Cliente)
+    Logistics-->>Frontend: Retorna distancia_km, tiempo_estimado, costo_envio_bs
+    Cliente->>Frontend: Selecciona método de pago (QR bancario o Contraentrega) y confirma
+
+    Frontend->>CheckoutAPI: POST /Transactions/checkout.php { items, metodo_pago, lat, lon } [Bearer Token]
+    CheckoutAPI->>CheckoutAPI: Validar autenticación JWT del Cliente
+
+    Note over CheckoutAPI,DB: Transacción Relacional ACID
+    CheckoutAPI->>DB: START TRANSACTION
+    loop Por cada producto en el carrito
+        CheckoutAPI->>DB: SELECT stock FROM productos WHERE id = ? FOR UPDATE
+        alt Stock insuficiente (stock < cantidad solicitada)
+            CheckoutAPI->>DB: ROLLBACK
+            CheckoutAPI-->>Frontend: JSON 400: Stock insuficiente para producto X
+        else Stock suficiente
+            CheckoutAPI->>DB: UPDATE productos SET stock = stock - cantidad WHERE id = ?
+            CheckoutAPI->>Audit: INSERT auditoria_logs (UPDATE productos, cambio de stock)
+        end
+    end
+
+    CheckoutAPI->>DB: INSERT INTO pedidos (cliente_id, total, metodo_pago, estado_pedido='pendiente', ...)
+    CheckoutAPI->>DB: INSERT INTO pedido_detalles (...)
+    CheckoutAPI->>Audit: INSERT auditoria_logs (INSERT pedidos, INSERT pedido_detalles)
+    CheckoutAPI->>DB: COMMIT
+    CheckoutAPI-->>Frontend: JSON 201: Pedido creado exitosamente y stock descontado
+
+    Note over Cliente,Audit: Flujo de Cancelación y Reembolso
+    opt El cliente o administrador cancela el pedido antes de despacho
+        Frontend->>CheckoutAPI: POST /Transactions/cancel_order.php { pedido_id } [Bearer Token]
+        CheckoutAPI->>DB: START TRANSACTION
+        CheckoutAPI->>DB: SELECT * FROM pedidos WHERE id = ? FOR UPDATE
+        CheckoutAPI->>DB: Reembolsa stock: UPDATE productos SET stock = stock + cantidad
+        CheckoutAPI->>DB: UPDATE pedidos SET estado_pedido = 'cancelado', estado_pago = 'cancelado'
+        CheckoutAPI->>Audit: INSERT auditoria_logs (Reembolso de inventario)
+        CheckoutAPI->>DB: COMMIT
+        CheckoutAPI-->>Frontend: JSON 200: Pedido cancelado y stock restituido al catálogo
+    end
+```
+
+---
+
+## 5. Diagrama de Flujo: Ciclo de Vida del Repartidor (Rider)
+
+Muestra el flujo completo desde la verificación de documentos del repartidor hasta la aceptación y entrega del pedido.
+
+```mermaid
+stateDiagram-v2
+    [*] --> RegistroRider: Sube Licencia, Seguro y CV
+    RegistroRider --> ExpedientePendiente: Registrado en documentacion_rider
+
+    state ExpedientePendiente {
+        [*] --> RevisionAdmin
+        RevisionAdmin --> Rechazado: Documentos inválidos / caducados
+        RevisionAdmin --> Aprobado: Verificación satisfactoria
+    }
+
+    Rechazado --> [*]: Requiere subsanar documentos
+    Aprobado --> RiderHabilitado: Habilitado para tomar pedidos
+
+    state CicloEntrega {
+        RiderHabilitado --> ColaPedidos: Consulta /Rider/assignment.php (GET)
+        ColaPedidos --> PedidoAsignado: POST /Rider/assignment.php { pedido_id }
+        note right of PedidoAsignado: estado_pedido = 'asignado'<br/>rider_id asociado
+        
+        PedidoAsignado --> EnCamino: PUT /Rider/delivery.php { nuevo_estado: 'en_camino' }
+        note right of EnCamino: Posición GPS simulada (interpolación 50%)<br/>Tracking activo en mapas cliente y admin
+
+        EnCamino --> Entregado: PUT /Rider/delivery.php { nuevo_estado: 'entregado' }
+        note right of Entregado: Si método = contraentrega:<br/>estado_pago = 'pagado_efectivo'<br/>(pasa a caja física del rider)
+    }
+
+    Entregado --> PendienteLiquidacion: Dinero acumulado en mano del rider
+    PendienteLiquidacion --> CajaLiquidada: Admin ejecuta settle_cash.php
+    CajaLiquidada --> RiderHabilitado: Caja conciliada y lista para nueva jornada
+```
+
+---
+
+## 6. Diagrama de Flujo: Monitoreo en Tiempo Real y Liquidación de Caja Central
+
+Ilustra la arquitectura de polling continuo (10 segundos), el cálculo de posición geográfica por interpolación lineal, y el cierre de caja de efectivo.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Super Usuario (Centro de Mando)
+    participant Dashboard as UI Monitoreo (app.js)
+    participant MonitorAPI as /Transactions/live_monitoring.php
+    participant MapLeaflet as Mapa Operativo Leaflet
+    participant SettleAPI as /Rider/settle_cash.php
+    participant DB as MySQL & auditoria_logs
+
+    Admin->>Dashboard: Accede a pestaña "Monitoreo & Caja Central"
+    Dashboard->>Dashboard: Inicia Polling recurrente (setInterval cada 10s)
+
+    loop Cada 10 Segundos (Polling Continuo)
+        Dashboard->>MonitorAPI: GET /Transactions/live_monitoring.php [Bearer Admin]
+        MonitorAPI->>DB: SELECT pedidos activos ('asignado', 'en_camino') con cliente y rider
+        MonitorAPI->>DB: SELECT recaudación en efectivo pendiente de liquidar agrupada por rider
+        MonitorAPI->>MonitorAPI: Calcula Haversine, ETA y Posición Rider Interpolada:
+        Note over MonitorAPI: P(t) = P_tienda + t * (P_cliente - P_tienda) [t=0 asignado, t=0.5 en_camino]
+        MonitorAPI-->>Dashboard: JSON 200 { pedidos_activos, liquidaciones_pendientes }
+        Dashboard->>Dashboard: Actualiza lista reactiva de envíos activos y panel de caja
+        Dashboard->>MapLeaflet: Actualiza marcadores tienda, cliente, ruta discontinua e ícono rider 🛵
+        Dashboard->>MapLeaflet: map.invalidateSize() para garantizar renderizado exacto
+    end
+
+    Note over Admin,DB: Selección de Ruta Específica
+    Admin->>Dashboard: Clic en "Rastrear en Mapa" del Pedido #X
+    Dashboard->>MapLeaflet: fitBounds([CoordsTienda, CoordsCliente], { padding: [35, 35] })
+    Dashboard->>MapLeaflet: Resalta tarjeta activa con borde morado
+
+    Note over Admin,DB: Proceso de Liquidación de Caja Física
+    Admin->>Dashboard: Rider entrega efectivo recaudado en central. Clic en "Liquidar Caja"
+    Dashboard->>SettleAPI: POST /Rider/settle_cash.php { rider_id: Y } [Bearer Admin]
+    SettleAPI->>DB: START TRANSACTION
+    SettleAPI->>DB: UPDATE pedidos SET estado_pago = 'liquidado' WHERE rider_id = Y AND estado_pago = 'pagado_efectivo'
+    SettleAPI->>DB: INSERT auditoria_logs (Conciliación financiera de caja central)
+    SettleAPI->>DB: COMMIT
+    SettleAPI-->>Dashboard: JSON 200: Caja liquidada con éxito
+    Dashboard->>Dashboard: Refresca lista de recaudaciones (el saldo pendiente pasa a 0.00 Bs)
+```
+
+
+
+---
+
+
+
+<!-- PAGE_BREAK -->
+
+# Capítulo 3: Arquitectura de Seguridad y Criptografía
+
+# Arquitectura de Seguridad y Protección de Datos - Tesina Técnica
+
+## 1. Autenticación y Autorización basada en JWT (HMAC-SHA256)
+
+El sistema **Burger 24/7** implementa un esquema de autenticación sin estado (*stateless*) fundamentado en **JSON Web Tokens (JWT)** conforme al estándar **RFC 7519**. Este mecanismo garantiza la integridad de la identidad del usuario y permite la validación descentralizada de permisos entre microservicios sin sobrecargar la base de datos con consultas de sesión repetitivas.
+
+### A. Estructura Criptográfica del Token
+Cada token emitido por [`microservices/Auth/jwt.php`](file:///F:/Bebidas-E-Commerce/microservices/Auth/jwt.php) consta de tres partes concatenadas por puntos (`.`):
+
+1. **Header:** Define el algoritmo de firma y el tipo de token:
+   ```json
+   {
+     "alg": "HS256",
+     "typ": "JWT"
+   }
+   ```
+2. **Payload:** Transporta los reclamos (*claims*) de identidad y control de acceso del usuario:
+   ```json
+   {
+     "user_id": 3,
+     "role": "super_usuario",
+     "email": "admin@mail.com",
+     "nombre": "Admin Central",
+     "ci_status": "verified",
+     "iat": 1789448640,
+     "exp": 1789535040
+   }
+   ```
+3. **Signature:** Firma digital generada mediante el algoritmo **HMAC-SHA256** utilizando una clave secreta segura (*Secret Key*) resguardada en el servidor:
+   $$\text{Signature} = \text{HMAC-SHA256}(\text{Base64Url}(\text{Header}) + "." + \text{Base64Url}(\text{Payload}), \text{SECRET\_KEY})$$
+
+### B. Política de Transporte Seguro de Tokens
+- **Transporte Exclusivo por Cabecera HTTP:** El token debe ser suministrado obligatoriamente en el encabezado:
+  ```http
+  Authorization: Bearer <token_jwt>
+  ```
+- **Rechazo Estricto de Tokens en Query Strings:** Para mitigar el riesgo de fuga de credenciales en bitácoras de servidores proxy, historial de navegación web y cabeceras `Referer`, todos los microservicios rechazan activamente parámetros `?token=...` en la URL. Si una petición intenta pasar el token por query string, el backend la invalida inmediatamente con un código **HTTP 401 Unauthorized**.
+- **Ventana de Caducidad:** Los tokens cuentan con un tiempo de expiración programado de 24 horas (`86400` segundos) desde el momento de emisión (`iat`), tras lo cual el cliente debe renovar su sesión.
+
+---
+
+## 2. Control de Acceso Basado en Roles (RBAC)
+
+La plataforma aplica un modelo de **Control de Acceso Basado en Roles (Role-Based Access Control - RBAC)** que gobierna la ejecución de cada operación en los endpoints de los microservicios:
+
+```
+                      Matriz de Privilegios RBAC
+┌───────────────────────────────┬─────────┬─────────┬─────────────────┐
+│ Operación / Endpoint          │ Cliente │  Rider  │ Admin / Central │
+├───────────────────────────────┼─────────┼─────────┼─────────────────┤
+│ Ver catálogo comercial        │    ✓    │    ✓    │        ✓        │
+│ Crear pedidos (Checkout)      │    ✓    │    ✗    │        ✗        │
+│ Subir comprobante QR          │    ✓    │    ✗    │        ✗        │
+│ Ver pedidos pendientes        │    ✗    │    ✓    │        ✓        │
+│ Aceptar despacho (Rider)      │    ✗    │    ✓    │        ✗        │
+│ Actualizar tránsito (Rider)   │    ✗    │    ✓    │        ✗        │
+│ Aprobar / Rechazar identidades│    ✗    │    ✗    │        ✓        │
+│ Modificar catálogo (CRUD)     │    ✗    │    ✗    │        ✓        │
+│ Monitoreo en vivo (Live Map)  │    ✗    │    ✗    │        ✓        │
+│ Liquidar caja central         │    ✗    │    ✗    │        ✓        │
+│ Consultar ledger auditoría    │    ✗    │    ✗    │        ✓        │
+│ Generar reportes financieros  │    ✗    │    ✗    │        ✓        │
+└───────────────────────────────┴─────────┴─────────┴─────────────────┘
+```
+
+### Funciones de Seguridad en Backend:
+- **`authenticate()`:** Extrae el Bearer token de las cabeceras HTTP, verifica la firma criptográfica HMAC-SHA256 y comprueba que la fecha actual sea anterior al reclamo `exp`.
+- **`requireAuth()`:** Invoca `authenticate()`. Si el token es nulo o inválido, emite una respuesta terminante **HTTP 401 Unauthorized** y detiene la ejecución.
+- **`requireAdmin()` / `check_admin_auth()`:** Comprueba adicionalmente que el rol del usuario contenido en el token pertenezca a `('admin', 'super_usuario')`. Si el rol no cumple la condición, emite una respuesta **HTTP 403 Forbidden**.
+
+---
+
+## 3. Cifrado y Hashing de Contraseñas (Bcrypt)
+
+Para neutralizar filtraciones de bases de datos y ataques por tablas arcoíris (*Rainbow Tables*), las contraseñas nunca se procesan ni almacenan en texto claro:
+1. **Algoritmo:** Se utiliza el estándar industrial **Bcrypt** mediante las funciones nativas `password_hash($password, PASSWORD_BCRYPT, ['cost' => 10])` en PHP y `bcrypt.hash()` en Python.
+2. **Salting Dinámico:** Bcrypt genera automáticamente una sal (*salt*) criptográfica aleatoria de 128 bits para cada usuario, garantizando que dos usuarios con la misma contraseña produzcan hashes totalmente diferentes en la tabla `users`.
+3. **Validación en Tiempo Constante:** La autenticación se verifica con `password_verify($password, $hash)`, la cual opera en tiempo constante para neutralizar ataques de temporización (*timing attacks*).
+
+---
+
+## 4. Políticas de CORS y Encabezados de Seguridad
+
+Dado que los microservicios pueden ser consumidos desde orígenes distribuidos, cada script PHP incorpora cabeceras de **Cross-Origin Resource Sharing (CORS)** y seguridad HTTP:
+
+```php
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+// Manejo expedito de pre-flight requests del navegador
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+```
+
+---
+
+## 5. Prevención de Vulnerabilidades Web Críticas
+
+### A. Prevención de Inyección SQL (SQLi)
+- **100% Sentencias Preparadas (Prepared Statements):** Ninguna consulta a la base de datos concatena parámetros provenientes del usuario (`$_GET`, `$_POST`, o cuerpo JSON).
+- **PDO Parametrizado:** Se emplean marcadores de posición (`?` o `:param`) que separan estrictamente la estructura sintáctica SQL de los datos proporcionados por el usuario, haciendo imposible la alteración de la lógica de consulta mediante inyecciones SQL.
+
+### B. Prevención de Cross-Site Scripting (XSS)
+- **Sanitización de Entradas:** Todas las cadenas recibidas que van a ser persistidas o reflejadas se limpian mediante `htmlspecialchars($data, ENT_QUOTES, 'UTF-8')` y `strip_tags()`.
+- **Renderizado Seguro en el Frontend:** En [`app.js`](file:///F:/Bebidas-E-Commerce/app.js), los datos provenientes de la API se inyectan en el DOM preferentemente mediante propiedades `innerText` o plantillas con escape de caracteres peligrosos (`<`, `>`, `"`, `'`, `&`).
+
+### C. Seguridad en la Subida de Archivos (File Upload Security)
+Para evitar la carga de archivos ejecutables maliciosos (ej. webshells en PHP):
+1. **Validación de Tipos MIME Reales:** No se confía en la extensión enviada por el navegador (`$_FILES['file']['name']`); se analiza el contenido binario del archivo usando `finfo_file()` para constatar que corresponda a imágenes legítimas (`image/jpeg`, `image/png`) o documentos (`application/pdf`).
+2. **Ofuscación Criptográfica de Nombres:** Los archivos almacenados en servidor son renombrados utilizando identificadores únicos no predecibles: `ci_` + `uniqid('', true)` + extensión limpia.
+3. **Aislamiento en Servidor con `.htaccess`:** En los directorios de almacenamiento privado (`uploads/ci/`, `uploads/qr/`, `uploads/riders/`), se ha desplegado un archivo `.htaccess` con la siguiente directiva:
+   ```apache
+   # uploads/ci/.htaccess
+   Require all denied
+   ```
+   Esto bloquea totalmente cualquier intento de acceder directamente a una imagen mediante una URL pública del navegador (evitando el robo masivo de documentos de identidad). Las imágenes solo pueden ser leídas por los microservicios autorizados a través de los canales internos de la plataforma.
+
+### D. Rate Limiting y Detección de Fuerza Bruta
+- Cada intento de autenticación fallido y cada operación CRUD se registra con su dirección IP de origen en `auditoria_logs`.
+- La plataforma detecta ráfagas anómalas de peticiones sobre el endpoint de login y emite retardos de respuesta para mitigar ataques automatizados de diccionario.
+
+---
+
+## 6. Manual de Pruebas de Seguridad (Casos de Éxito y Error)
+
+| ID | Vector de Ataque / Escenario | Petición / Parámetros Enviados | Mecanismo de Defensa | Código HTTP | Resultado del Sistema |
+|---|---|---|---|---|---|
+| **CP-SEC-01** | Acceso sin token de autorización | GET `/live_monitoring.php` sin cabecera `Authorization`. | Middleware `requireAuth()` evalúa ausencia de credenciales. | 401 Unauthorized | Acceso denegado: "Token de autorización no proporcionado". |
+| **CP-SEC-02** | Token manipulado (Firma inválida) | Petición con JWT cuyo payload fue alterado manualmente en Base64. | `jwt.php` recalcula el HMAC-SHA256 con la Secret Key del servidor y detecta discrepancia. | 401 Unauthorized | Token rechazado por firma criptográfica inválida. |
+| **CP-SEC-03** | Token transmitido por Query String | GET `/live_monitoring.php?token=eyJhbG...` | El microservicio rechaza explícitamente tokens en la URL. | 401 Unauthorized | Petición rechazada para prevenir fugas de token en logs. |
+| **CP-SEC-04** | Escalación de privilegios RBAC | Cliente verificado intenta invocar `settle_cash.php` o `catalog.php` (POST). | `requireAdmin()` comprueba `role === 'cliente'` y deniega la operación. | 403 Forbidden | Permiso denegado: "Solo administradores pueden realizar esta acción". |
+| **CP-SEC-05** | Intento de Inyección SQL (SQLi) | Intento de login con `' OR '1'='1` en el campo email. | Consulta PDO preparada con placeholder `WHERE email = ?`. El string se trata como literal. | 401 Unauthorized | No se altera la consulta; el usuario no existe. Cero brechas SQLi. |
+| **CP-SEC-06** | Carga de archivo malicioso (.php) | Intento de subir un archivo `shell.php` renombrado como `foto.jpg`. | `finfo_file` detecta que el MIME real es `text/x-php` y no `image/jpeg`. | 400 Bad Request | Carga cancelada: "Formato de archivo no permitido". |
+| **CP-SEC-07** | Acceso directo a carpeta protegida | Navegación directa hacia `http://localhost/uploads/ci/foto.jpg`. | Archivo `.htaccess` con `Require all denied` intercepta la petición a nivel de servidor web. | 403 Forbidden | Acceso bloqueado por el servidor web Apache. Documentos protegidos. |
+| **CP-SEC-08** | Inyección de script malicioso (XSS) | Producto creado con nombre `<script>alert('xss')</script>`. | Sanitización con `htmlspecialchars` y renderizado seguro en el DOM del cliente. | 200 / 201 | El script no se ejecuta; se renderiza como texto inerte en pantalla. |
+
+
+---
+
+
+
+<!-- PAGE_BREAK -->
+
+# Capítulo 4: Transacciones, Máquinas de Estados y Reglas de Negocio
+
+# Transacciones, Máquinas de Estados y Reglas de Negocio - Tesina Técnica
+
+## 1. DDL y Modelo Relacional Transaccional
+
+El modelo transaccional de **Burger 24/7** está implementado sobre el motor **InnoDB** de MySQL, asegurando el cumplimiento estricto de las propiedades **ACID** (Atomicidad, Consistencia, Aislamiento y Durabilidad). A continuación se presenta el DDL canónico de las tablas del dominio transaccional:
+
+```sql
+-- 1. Tabla de Usuarios del Sistema
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role ENUM('cliente', 'rider', 'super_usuario', 'admin') NOT NULL DEFAULT 'cliente',
+    nombre VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    fecha_nacimiento DATE NULL,
+    ci_url VARCHAR(255) NULL,
+    ci_status ENUM('pending', 'verified', 'rejected') NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by INT NULL,
+    updated_by INT NULL,
+    CONSTRAINT fk_users_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_users_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Tabla de Catálogo de Productos e Inventario
+CREATE TABLE IF NOT EXISTS productos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoria VARCHAR(50) NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    marca VARCHAR(100) NULL,
+    sabor VARCHAR(255) NULL,
+    precio DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by INT NULL,
+    updated_by INT NULL,
+    CONSTRAINT chk_precio_positivo CHECK (precio >= 0),
+    CONSTRAINT chk_stock_no_negativo CHECK (stock >= 0),
+    CONSTRAINT fk_productos_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_productos_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Tabla Cabecera de Pedidos y Transacciones
+CREATE TABLE IF NOT EXISTS pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT NOT NULL,
+    rider_id INT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    costo_envio DECIMAL(10,2) NOT NULL DEFAULT 5.00,
+    distancia_km DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+    latitud DECIMAL(10,8) NULL,
+    longitud DECIMAL(11,8) NULL,
+    metodo_pago ENUM('qr', 'contraentrega_efectivo') NOT NULL DEFAULT 'contraentrega_efectivo',
+    estado_pago ENUM('esperando_pago', 'pagado_qr', 'pagado_efectivo', 'contraentrega', 'liquidado', 'cancelado') NOT NULL DEFAULT 'contraentrega',
+    estado_pedido ENUM('pendiente', 'asignado', 'en_camino', 'entregado', 'cancelado') NOT NULL DEFAULT 'pendiente',
+    qr_comprobante_url VARCHAR(255) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by INT NULL,
+    updated_by INT NULL,
+    CONSTRAINT fk_pedidos_cliente FOREIGN KEY (cliente_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_pedidos_rider FOREIGN KEY (rider_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_pedidos_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_pedidos_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. Tabla Detalle de Pedidos (Renglones)
+CREATE TABLE IF NOT EXISTS pedido_detalles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pedido_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by INT NULL,
+    updated_by INT NULL,
+    CONSTRAINT chk_cantidad_positiva CHECK (cantidad > 0),
+    CONSTRAINT fk_detalles_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
+    CONSTRAINT fk_detalles_producto FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_detalles_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_detalles_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. Tabla Ledger de Auditoría Inmutable
+CREATE TABLE IF NOT EXISTS auditoria_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tabla_afectada VARCHAR(100) NOT NULL,
+    registro_id INT NOT NULL,
+    accion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    datos_anteriores JSON NULL,
+    datos_nuevos JSON NULL,
+    ip_address VARCHAR(45) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by INT NULL,
+    updated_by INT NULL,
+    INDEX idx_tabla_registro (tabla_afectada, registro_id),
+    CONSTRAINT fk_auditoria_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+---
+
+## 2. Máquinas de Estados Finitas (FSM)
+
+El comportamiento de los pedidos, pagos e identidades está regido por **Máquinas de Estados Finitas (Finite State Machines)** que impiden transiciones ilegales o inconsistentes en la base de datos.
+
+### A. Máquina de Estados del Pedido (`pedidos.estado_pedido`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> pendiente: Checkout Confirmado (Stock Reservado)
+    
+    pendiente --> asignado: Rider Aprobado acepta orden (/Rider/assignment.php)
+    pendiente --> cancelado: Cliente o Admin cancela (Stock Reembolsado)
+
+    asignado --> en_camino: Rider inicia traslado (/Rider/delivery.php)
+    asignado --> cancelado: Admin cancela por contingencia (Stock Reembolsado)
+
+    en_camino --> entregado: Rider confirma entrega en domicilio (/Rider/delivery.php)
+
+    entregado --> [*]: Transacción Logística Completada
+    cancelado --> [*]: Transacción Abortada y Stock Reintegrado
+```
+
+#### Reglas de Transición de `estado_pedido`:
+1. **`pendiente` $\rightarrow$ `asignado`:** Exclusivo para repartidores con expediente verificado (`estado_aprobacion = 'aprobado'`).
+2. **`asignado` $\rightarrow$ `en_camino`:** Solo puede ser ejecutado por el repartidor asignado a la orden (`rider_id == auth_user_id`).
+3. **`en_camino` $\rightarrow$ `entregado`:** Concluye el viaje. Si el pago fue convenido en efectivo, actualiza el estado financiero a `pagado_efectivo`.
+4. **Transición a `cancelado`:** Solo permitida si el estado es `pendiente` o `asignado`. Un pedido `en_camino` o `entregado` no puede cancelarse sin auditoría administrativa previa.
+
+---
+
+### B. Máquina de Estados Financiera (`pedidos.estado_pago`)
+
+```mermaid
+stateDiagram-v2
+    [*] --> esperando_pago: Pedido con método QR creado
+    [*] --> contraentrega: Pedido con método Efectivo creado
+
+    esperando_pago --> pagado_qr: Cliente sube comprobante verificado
+    contraentrega --> pagado_efectivo: Rider entrega el producto y cobra en mano
+
+    pagado_efectivo --> liquidado: Admin recibe efectivo en central (/Rider/settle_cash.php)
+    
+    esperando_pago --> cancelado: Pedido cancelado
+    contraentrega --> cancelado: Pedido cancelado
+
+    pagado_qr --> [*]: Dinero conciliado en cuenta bancaria
+    liquidado --> [*]: Dinero conciliado en caja física central
+    cancelado --> [*]: Fondos no cobrados / Anulados
+```
+
+#### Reglas de Transición de `estado_pago`:
+1. **`contraentrega` $\rightarrow$ `pagado_efectivo`:** Se dispara automáticamente cuando el repartidor marca el pedido como `entregado`.
+2. **`pagado_efectivo` $\rightarrow$ `liquidado`:** Solo puede ser ejecutada por un usuario con rol `admin` o `super_usuario` a través del endpoint `settle_cash.php`. Modifica todas las órdenes pendientes del conductor a `liquidado` en una única transacción atómica.
+
+---
+
+## 3. Reglas de Negocio y Garantías ACID
+
+### 1. Atomicidad en la Creación de Pedidos y Descuento de Stock
+En [`microservices/Transactions/checkout.php`](file:///F:/Bebidas-E-Commerce/microservices/Transactions/checkout.php), el proceso de compra está blindado bajo una transacción SQL:
+```php
+$db->beginTransaction();
+try {
+    foreach ($items as $item) {
+        // Bloqueo pesimista de fila para evitar condiciones de carrera
+        $stmtLock = $db->prepare("SELECT stock, precio FROM productos WHERE id = ? FOR UPDATE");
+        $stmtLock->execute([$item['producto_id']]);
+        $prod = $stmtLock->fetch();
+
+        if ($prod['stock'] < $item['cantidad']) {
+            throw new Exception("Stock insuficiente para el producto ID " . $item['producto_id']);
+        }
+
+        // Descuento atómico del inventario
+        $stmtStock = $db->prepare("UPDATE productos SET stock = stock - ? WHERE id = ?");
+        $stmtStock->execute([$item['cantidad'], $item['producto_id']]);
+    }
+
+    // Inserción de cabecera y detalles
+    // ...
+    $db->commit();
+} catch (Exception $e) {
+    $db->rollBack(); // Si cualquier producto falla, ningún stock es descontado
+    throw $e;
+}
+```
+
+### 2. Aislamiento Pesimista (`FOR UPDATE`)
+Para neutralizar ataques de concurrencia y sobreventa (*overselling*), se utiliza `FOR UPDATE`. Si dos clientes intentan comprar la última hamburguesa simultáneamente, la primera consulta bloquea la fila hasta completar la transacción; la segunda consulta esperará y detectará que el stock ha caído a 0, ejecutando un `ROLLBACK` seguro con HTTP 400.
+
+### 3. Cancelación con Reembolso Atómico de Mercancía
+En [`microservices/Transactions/cancel_order.php`](file:///F:/Bebidas-E-Commerce/microservices/Transactions/cancel_order.php):
+- Solo se permite la cancelación si el pedido no ha sido despachado a la calle (`estado_pedido IN ('pendiente', 'asignado')`).
+- Al cancelar, se recorren los renglones en `pedido_detalles` y se ejecuta `UPDATE productos SET stock = stock + cantidad` para cada ítem.
+- Se registran los estados anteriores y nuevos en `auditoria_logs`, garantizando que cada unidad devuelta esté plenamente justificada en los balances contables.
+
+---
+
+## 4. Manual de Pruebas de Transacciones (Casos de Éxito y Error)
+
+| ID | Escenario de Prueba | Petición / Parámetros | Comportamiento del Motor SQL | Código HTTP | Resultado Esperado |
+|---|---|---|---|---|---|
+| **CP-TX-01** | Checkout exitoso con stock disponible | POST `/checkout.php` con 2x Hamburguesa Clásica (Stock actual: 50). | `START TRANSACTION` $\rightarrow$ Valida stock $\rightarrow$ Descuenta 2 unidades $\rightarrow$ `COMMIT`. | 201 Created | Pedido creado con ID asignado; stock final: 48. |
+| **CP-TX-02** | Checkout con stock insuficiente | POST `/checkout.php` solicitando 100 unidades (Stock actual: 20). | `START TRANSACTION` $\rightarrow$ Detecta $20 < 100$ $\rightarrow$ Dispara excepción $\rightarrow$ `ROLLBACK`. | 400 Bad Request | Transacción revertida; stock se mantiene intacto en 20. |
+| **CP-TX-03** | Concurrencia simultánea en última unidad | Dos peticiones POST concurrentes para comprar 1 unidad (Stock actual: 1). | El motor aplica bloqueo `FOR UPDATE`. La petición A descuenta a 0; la petición B detecta stock 0 y hace `ROLLBACK`. | 201 (Pet. A) / 400 (Pet. B) | Una compra aprobada, una rechazada; stock final: 0 (sin negativos). |
+| **CP-TX-04** | Cancelación legal con reembolso | POST `/cancel_order.php` para pedido #10 en estado `pendiente`. | `START TRANSACTION` $\rightarrow$ Devuelve unidades a `productos` $\rightarrow$ Cambia pedido a `cancelado` $\rightarrow$ `COMMIT`. | 200 OK | Pedido cancelado y stock de productos restaurado exactamente. |
+| **CP-TX-05** | Cancelación ilegal de orden entregada | POST `/cancel_order.php` para pedido #12 en estado `entregado`. | Se evalúa `estado_pedido`. Al ser `entregado`, se aborta la operación antes de modificar stock. | 400 Bad Request | Rechazado con mensaje: "No se puede cancelar un pedido entregado". |
+| **CP-TX-06** | Liquidación de caja de repartidor | POST `/settle_cash.php` con `{ rider_id: 1 }` emitido por Admin. | `START TRANSACTION` $\rightarrow$ Suma pedidos `pagado_efectivo` $\rightarrow$ Pasa a `liquidado` $\rightarrow$ Registra auditoría $\rightarrow$ `COMMIT`. | 200 OK | Recaudación del rider conciliada a 0.00 Bs; órdenes marcadas `liquidado`. |
+| **CP-TX-07** | Intento de liquidación por usuario no admin | POST `/settle_cash.php` con token de Cliente o Rider. | El middleware de seguridad valida el rol del token JWT y deniega el acceso antes de consultar la BD. | 403 Forbidden | Acceso denegado: "Solo administradores pueden liquidar cajas". |
+| **CP-TX-08** | Inserción obligatoria de auditoría | Cualquier mutación (`INSERT`, `UPDATE`, `DELETE`) en el sistema. | Se ejecuta la función `logAuditoria()`. Si la inserción en `auditoria_logs` falla, la transacción maestra hace `ROLLBACK`. | 200 / 201 | Cero mutaciones huérfanas sin rastro en el ledger inmutable. |
+
+
+
+---
+
+
+
+<!-- PAGE_BREAK -->
+
+# Capítulo 5: Manual de Integración Frontend-Backend y Catálogo de APIs
+
+# Manual de Integración Frontend-Backend y Catálogo de APIs - Tesina Técnica
+
+## 1. Arquitectura de Integración (Frontend $\rightarrow$ Backend)
+
+La comunicación entre la interfaz de usuario ([`app.js`](file:///F:/Bebidas-E-Commerce/app.js)) y los microservicios REST desplegados en PHP y Python se realiza a través de una capa centralizada y desacoplada implementada en [`api.js`](file:///F:/Bebidas-E-Commerce/api.js).
+
+```mermaid
+graph LR
+    subgraph UI ["Capa UI (app.js)"]
+        Components["Componentes (Catálogo, Checkout, Rider, Admin)"]
+    end
+
+    subgraph APIClient ["Capa de Abstracción de Red (api.js)"]
+        Helpers["apiGet() | apiPost() | apiPut() | apiDelete()"]
+        AuthInjector["Inyector JWT: Authorization: Bearer <token>"]
+        UrlResolver["getApiBaseUrl() (Detección dinámica de origen)"]
+    end
+
+    subgraph DualMode ["Gestor de Conectividad y Resiliencia"]
+        Switch{"¿Modo Conectado Activo?"}
+        Fallback["Motor Fallback (localStorage / Mock DB)"]
+    end
+
+    subgraph Backend ["Servidor REST (PHP / Python)"]
+        Microservices["Microservicios REST (Auth, Catalog, Transactions, Rider, Logistics)"]
+        ResponseEnvelope["Envolvente Estándar BMAD (status, data, audit, error_details)"]
+    end
+
+    Components --> Helpers
+    Helpers --> AuthInjector
+    AuthInjector --> UrlResolver
+    UrlResolver --> Switch
+    Switch -->|Sí (Online)| Microservices
+    Switch -->|No / Falla HTTP| Fallback
+    Microservices --> ResponseEnvelope
+    ResponseEnvelope --> Helpers
+    Fallback --> Components
+```
+
+### Funciones Helper Estándar en `api.js`
+- **`apiRequest(endpoint, options)`:** Núcleo asíncrono basado en la API nativa `fetch`. Resuelve la URL base, inyecta la cabecera `Authorization: Bearer <token>` obtenida de `localStorage`, formatea cuerpos JSON o `FormData` y normaliza la respuesta.
+- **`apiGet(endpoint, params, options)`:** Emite peticiones HTTP GET limpiando parámetros y serializando filtros query string.
+- **`apiPost(endpoint, data, options)`:** Envía cargas útiles para inserción o procesamiento transaccional.
+- **`apiPut(endpoint, data, options)`:** Envía actualizaciones completas o parciales de registros.
+- **`apiDelete(endpoint, params, options)`:** Solicita eliminación de recursos.
+
+### Manejo de Modo Dual y Resiliencia ante Desconexión
+La variable global `config.connectedMode` actúa como un conmutador maestro de la plataforma:
+1. **Modo Conectado (`true`):** Toda acción del usuario interactúa directamente con los microservicios PHP/MySQL en el backend. Si una petición genera un error de red o el servidor se encuentra apagado, el sistema atrapa la excepción (`catch`), notifica mediante un Toast explicativo y revierte de forma transparente al modo simulado.
+2. **Modo Simulado (`false`):** La plataforma opera sobre la estructura en memoria `DB`, respaldada en `localStorage`. Todas las operaciones (registro, checkout, asignación de pedidos, actualización de estados, auditoría) son 100% funcionales localmente, permitiendo evaluar y defender la tesina incluso sin servidor web activo.
+
+---
+
+## 2. Estándar de Respuesta Unificada BMAD
+
+Todos los microservicios emiten sus respuestas respetando la especificación **BMAD-METHOD**:
+```json
+{
+  "status": "success",
+  "data": {
+    /* Entidades u objetos retornados */
+  },
+  "audit": {
+    "user_id": "3",
+    "timestamp": "2026-09-15T05:04:04.428667+00:00",
+    "action": "LIVE_MONITORING"
+  },
+  "error_details": null
+}
+```
+
+La función `apiRequest()` normaliza esta estructura en una promesa JavaScript estándar:
+```javascript
+const response = await apiGet('/Catalog/catalog.php');
+if (response.ok) {
+    console.log("Datos recibidos:", response.data);
+    console.log("Auditoría firmada:", response.envelope.audit);
+} else {
+    console.error("Error en petición:", response.error);
+}
+```
+
+---
+
+## 3. Catálogo Completo de Endpoints de la Plataforma
+
+### A. Módulo de Autenticación y Cuentas (`microservices/Auth/`)
+
+#### 1. `POST /Auth/login.php`
+- **Descripción:** Autentica credenciales y genera el token Bearer JWT firmado.
+- **Seguridad / Rol:** Público.
+- **Body JSON:**
+  ```json
+  { "email": "admin@mail.com", "password": "admin" }
+  ```
+- **Respuesta 200 OK:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "token": "eyJhbGciOiJIUzI1Ni...",
+      "user": { "id": 3, "nombre": "Admin Central", "role": "super_usuario", "email": "admin@mail.com", "ci_status": "verified" }
+    },
+    "audit": { "user_id": "3", "timestamp": "...", "action": "LOGIN_SUCCESS" }
+  }
+  ```
+- **Errores:** 400 (Campos faltantes), 401 (Credenciales inválidas).
+
+#### 2. `POST /Auth/register.php`
+- **Descripción:** Registra un nuevo cliente validando mayoría de edad y subida de C.I.
+- **Seguridad / Rol:** Público.
+- **Body:** `multipart/form-data` con `nombre`, `email`, `password`, `fecha_nacimiento`, `ci_file` (archivo JPG/PNG/PDF).
+- **Respuesta 201 Created:**
+  ```json
+  { "status": "success", "data": { "id": 4, "nombre": "Nuevo Cliente", "ci_status": "pending" }, "audit": { ... } }
+  ```
+- **Errores:** 400 (Menor de edad $\text{edad} < 18$, formato de archivo no permitido, email duplicado).
+
+#### 3. `POST /Auth/register_rider.php`
+- **Descripción:** Registra un repartidor postulante con su expediente digital.
+- **Seguridad / Rol:** Público.
+- **Body:** `multipart/form-data` con `nombre`, `email`, `password`, `licencia_file`, `seguro_file`, `cv_file`.
+- **Respuesta 201 Created:** Cuenta creada con expediente en estado `pendiente`.
+
+#### 4. `GET /Auth/session.php`
+- **Descripción:** Restaura la sesión del usuario a partir del Bearer Token JWT activo.
+- **Seguridad / Rol:** Cualquier usuario autenticado (`Bearer <token>`).
+- **Respuesta 200 OK:** Perfil de usuario y estado de C.I. actualizado.
+
+#### 5. `POST /Auth/admin_approval.php`
+- **Descripción:** Aprueba o rechaza el C.I. de un cliente o el expediente de un repartidor.
+- **Seguridad / Rol:** Exclusivo Administrador (`admin`, `super_usuario`).
+- **Body JSON:**
+  ```json
+  { "tipo": "user", "id": 2, "accion": "aprobar" }
+  ```
+- **Respuesta 200 OK:** Estado actualizado y evento registrado en `auditoria_logs`.
+- **Errores:** 401 (No autenticado), 403 (Rol insuficiente).
+
+#### 6. `GET /Auth/connection.php`
+- **Descripción:** Heartbeat de verificación de conectividad y estado de la base de datos MySQL.
+- **Seguridad / Rol:** Público.
+- **Respuesta 200 OK:** `{ "status": "success", "data": { "connected": true, "database": "burger_shop" } }`.
+
+---
+
+### B. Módulo de Catálogo e Inventario (`microservices/Catalog/`)
+
+#### 1. `GET /Catalog/catalog.php`
+- **Descripción:** Lista los productos disponibles agrupados por categoría.
+- **Seguridad / Rol:** Público (con comportamiento adaptativo según C.I. del usuario).
+- **Respuesta 200 OK:** Arreglo de productos con `id`, `categoria`, `nombre`, `marca`, `sabor`, `precio`, `stock`.
+
+#### 2. `POST /Catalog/catalog.php`
+- **Descripción:** Da de alta un nuevo producto en el menú comercial.
+- **Seguridad / Rol:** Exclusivo Administrador (`Bearer Admin`).
+- **Body JSON:**
+  ```json
+  { "categoria": "Hamburguesas", "nombre": "Smash Triple", "marca": "Gourmet", "sabor": "Triple carne", "precio": 35.00, "stock": 40 }
+  ```
+- **Respuesta 201 Created:** Producto creado con ID asignado y auditoría registrada.
+
+#### 3. `PUT /Catalog/catalog.php`
+- **Descripción:** Modifica el precio, stock o datos descriptivos de un producto existente.
+- **Seguridad / Rol:** Exclusivo Administrador (`Bearer Admin`).
+- **Body JSON:** `{ "id": 1, "precio": 24.00, "stock": 50 }`.
+- **Respuesta 200 OK:** Producto actualizado y log diferencial en `auditoria_logs`.
+
+#### 4. `DELETE /Catalog/catalog.php?id=X`
+- **Descripción:** Elimina un producto del catálogo comercial.
+- **Seguridad / Rol:** Exclusivo Administrador (`Bearer Admin`).
+- **Respuesta 200 OK:** Confirmación de eliminación y log de auditoría.
+
+---
+
+### C. Módulo de Transacciones y Finanzas (`microservices/Transactions/`)
+
+#### 1. `POST /Transactions/checkout.php`
+- **Descripción:** Procesa la compra con descuento atómico de inventario bajo transacción SQL ACID.
+- **Seguridad / Rol:** Cliente autenticado (`Bearer Cliente`).
+- **Body JSON:**
+  ```json
+  {
+    "items": [{ "producto_id": 1, "cantidad": 2 }],
+    "metodo_pago": "contraentrega_efectivo",
+    "latitud": -16.5100,
+    "longitud": -68.1350
+  }
+  ```
+- **Respuesta 201 Created:**
+  ```json
+  {
+    "status": "success",
+    "data": { "pedido_id": 15, "total": 49.00, "estado_pedido": "pendiente", "distancia_km": 1.2 }
+  }
+  ```
+- **Errores:** 400 (Stock insuficiente, rollback ejecutado sin modificar el inventario).
+
+#### 2. `POST /Transactions/cancel_order.php`
+- **Descripción:** Cancela un pedido no despachado y devuelve las unidades al stock en MySQL.
+- **Seguridad / Rol:** Cliente propietario o Administrador (`Bearer Token`).
+- **Body JSON:** `{ "pedido_id": 15 }`.
+- **Respuesta 200 OK:** Pedido cancelado y unidades devueltas al inventario.
+
+#### 3. `GET /Transactions/live_monitoring.php`
+- **Descripción:** Monitorea en tiempo real pedidos activos y liquidaciones de caja pendientes.
+- **Seguridad / Rol:** Exclusivo Administrador (`Bearer Admin`).
+- **Respuesta 200 OK:**
+  ```json
+  {
+    "status": "success",
+    "data": {
+      "pedidos_activos": [
+        {
+          "id": 15,
+          "estado_pedido": "en_camino",
+          "cliente_nombre": "Carlos Cliente",
+          "rider_nombre": "Pedro Gómez",
+          "distancia_km": 1.5,
+          "eta_minutos": 6,
+          "posicion_rider": { "lat": -16.5075, "lon": -68.1320, "progreso": 0.5 },
+          "detalles": [{ "producto_nombre": "Doble Smash", "cantidad": 2 }]
+        }
+      ],
+      "liquidaciones_pendientes": [
+        { "id": 2, "nombre": "Pedro Gómez", "total_recaudado_bs": 120.00, "pedidos_pendientes": 2 }
+      ],
+      "coordenadas_tienda": { "latitud": -16.5050, "longitud": -68.1290 }
+    }
+  }
+  ```
+
+#### 4. `GET /Transactions/report.php`
+- **Descripción:** Consolida métricas de facturación mensual, métodos de pago y ranking de repartidores.
+- **Seguridad / Rol:** Exclusivo Administrador (`Bearer Admin`).
+
+---
+
+### D. Módulo de Repartidores (`microservices/Rider/`)
+
+#### 1. `GET /Rider/assignment.php`
+- **Descripción:** Lista los pedidos en espera de asignación disponibles para despacho.
+- **Seguridad / Rol:** Repartidor Aprobado (`Bearer Rider`).
+
+#### 2. `POST /Rider/assignment.php`
+- **Descripción:** El repartidor acepta un pedido pendiente.
+- **Seguridad / Rol:** Repartidor Aprobado (`Bearer Rider`).
+- **Body JSON:** `{ "pedido_id": 15 }`.
+- **Respuesta 200 OK:** Pedido vinculado al conductor (`estado_pedido = 'asignado'`).
+
+#### 3. `PUT /Rider/delivery.php`
+- **Descripción:** Actualiza la etapa del despacho (`en_camino` $\rightarrow$ `entregado`).
+- **Seguridad / Rol:** Repartidor asignado a la orden (`Bearer Rider`).
+- **Body JSON:** `{ "pedido_id": 15, "nuevo_estado": "en_camino" }`.
+- **Respuesta 200 OK:** Transición de estado completada.
+
+#### 4. `POST /Rider/settle_cash.php`
+- **Descripción:** Liquida y concilia el dinero en efectivo recaudado por un repartidor.
+- **Seguridad / Rol:** Exclusivo Administrador (`Bearer Admin`).
+- **Body JSON:** `{ "rider_id": 2 }`.
+- **Respuesta 200 OK:** Órdenes marcadas como `liquidado` y saldo de caja en cero.
+
+---
+
+## 4. Manual de Pruebas de Integración (Casos de Éxito y Error)
+
+| ID | Endpoint Evaluado | Parámetros Enviados | Simulación / Prueba | Código HTTP | Resultado de Integración |
+|---|---|---|---|---|---|
+| **CP-INT-01** | `GET /Auth/connection.php` | Ninguno. | Petición de comprobación de servidor en línea. | 200 OK | Banner verde: "Modo Conectado (PHP Server)". |
+| **CP-INT-02** | Detección de caída de servidor | Servidor web apagado o puerto inaccesible. | `apiGet()` intercepta error de red `fetch`. | Fallback Local | Toast informativo; alternancia transparente a modo simulado. |
+| **CP-INT-03** | `POST /Auth/login.php` | Password errónea. | Verificación de clave con hash Bcrypt. | 401 Unauthorized | Toast rojo: "Credenciales inválidas". No se almacena token. |
+| **CP-INT-04** | `GET /live_monitoring.php` | Token de usuario cliente. | Evaluación de rol en middleware de seguridad. | 403 Forbidden | Acceso denegado. Panel de monitoreo protegido. |
+| **CP-INT-05** | `POST /Transactions/checkout.php` | Items con stock disponible + coordenadas GPS. | Transacción ACID: despiece, bloqueo y reserva. | 201 Created | Pedido generado; stock disminuido; tracking activado en mapa. |
+| **CP-INT-06** | `POST /Transactions/checkout.php` | Cantidad mayor al stock físico existente. | Validación de balance de inventario en MySQL. | 400 Bad Request | Rollback automático; alerta: "Stock insuficiente". |
+| **CP-INT-07** | Polling continuo de 10 segundos | Administrador en pestaña de Monitoreo. | Invocaciones periódicas transparentes a `live_monitoring.php`. | 200 OK | Actualización en vivo de posiciones GPS sin parpadeo del DOM. |
+| **CP-INT-08** | `POST /Rider/settle_cash.php` | Rider ID con 3 pedidos cobrados en efectivo. | Cierre de caja central y conciliación bancaria. | 200 OK | Pedidos pasan a `liquidado`; total recaudado en panel pasa a 0.00 Bs. |
+
+
+
+---
+
+
+
+<!-- PAGE_BREAK -->
+
+# Capítulo 6: Interfaz de Usuario y Componentes Frontend
+
+# Interfaz de Usuario y Componentes Frontend - Tesina Técnica
+
+## 1. Arquitectura de la Interfaz (SPA Multi-Actor)
+
+El frontend de **Burger 24/7** está implementado como una **Single Page Application (SPA)** de alto rendimiento desarrollada en **Vanilla JavaScript (ES6+)**, sin dependencia de frameworks pesados (como React, Angular o Vue), logrando una velocidad de renderizado instantánea, bajo consumo de memoria y compatibilidad universal con navegadores modernos.
+
+### Principios de Diseño
+- **Glassmorphism y Tema Oscuro:** Estética visual futurista basada en tarjetas de cristal difuminado (`backdrop-filter: blur(12px)`), bordes sutiles semitransparentes y gradientes de color cálidos (naranja `#f97316`, rojo `#ef4444`, morado `#8b5cf6`).
+- **Reactividad Nativa del DOM:** Gestión de estado centralizada mediante objetos JavaScript (`DB`, `currentSession`, `cart`, `config`) que propagan cambios a la interfaz mediante funciones de renderizado dirigidas (`renderProducts`, `renderAdminMonitoringUI`, `updateUIForCurrentRole`).
+- **Resiliencia y Modo Dual:** Switch maestro `toggleConnectedMode` que permite operar en **Modo Conectado** consumiendo los microservicios REST PHP/MySQL mediante [`api.js`](file:///F:/Bebidas-E-Commerce/api.js) o en **Modo Simulado** con persistencia local en `localStorage` como fallback ante cortes de red o servidores fuera de línea.
+
+---
+
+## 2. Descripción Detallada de Paneles y Componentes
+
+### A. Panel del Cliente (`#panelCliente`)
+Provee la experiencia comercial integral para el consumidor final:
+1. **Barra Lateral de Cuenta y Categorías:**
+   - Visualiza el estado de identidad del cliente con badges dinámicos: *Pendiente de Aprobación* (amarillo), *C.I. Verificado* (verde) o *C.I. Rechazado* (rojo).
+   - Selector de categorías jerárquicas: *Todos*, *Hamburguesas*, *Combos*, *Acompañamientos*, *Bebidas*.
+2. **Control de Acceso Comercial (Bloqueo por C.I.):**
+   - Si el cliente no ha verificado su C.I. (`ci_status !== 'verified'`), los precios de los productos se difuminan con la leyenda `"Oculto - Verifica tu C.I."` y los botones de compra permanecen deshabilitados, impidiendo compras no autorizadas.
+3. **Catálogo Reactivo y Buscador:**
+   - Campo de búsqueda en vivo (`#txtSearch`) que filtra productos por nombre, marca o ingredientes en tiempo real.
+   - Rejilla responsiva con tarjetas de producto que informan stock en almacén, precio en Bolivianos (Bs) y botón *"Agregar al Carrito"*.
+4. **Modal de Checkout y Geolocalización GPS:**
+   - Selector interactivo con mapa **Leaflet.js** que permite al cliente hacer clic para fijar el punto exacto de recepción.
+   - Cálculo dinámico de distancia en kilómetros desde la central Sopocachi y flete logístico según la fórmula oficial:
+     $$\text{Costo Envío} = 5.00\text{ Bs} + (\text{Distancia Km} \times 2.00\text{ Bs})$$
+   - Selector de método de pago: *QR Bancario Simple* (con carga obligatoria de imagen de comprobante) o *Contraentrega en Efectivo*.
+5. **Seguimiento de Pedido Activo en Tiempo Real:**
+   - Línea de tiempo visual en 4 etapas: **1. Pendiente** $\rightarrow$ **2. Asignado** $\rightarrow$ **3. En Camino** $\rightarrow$ **4. Entregado**.
+   - Mapa de tracking embebido que muestra la ubicación del cliente, la tienda y la posición en movimiento del repartidor asignado junto al ETA calculado.
+
+---
+
+### B. Panel del Repartidor (`#panelRider`)
+Orientado a la gestión ágil de rutas y cobros en calle:
+1. **Perfil del Conductor y Expediente Digital:**
+   - Muestra el estado de habilitación operativa: *Pendiente*, *Aprobado* o *Rechazado*.
+   - Módulo de subida de documentación obligatoria: Licencia de conducir, SOAT/Seguro vehicular y Curriculum Vitae.
+   - Bloqueo operativo preventivo: Si el expediente no está aprobado por el Administrador, el sistema prohíbe la toma de pedidos retornando alertas claras.
+2. **Cola de Pedidos Pendientes de Despacho:**
+   - Lista dinámica que agrupa las órdenes creadas en espera de asignación.
+   - Cada tarjeta desglosa el cliente, los productos a retirar, el total monetario a cobrar y el botón *"Aceptar Pedido"*.
+3. **Tarjeta de Entrega Activa y Navegación GPS:**
+   - Mapa interactivo con ruta trazada entre la cocina de despacho y el domicilio del cliente.
+   - Indicadores de telemetría: Distancia de ruta estimada y tiempo aproximado de llegada.
+   - Botón de avance de estado:
+     - De *Aceptado* pasa a *"Iniciar Entrega (En Camino)"*.
+     - De *En Camino* pasa a *"Finalizar Entrega (Entregado)"*.
+   - Al finalizar un pedido pagado en contraentrega, el monto se acumula automáticamente en la caja física del conductor para su posterior rendición de cuentas.
+
+---
+
+### C. Panel del Super Usuario / Administrador (`#panelAdmin`)
+Centro de mando unificado compuesto por 5 sub-paneles especializados:
+
+```
+Centro de Control Administrativo
+├── 1. Aprobación C.I. & Expedientes   -> Validación documental de clientes y riders
+├── 2. Control de Catálogo (CRUD)      -> Gestión de existencias, precios y altas
+├── 3. Monitoreo & Caja Central        -> Mapa operativo en vivo (10s) y cierre de cajas
+├── 4. Ledger de Auditoría (BMAD)      -> Bitácora inmutable de eventos del sistema
+└── 5. Reporte de Ventas & Riders      -> Métricas de facturación y rankings
+```
+
+1. **Subpanel 1: Aprobación C.I. & Expedientes (`#subpanelApprovals`):**
+   - Lista clientes pendientes de verificación con vista previa de imagen en modal emergente (`#fileViewerModal`).
+   - Lista expedientes de repartidores con accesos directos a licencia, seguro y CV, permitiendo la aprobación o rechazo en un solo clic.
+2. **Subpanel 2: Control de Catálogo CRUD (`#subpanelCatalog`):**
+   - Tabla administrativa completa con badges de stock (verde para existencias normales, rojo para stock crítico).
+   - Formulario de alta y edición con validación de precios positivos y stock no negativo.
+   - Acciones de Edición en línea y Eliminación lógica de ítems con registro inmediato en la bitácora de auditoría.
+3. **Subpanel 3: Monitoreo en Tiempo Real y Caja Central (`#subpanelMonitoring`):**
+   - **Polling Automático de 10 Segundos:** Consulta periódica asíncrona que refresca la lista de pedidos en tránsito sin recargar la página.
+   - **Mapa Operativo del Centro de Control:** Instancia Leaflet con capa CartoDB Dark. Representa la central con marcador morado, el cliente con marcador ámbar y el repartidor con ícono de moto 🛵 interpolado dinámicamente entre ambos puntos.
+   - **Corrección de Tamaño Leaflet (`invalidateSize`):** Resuelve el problema común de renderizado en blanco al cambiar de pestañas mediante temporizadores de recalculación geométrica.
+   - **Liquidación y Cierre de Cajas:** Panel financiero que lista a cada repartidor con el total de efectivo recaudado por cobrar. Al presionar *"Liquidar Caja"*, el dinero pasa a caja central y las órdenes se marcan como `liquidado`.
+4. **Subpanel 4: Ledger Inmutable de Auditoría BMAD (`#subpanelAudit`):**
+   - Registro cronológico detallado que expone ID, fecha y hora UTC, IP de origen, operador responsable, tabla afectada, tipo de acción (`INSERT`, `UPDATE`, `DELETE`) y comparador JSON con el estado previo y resultante.
+5. **Subpanel 5: Reporte de Ventas & Desempeño (`#subpanelReports`):**
+   - Tarjetas KPI: Ventas totales acumuladas en Bs, pedidos entregados y repartidores activos.
+   - Gráfico comparativo de métodos de pago (Porcentaje cobrado en QR vs Porcentaje cobrado en Efectivo).
+   - Tabla de rendimiento de repartidores ordenada por cantidad de entregas exitosas y recaudación.
+
+---
+
+### D. Componentes Globales de Navegación y Soporte
+- **Selector Rápido de Cuentas (Tesina Quick Switcher - `#devQuickSwitch`):** Accesos directos de demostración para alternar instantáneamente entre Carlos (Cliente), Pedro (Rider Aprobado) y Central (Administrador).
+- **Banner de Estado de Conexión (`#apiStatusText`, `#apiDot`):** Muestra si el sistema opera conectado a la API PHP Backend o en modo simulado local.
+- **Sistema Centralizado de Toasts (`showToast`):** Alertas flotantes animadas con código de colores (éxito en verde, información en azul, advertencia en amarillo, peligro en rojo).
+
+---
+
+## 3. Manual de Pruebas Frontend (Casos de Éxito y Error)
+
+| ID | Caso de Prueba | Entrada / Acción del Usuario | Comportamiento Esperado | Tipo | Resultado de Salida |
+|---|---|---|---|---|---|
+| **CP-FE-01** | Registro con menor de edad | Fecha de nacimiento menor a 18 años respecto a hoy. | Se calcula la edad, se muestra toast de advertencia y se cancela el registro. | Error | Registro bloqueado (`edad < 18`). |
+| **CP-FE-02** | Navegación de cliente no verificado | Login como cliente con `ci_status = 'pending'`. | Catálogo renderiza precios como "Oculto - Verifica tu C.I." y deshabilita botones de añadir al carrito. | Éxito (Restricción) | Compra prevenida para usuarios no aprobados. |
+| **CP-FE-03** | Aprobación reactiva de C.I. | Administrador presiona "Aprobar" en cliente pendiente. | Se envía petición al backend, cambia a `verified`, se actualiza el badge y se desbloquea el catálogo inmediatamente. | Éxito | Catálogo desbloqueado con precios visibles. |
+| **CP-FE-04** | Selección GPS en Checkout | Clic sobre un punto en el mapa interactivo de checkout. | Se ubica el marcador, se calcula la distancia Haversine, el flete en Bs y el total final en tiempo real. | Éxito | Coordenadas y costo calculados reactivamente. |
+| **CP-FE-05** | Checkout sin comprobante QR | Selecciona "QR Bancario" pero no adjunta comprobante. | El sistema detecta la ausencia del archivo de pago y detiene el envío mostrando alerta roja. | Error | Checkout retenido hasta adjuntar comprobante. |
+| **CP-FE-06** | Rider no aprobado intenta aceptar | Rider con `estado_aprobacion = 'pendiente'` hace clic en "Aceptar Pedido". | El sistema despliega mensaje de restricción: "Debes estar aprobado por la administración". | Error | Asignación denegada (HTTP 403 en modo conectado). |
+| **CP-FE-07** | Rider aprobado acepta orden | Rider verificado hace clic en "Aceptar Pedido". | La orden pasa a `asignado`, se descuenta el stock de la tienda y se abre el panel de navegación GPS. | Éxito | Pedido vinculado al conductor; stock restado. |
+| **CP-FE-08** | Avance de entrega y cobro | Rider presiona "Iniciar Entrega" y luego "Finalizar Entrega". | El estado cambia a `en_camino` (GPS activado) y luego a `entregado`. La recaudación en efectivo suma a su caja. | Éxito | Pedido entregado y dinero registrado en caja. |
+| **CP-FE-09** | Polling en Monitoreo Admin | Administrador permanece en la pestaña "Monitoreo & Caja Central". | Cada 10 segundos el sistema consulta el endpoint sin recargar la página, actualizando los repartidores en el mapa. | Éxito | Datos e interpolación de ruta actualizados. |
+| **CP-FE-10** | Liquidación de caja de rider | Administrador presiona "Liquidar Caja" en rider con cobros en mano. | Se invoca `settle_cash.php`, las órdenes pasan a `liquidado`, el saldo pasa a 0.00 Bs y se emite toast verde. | Éxito | Cierre de caja conciliado en base de datos. |
+
+
+
+---
+
+
+
+<!-- PAGE_BREAK -->
+
+# Capítulo 7: Manual de Usuario, Pruebas Operativas y Conclusiones
+
+# Manual de Usuario, Pruebas Operativas y Conclusiones - Tesina Técnica
+
+## 1. Manual de Usuario Integral por Rol
+
+La plataforma **Burger 24/7** provee interfaces ergonómicas y flujos de trabajo especializados para cada uno de los tres actores del ecosistema:
+
+---
+
+### A. Guía de Operación: Rol Cliente
+
+#### 1. Registro y Validación de Mayoría de Edad
+1. En la pantalla inicial, haz clic en el enlace **"Registrarme Cliente"**.
+2. Completa los datos personales: Nombre completo, correo electrónico y contraseña.
+3. Ingresa tu **Fecha de Nacimiento**. El sistema calculará tu edad automáticamente; debes tener 18 años o más para continuar.
+4. Adjunta una fotografía clara de tu **Cédula de Identidad (C.I.)** en formato JPG, PNG o PDF.
+5. Presiona **"Crear Cuenta Cliente"**. Tu cuenta quedará registrada con estado `Pendiente de Aprobación`.
+
+#### 2. Exploración del Catálogo y Compra
+1. Tras iniciar sesión, puedes explorar las hamburguesas gourmet, combos, acompañamientos y bebidas.
+2. Si tu C.I. aún está pendiente de revisión por el administrador, los precios aparecerán difuminados con la leyenda `"Oculto - Verifica tu C.I."` y la compra estará bloqueada por normativa.
+3. Una vez verificado tu documento, los precios se mostrarán en Bolivianos (Bs) y se habilitará el botón **"Agregar al Carrito"**.
+4. Puedes filtrar productos por categoría en la barra lateral o utilizar el buscador en vivo para localizar ingredientes específicos.
+
+#### 3. Proceso de Checkout y Geolocalización GPS
+1. Abre el carrito flotante y presiona **"Proceder al Checkout"**.
+2. **Selección de Ubicación:** En el mapa interactivo de La Paz (Sopocachi y alrededores), haz clic sobre tu calle o domicilio exacto. El sistema trazará la ruta desde la cocina central y calculará automáticamente:
+   - La distancia geodésica exacta en kilómetros.
+   - El costo de envío: $5.00\text{ Bs (base)} + (2.00\text{ Bs} \times \text{Km})$.
+   - El tiempo estimado de entrega (ETA).
+3. **Selección de Método de Pago:**
+   - **QR Bancario:** Escanea el código QR en pantalla y transfiere desde tu app bancaria. Sube la captura de pantalla del comprobante bancario.
+   - **Contraentrega en Efectivo:** Paga en efectivo al repartidor al momento de recibir tu pedido.
+4. Presiona **"Confirmar y Enviar Pedido"**. El stock se reservará de manera atómica en la base de datos.
+
+#### 4. Rastreo en Tiempo Real
+1. Una vez confirmado el pedido, se activará en tu panel la tarjeta de **Seguimiento en Tiempo Real**.
+2. La barra de progreso indicará la fase actual:
+   - **1. Pendiente:** Pedido recibido en cocina.
+   - **2. Asignado:** Un repartidor ha aceptado tu despacho.
+   - **3. En Camino:** El repartidor está en tránsito hacia tu dirección (podrás ver su posición aproximada en el mapa).
+   - **4. Entregado:** El pedido ha llegado a tus manos.
+
+---
+
+### B. Guía de Operación: Rol Repartidor (Rider)
+
+#### 1. Postulación y Carga de Expediente Digital
+1. En la pantalla inicial, haz clic en **"Postularme Repartidor"**.
+2. Registra tus datos personales y carga tu expediente obligatorio:
+   - Fotografía de tu **Licencia de Conducir** vigente.
+   - Fotografía de tu **SOAT o Póliza de Seguro Vehicular**.
+   - Archivo de tu **Curriculum Vitae (Hoja de Vida)**.
+3. El expediente quedará en estado `Pendiente de Aprobación`. No podrás aceptar despachos hasta ser verificado.
+
+#### 2. Recepción y Aceptación de Despachos
+1. Una vez aprobado por la administración, accede con tus credenciales.
+2. En la sección **"Pedidos Pendientes de Despacho"**, visualizarás las órdenes disponibles generadas por los clientes.
+3. Cada orden informa la dirección de destino, los productos a transportar, la distancia total y la ganancia por flete.
+4. Haz clic en **"Aceptar Pedido"**. La orden se vinculará a tu cuenta y se activará la ruta de navegación.
+
+#### 3. Ejecución de la Entrega y Cobranza
+1. Dirígete a la cocina central de Sopocachi para retirar el pedido ya empaquetado.
+2. Presiona el botón **"Iniciar Entrega (En Camino)"**. El cliente y la central de monitoreo verán tu movimiento en el mapa.
+3. Al llegar a la ubicación del cliente y entregar el paquete, presiona **"Finalizar Entrega"**.
+4. Si el pedido era contraentrega, cobra el importe exacto en efectivo. El sistema registrará ese monto en tu caja personal para su posterior liquidación.
+
+---
+
+### C. Guía de Operación: Rol Administrador (Super Usuario)
+
+#### 1. Verificación de Identidades y Expedientes
+1. Ingresa a la subpestaña **"Aprobación C.I. & Expedientes"**.
+2. En la sección de clientes, haz clic en *"Ver Documento"* para examinar el carnet de identidad. Si es legible y mayor de edad, presiona **"Aprobar"**; de lo contrario, presiona **"Rechazar"**.
+3. En la sección de repartidores, revisa la licencia, seguro y CV. Al presionar **"Aprobar"**, el repartidor queda autorizado para trabajar.
+
+#### 2. Control y Administración del Catálogo (CRUD)
+1. Ingresa a la subpestaña **"Control de Catálogo (CRUD)"**.
+2. **Crear Producto:** Completa el formulario con categoría, nombre, marca, descripción, precio en Bs y stock inicial. Presiona *"Guardar Producto"*.
+3. **Modificar Producto:** Haz clic en *"Editar"* sobre cualquier fila de la tabla para ajustar el stock o cambiar el precio.
+4. **Eliminar:** Haz clic en *"Eliminar"* para dar de baja un producto descontinuado.
+
+#### 3. Monitoreo en Tiempo Real y Cierre de Cajas
+1. Ingresa a la subpestaña **"Monitoreo & Caja Central"**.
+2. **Mapa Operativo:** El mapa se actualiza automáticamente cada **10 segundos** mostrando las entregas en curso. La cocina se identifica en morado, los clientes en ámbar y los repartidores en verde con ícono de moto 🛵.
+3. **Rastrear Pedido:** Haz clic en *"Rastrear en Mapa"* en cualquier tarjeta para centrar y enfocar su ruta específica.
+4. **Cancelar Pedido en Contingencia:** Si un pedido sufre una contingencia antes de su despacho, presiona *"Cancelar Pedido"*. El sistema devolverá automáticamente las unidades al stock en MySQL.
+5. **Liquidación de Cajas:** Cuando un repartidor entrega la recaudación física en la central, presiona **"Liquidar Caja"**. El sistema conciliará las órdenes a estado `liquidado`, liberará la caja del conductor y estampará un registro de auditoría.
+
+#### 4. Auditoría y Reportes Financieros
+1. **Ledger de Auditoría (BMAD):** Consulta la bitácora inmutable para rastrear con nombre de usuario, IP y hora cada inserción, actualización o eliminación en la plataforma.
+2. **Reportes:** Revisa la facturación total acumulada, el porcentaje comparativo de recaudación (QR vs Efectivo) y el ranking de entregas por repartidor.
+
+---
+
+## 2. Matriz de Pruebas Operativas de Extremo a Extremo (E2E)
+
+| Flujo Evaluado | Pasos de la Prueba | Validación Operativa | Resultado del Sistema |
+|---|---|---|---|
+| **E2E-01: Ciclo Completo de Compra QR** | Cliente verificado $\rightarrow$ Agrega Doble Smash al carrito $\rightarrow$ Selecciona GPS $\rightarrow$ Sube comprobante QR $\rightarrow$ Confirma pedido. | Se genera pedido en estado `esperando_pago` y `pendiente`. Se descuenta stock atómicamente. | Pedido registrado en cola de despacho con comprobante bancario. |
+| **E2E-02: Ciclo Completo de Despacho y Cobro** | Rider acepta orden E2E-01 $\rightarrow$ Marca "En Camino" $\rightarrow$ Marca "Entregado". | Estado evoluciona: `asignado` $\rightarrow$ `en_camino` $\rightarrow$ `entregado`. Mapas de cliente y admin reflejan la posición interpolada. | Despacho completado con éxito; cliente satisfecho. |
+| **E2E-03: Cierre Financiero de Caja Central** | Pedido contraentrega finalizado $\rightarrow$ Admin entra a Monitoreo $\rightarrow$ Visualiza saldo de 50.70 Bs del rider $\rightarrow$ Clic en "Liquidar Caja". | Se invoca `settle_cash.php`. El saldo pasa a 0.00 Bs. La orden pasa a `liquidado`. Se estampa log inmutable. | Caja física conciliada; cero descuadres de efectivo. |
+| **E2E-04: Resiliencia ante Desconexión del Servidor** | Servidor web PHP se apaga $\rightarrow$ Usuario navega por la app $\rightarrow$ Intenta agregar productos o login. | `api.js` detecta fallo de red $\rightarrow$ Activa modo simulado con `localStorage` $\rightarrow$ Muestra Toast informativo. | Cero caídas de pantalla blanca; continuidad operativa garantizada. |
+
+---
+
+## 3. Conclusiones Técnicas y Académicas de la Tesina
+
+El desarrollo e implementación de la plataforma **Burger 24/7** ha aportado valiosas conclusiones técnicas respecto a la ingeniería de software moderna aplicada al comercio electrónico de alta disponibilidad:
+
+### 1. Desacoplamiento Eficiente mediante Microservicios
+La separación del sistema en microservicios independientes (`Auth`, `Catalog`, `Transactions`, `Rider`, `Logistics`) superó ampliamente los problemas típicos de las arquitecturas monolíticas:
+- **Independencia Funcional:** El microservicio de Catálogo puede procesar cientos de consultas por segundo de usuarios visualizando el menú sin degradar el rendimiento del microservicio transaccional de Checkout.
+- **Especialización Tecnológica:** Delegar el cálculo trigonométrico geoespacial (Fórmula Haversine) a Python mientras la persistencia relacional transaccional se gestiona con PHP PDO y MySQL demostró que un enfoque políglota optimiza los recursos de cómputo en servidores cloud.
+
+### 2. Consistencia y Prevención de Fraude con la Regla de Oro (BMAD)
+En un negocio con reparto nocturno continuo, el riesgo de fraude en cajas y pérdida de inventario es crítico. La implementación del **Ledger Inmutable de Auditoría (`auditoria_logs`)** combinado con el campo `updated_by` vinculado al token JWT criptográfico proporciona:
+- **No Repudio:** Ningún usuario o administrador puede modificar precios, condonar deudas o cancelar órdenes sin dejar un rastro permanente con su identidad y dirección IP.
+- **Trazabilidad Completa del Inventario:** Cada hamburguesa descontada o devuelta por cancelación queda asociada a un ID de transacción y a un registro diferencial antes/después en formato JSON.
+
+### 3. Arquitectura Resiliente en Modo Dual
+La combinación de una capa de transporte HTTP inteligente ([`api.js`](file:///F:/Bebidas-E-Commerce/api.js)) con un motor de persistencia local en `localStorage` demostró ser una solución sobresaliente para entornos con conectividad inestable, permitiendo que la interfaz siga operando sin errores fatales incluso ante caídas temporales de la infraestructura central.
+
+### 4. Líneas Futuras de Investigación y Expansión
+Para futuras versiones del proyecto, se plantean las siguientes líneas de mejora:
+1. **Migración de Polling a WebSockets / SSE:** Reemplazar el intervalo de polling de 10 segundos por WebSockets bidireccionales o *Server-Sent Events* para reducir aún más la sobrecarga de red y lograr latencias submétricas en el mapa operativo.
+2. **Pasarelas Bancarias Automatizadas:** Integración directa mediante Webhooks con servicios de cobro QR interoperable bancario en tiempo real.
+3. **Aplicación Móvil Nativa:** Empaquetar el frontend responsivo o desarrollar clientes nativos en Flutter para aprovechar los sensores de GPS en segundo plano y la cámara del dispositivo móvil de los repartidores.
+
+
+
+---

@@ -7,7 +7,8 @@
     "start": "python server.py 8000",
     "serve": "python server.py 8000",
     "migrate": "python migrate.py",
-    "export:tesina": "python export_tesina.py"
+    "export:tesina": "python export_tesina.py",
+    "export:word": "python generate_word_tesina.py"
   },
   "keywords": ["ecommerce", "microservices", "python", "php", "javascript", "leaflet"],
   "author": "TuGfaNat",

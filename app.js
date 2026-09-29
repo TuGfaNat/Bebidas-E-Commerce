@@ -819,11 +819,11 @@ function setupAuthFormListeners(view) {
             }
         });
 
-        document.getElementById('formAuthRegisterClient').addEventListener('submit', (e) => {
+        document.getElementById('formAuthRegisterClient').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('regClientName').value;
-            const email = document.getElementById('regClientEmail').value;
-            const pass = document.getElementById('regClientPass').value;
+            const name = document.getElementById('regClientName').value.trim();
+            const email = document.getElementById('regClientEmail').value.trim();
+            const pass = document.getElementById('regClientPass').value.trim();
             const dob = dobInput.value;
             const file = document.getElementById('regClientCiFile').files[0];
 
@@ -832,28 +832,63 @@ function setupAuthFormListeners(view) {
                 return;
             }
 
-            const newId = DB.users.length + 1;
-            const newClient = {
-                id: newId,
-                role: 'cliente',
-                nombre: name,
-                email: email,
-                password_hash: hashPassword(pass),
-                fecha_nacimiento: dob,
-                ci_url: `/uploads/ci/ci_${newId}_${file.name}`,
-                ci_status: 'pending',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                created_by: newId,
-                updated_by: newId
-            };
+            const formData = new FormData();
+            formData.append('nombre', name);
+            formData.append('correo', email);
+            formData.append('password', pass);
+            formData.append('fecha_nacimiento', dob);
+            formData.append('ci_image', file);
 
-            DB.users.push(newClient);
-            logAuditoria('users', newId, 'INSERT', null, { email, name, role: 'cliente', ci_status: 'pending' }, newId);
-            saveDatabase();
+            let registeredUser = null;
+            try {
+                const res = await apiPost('/Auth/register.php', formData, { skipAuth: true });
+                if (res.ok && res.data) {
+                    if (res.data.token) {
+                        localStorage.setItem('burger_jwt_token', res.data.token);
+                    }
+                    registeredUser = res.data.user || {
+                        id: (res.envelope && res.envelope.audit && res.envelope.audit.user_id) || (DB.users.length + 1),
+                        role: 'cliente',
+                        nombre: name,
+                        email: email,
+                        ci_status: 'pending',
+                        ci_url: `/uploads/ci/ci_${file.name}`
+                    };
+                    showToast('Cliente registrado con éxito en el backend. Esperando aprobación de C.I.', 'success');
+                } else if (res.error) {
+                    showToast(`Error: ${res.error}`, 'error');
+                    return;
+                }
+            } catch (err) {
+                console.warn('Backend no disponible para registro, usando modo simulado:', err);
+            }
 
-            showToast('Cliente registrado con éxito. Esperando aprobación de C.I.', 'success');
-            onLoginSuccess(newClient);
+            if (!registeredUser) {
+                const newId = DB.users.length + 1;
+                registeredUser = {
+                    id: newId,
+                    role: 'cliente',
+                    nombre: name,
+                    email: email,
+                    password_hash: hashPassword(pass),
+                    fecha_nacimiento: dob,
+                    ci_url: `/uploads/ci/ci_${newId}_${file.name}`,
+                    ci_status: 'pending',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    created_by: newId,
+                    updated_by: newId
+                };
+                showToast('Cliente registrado en modo local. Esperando aprobación de C.I.', 'success');
+            }
+
+            if (!DB.users.some(u => u.email === email)) {
+                DB.users.push(registeredUser);
+                logAuditoria('users', registeredUser.id, 'INSERT', null, { email, name, role: 'cliente', ci_status: 'pending' }, registeredUser.id);
+                saveDatabase();
+            }
+
+            onLoginSuccess(registeredUser);
         });
     } 
     else if (view === 'register_rider') {
@@ -872,11 +907,11 @@ function setupAuthFormListeners(view) {
             }
         });
 
-        document.getElementById('formAuthRegisterRider').addEventListener('submit', (e) => {
+        document.getElementById('formAuthRegisterRider').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('regRiderName').value;
-            const email = document.getElementById('regRiderEmail').value;
-            const pass = document.getElementById('regRiderPass').value;
+            const name = document.getElementById('regRiderName').value.trim();
+            const email = document.getElementById('regRiderEmail').value.trim();
+            const pass = document.getElementById('regRiderPass').value.trim();
             const dob = dobInput.value;
 
             const l = document.getElementById('regRiderLicencia').files[0];
@@ -888,46 +923,80 @@ function setupAuthFormListeners(view) {
                 return;
             }
 
-            const newId = DB.users.length + 1;
-            const newRider = {
-                id: newId,
-                role: 'rider',
-                nombre: name,
-                email: email,
-                password_hash: hashPassword(pass),
-                fecha_nacimiento: dob,
-                ci_url: `/uploads/ci/ci_${newId}_rider.jpg`,
-                ci_status: 'pending',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                created_by: newId,
-                updated_by: newId
-            };
+            const formData = new FormData();
+            formData.append('nombre', name);
+            formData.append('correo', email);
+            formData.append('password', pass);
+            formData.append('fecha_nacimiento', dob);
+            formData.append('licencia', l);
+            formData.append('seguro', s);
+            formData.append('cv', c);
 
-            DB.users.push(newRider);
+            let registeredRider = null;
+            try {
+                const res = await apiPost('/Auth/register_rider.php', formData, { skipAuth: true });
+                if (res.ok && res.data) {
+                    if (res.data.token) {
+                        localStorage.setItem('burger_jwt_token', res.data.token);
+                    }
+                    registeredRider = res.data.user || {
+                        id: (res.envelope && res.envelope.audit && res.envelope.audit.user_id) || (DB.users.length + 1),
+                        role: 'rider',
+                        nombre: name,
+                        email: email,
+                        ci_status: 'pending'
+                    };
+                    showToast('Rider registrado y expediente digital subido al backend.', 'success');
+                } else if (res.error) {
+                    showToast(`Error: ${res.error}`, 'error');
+                    return;
+                }
+            } catch (err) {
+                console.warn('Backend no disponible para registro de rider, usando modo local:', err);
+            }
 
-            const docId = DB.documentacion_rider.length + 1;
-            const newDocs = {
-                id: docId,
-                rider_id: newId,
-                licencia_url: `/uploads/docs/licencia_${newId}_${l.name}`,
-                seguro_url: `/uploads/docs/soat_${newId}_${s.name}`,
-                cv_url: `/uploads/docs/cv_${newId}_${c.name}`,
-                estado_aprobacion: 'pendiente',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                created_by: newId,
-                updated_by: newId
-            };
-            DB.documentacion_rider.push(newDocs);
+            if (!registeredRider) {
+                const newId = DB.users.length + 1;
+                registeredRider = {
+                    id: newId,
+                    role: 'rider',
+                    nombre: name,
+                    email: email,
+                    password_hash: hashPassword(pass),
+                    fecha_nacimiento: dob,
+                    ci_url: `/uploads/ci/ci_${newId}_rider.jpg`,
+                    ci_status: 'pending',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    created_by: newId,
+                    updated_by: newId
+                };
+                showToast('Postulación guardada localmente. Pendiente de revisión del administrador.', 'success');
+            }
 
-            logAuditoria('users', newId, 'INSERT', null, { email, name, role: 'rider', ci_status: 'pending' }, newId);
-            logAuditoria('documentacion_rider', docId, 'INSERT', null, { rider_id: newId, estado_aprobacion: 'pendiente' }, newId);
-            
-            saveDatabase();
+            if (!DB.users.some(u => u.email === email)) {
+                DB.users.push(registeredRider);
+                const docId = DB.documentacion_rider.length + 1;
+                const newDocs = {
+                    id: docId,
+                    rider_id: registeredRider.id,
+                    licencia_url: `/uploads/docs/licencia_${registeredRider.id}_${l.name}`,
+                    seguro_url: `/uploads/docs/soat_${registeredRider.id}_${s.name}`,
+                    cv_url: `/uploads/docs/cv_${registeredRider.id}_${c.name}`,
+                    estado_aprobacion: 'pendiente',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    created_by: registeredRider.id,
+                    updated_by: registeredRider.id
+                };
+                DB.documentacion_rider.push(newDocs);
 
-            showToast('Postulación enviada. Pendiente de revisión del administrador.', 'success');
-            onLoginSuccess(newRider);
+                logAuditoria('users', registeredRider.id, 'INSERT', null, { email, name, role: 'rider', ci_status: 'pending' }, registeredRider.id);
+                logAuditoria('documentacion_rider', docId, 'INSERT', null, { rider_id: registeredRider.id, estado_aprobacion: 'pendiente' }, registeredRider.id);
+                saveDatabase();
+            }
+
+            onLoginSuccess(registeredRider);
         });
     }
 }
@@ -2303,11 +2372,31 @@ function cancelRiderActiveOrder() {
 // ----------------------------------------------------
 // 10. ADMIN PORTAL LOGIC & LIVE OPERATIONS
 // ----------------------------------------------------
-function renderAdminPendingApprovals() {
+async function renderAdminPendingApprovals() {
     const custContainer = document.getElementById('pendingCustomersList');
     const riderContainer = document.getElementById('pendingRidersList');
 
-    const pendingCustomers = DB.users.filter(u => u.role === 'cliente' && u.ci_status === 'pending');
+    let pendingCustomers = [];
+    let pendingRidersDocs = [];
+
+    try {
+        const res = await apiGet('/Auth/admin_approval.php');
+        if (res.ok && res.data) {
+            if (Array.isArray(res.data.pending_customers) && res.data.pending_customers.length > 0) {
+                pendingCustomers = res.data.pending_customers;
+            }
+            if (Array.isArray(res.data.pending_riders) && res.data.pending_riders.length > 0) {
+                pendingRidersDocs = res.data.pending_riders;
+            }
+        }
+    } catch (err) {
+        console.warn('Fallo consulta a /Auth/admin_approval.php, usando DB local:', err);
+    }
+
+    if (pendingCustomers.length === 0 && pendingRidersDocs.length === 0) {
+        pendingCustomers = DB.users.filter(u => u.role === 'cliente' && u.ci_status === 'pending');
+        pendingRidersDocs = DB.documentacion_rider.filter(d => d.estado_aprobacion === 'pendiente');
+    }
 
     if (pendingCustomers.length === 0) {
         custContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem;">No hay clientes pendientes de verificación de C.I.</div>`;
@@ -2322,11 +2411,11 @@ function renderAdminPendingApprovals() {
                     <span class="badge badge-pending">Pendiente</span>
                 </div>
                 <div class="approval-details-row">
-                    <span>Nacimiento: ${u.fecha_nacimiento}</span>
-                    <span>Edad: ${calculateAge(u.fecha_nacimiento)} años</span>
+                    <span>Nacimiento: ${u.fecha_nacimiento || 'N/A'}</span>
+                    <span>Edad: ${u.fecha_nacimiento ? calculateAge(u.fecha_nacimiento) : 18} años</span>
                 </div>
                 <div style="display: flex; align-items:center; justify-content:space-between;">
-                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url}', 'C.I. - ${u.nombre}')"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
+                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || '/uploads/ci/default.jpg'}', 'C.I. - ${u.nombre}')"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
                     <div class="approval-actions">
                         <button class="btn btn-danger btn-sm" onclick="approveUser(${u.id}, 'rejected')">Rechazar</button>
                         <button class="btn btn-success btn-sm" onclick="approveUser(${u.id}, 'verified')">Aprobar</button>
@@ -2336,15 +2425,14 @@ function renderAdminPendingApprovals() {
         `).join('');
     }
 
-    const pendingRidersDocs = DB.documentacion_rider.filter(d => d.estado_aprobacion === 'pendiente');
-
     if (pendingRidersDocs.length === 0) {
         riderContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem;">No hay expedientes de riders pendientes de aprobación.</div>`;
     } else {
         riderContainer.innerHTML = pendingRidersDocs.map(d => {
-            const riderUser = DB.users.find(u => u.id === d.rider_id);
-            const riderName = riderUser ? riderUser.nombre : 'Rider Desconocido';
-            const riderEmail = riderUser ? riderUser.email : '';
+            const riderId = d.rider_id || d.id;
+            const riderUser = DB.users.find(u => u.id === riderId);
+            const riderName = d.nombre || (riderUser ? riderUser.nombre : 'Rider Desconocido');
+            const riderEmail = d.email || (riderUser ? riderUser.email : '');
 
             return `
                 <div class="approval-card">
@@ -2361,8 +2449,8 @@ function renderAdminPendingApprovals() {
                         <a class="file-view-trigger" onclick="openFileViewer('${d.cv_url}', 'CV - ${riderName}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Currículum Vitae</a>
                     </div>
                     <div class="approval-actions" style="justify-content: flex-end;">
-                        <button class="btn btn-danger btn-sm" onclick="approveRiderDocs(${d.id}, 'rechazado')">Rechazar</button>
-                        <button class="btn btn-success btn-sm" onclick="approveRiderDocs(${d.id}, 'aprobado')">Aprobar Rider</button>
+                        <button class="btn btn-danger btn-sm" onclick="approveRiderDocs(${riderId}, 'rechazado')">Rechazar</button>
+                        <button class="btn btn-success btn-sm" onclick="approveRiderDocs(${riderId}, 'aprobado')">Aprobar Rider</button>
                     </div>
                 </div>
             `;
@@ -2371,38 +2459,67 @@ function renderAdminPendingApprovals() {
     initLucide();
 }
 
-window.approveUser = function(userId, status) {
-    const admin = currentSession.admin;
+window.approveUser = async function(userId, status) {
+    const admin = currentSession.admin || { id: 3, nombre: 'Admin Central' };
     const u = DB.users.find(usr => usr.id === userId);
+    const mappedState = (status === 'verified' ? 'aprobado' : 'rechazado');
 
-    if (!u) return;
+    try {
+        const res = await apiPost('/Auth/admin_approval.php', {
+            target_id: userId,
+            tipo: 'user',
+            estado: mappedState
+        });
+        if (res.ok) {
+            showToast(`Cliente ${status === 'verified' ? 'aprobado' : 'rechazado'} en el backend con éxito.`, 'success');
+        } else if (res.error) {
+            showToast(`Aviso backend: ${res.error}`, 'warning');
+        }
+    } catch (err) {
+        console.warn('Fallo llamada a /Auth/admin_approval.php:', err);
+    }
 
-    const oldState = u.ci_status;
-    u.ci_status = status;
-    u.updated_at = new Date().toISOString();
-    u.updated_by = admin.id;
-
-    logAuditoria('users', userId, 'UPDATE', { ci_status: oldState }, { ci_status: status }, admin.id);
-    saveDatabase();
+    if (u) {
+        const oldState = u.ci_status;
+        u.ci_status = status;
+        u.updated_at = new Date().toISOString();
+        u.updated_by = admin.id;
+        logAuditoria('users', userId, 'UPDATE', { ci_status: oldState }, { ci_status: status }, admin.id);
+        saveDatabase();
+    }
     
-    showToast(`Cliente ${u.nombre} ha sido ${status === 'verified' ? 'aprobado' : 'rechazado'}.`, 'success');
     renderAdminPendingApprovals();
 };
 
-window.approveRiderDocs = function(docId, status) {
-    const admin = currentSession.admin;
-    const doc = DB.documentacion_rider.find(d => d.id === docId);
+window.approveRiderDocs = async function(riderOrDocId, status) {
+    const admin = currentSession.admin || { id: 3, nombre: 'Admin Central' };
+    const doc = DB.documentacion_rider.find(d => d.id === riderOrDocId || d.rider_id === riderOrDocId);
+    const targetRiderId = doc ? doc.rider_id : riderOrDocId;
 
-    if (!doc) return;
+    try {
+        const res = await apiPost('/Auth/admin_approval.php', {
+            target_id: targetRiderId,
+            tipo: 'rider',
+            estado: status
+        });
+        if (res.ok) {
+            showToast(`Expediente de Rider ${status} en el backend con éxito.`, 'success');
+        } else if (res.error) {
+            showToast(`Aviso backend: ${res.error}`, 'warning');
+        }
+    } catch (err) {
+        console.warn('Fallo llamada a /Auth/admin_approval.php para rider:', err);
+    }
 
-    const oldApprove = doc.estado_aprobacion;
-    doc.estado_aprobacion = status;
-    doc.updated_at = new Date().toISOString();
-    doc.updated_by = admin.id;
+    if (doc) {
+        const oldApprove = doc.estado_aprobacion;
+        doc.estado_aprobacion = status;
+        doc.updated_at = new Date().toISOString();
+        doc.updated_by = admin.id;
+        logAuditoria('documentacion_rider', doc.id, 'UPDATE', { estado_aprobacion: oldApprove }, { estado_aprobacion: status }, admin.id);
+    }
 
-    logAuditoria('documentacion_rider', docId, 'UPDATE', { estado_aprobacion: oldApprove }, { estado_aprobacion: status }, admin.id);
-
-    const riderUser = DB.users.find(u => u.id === doc.rider_id);
+    const riderUser = DB.users.find(u => u.id === targetRiderId);
     if (riderUser) {
         const oldCiStatus = riderUser.ci_status;
         const newCi = (status === 'aprobado') ? 'verified' : 'rejected';
@@ -2413,7 +2530,6 @@ window.approveRiderDocs = function(docId, status) {
     }
 
     saveDatabase();
-    showToast(`El expediente del Rider ha sido ${status}.`, 'success');
     renderAdminPendingApprovals();
 };
 

@@ -219,6 +219,50 @@ RIDER_DOCS_DB = [
     }
 ]
 
+def parse_multipart_body(raw_bytes, content_type):
+    fields = {}
+    files = {}
+    if 'boundary=' not in content_type:
+        return fields, files
+    boundary_str = content_type.split('boundary=')[1].split(';')[0].strip().strip('"\'')
+    delimiter = b'--' + boundary_str.encode('latin1')
+    parts = raw_bytes.split(delimiter)
+    for part in parts:
+        if not part or part in (b'--\r\n', b'--', b'--\n'):
+            continue
+        if part.startswith(b'\r\n'):
+            part = part[2:]
+        elif part.startswith(b'\n'):
+            part = part[1:]
+        if b'\r\n\r\n' in part:
+            header_bytes, body_bytes = part.split(b'\r\n\r\n', 1)
+        elif b'\n\n' in part:
+            header_bytes, body_bytes = part.split(b'\n\n', 1)
+        else:
+            continue
+        if body_bytes.endswith(b'\r\n'):
+            body_bytes = body_bytes[:-2]
+        elif body_bytes.endswith(b'\n'):
+            body_bytes = body_bytes[:-1]
+
+        header_text = header_bytes.decode('utf-8', errors='ignore')
+        field_name = None
+        filename = None
+        for line in header_text.splitlines():
+            if line.lower().startswith('content-disposition:'):
+                for item in line.split(';'):
+                    item = item.strip()
+                    if item.lower().startswith('name='):
+                        field_name = item[5:].strip('"\'')
+                    elif item.lower().startswith('filename='):
+                        filename = item[9:].strip('"\'')
+        if field_name:
+            if filename is not None:
+                files[field_name] = {'filename': filename, 'content': body_bytes}
+            else:
+                fields[field_name] = body_bytes.decode('utf-8', errors='ignore')
+    return fields, files
+
 class BebidasHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT_DIR, **kwargs)
@@ -336,6 +380,49 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             }, user_id=user_id, action="SESSION_RESTORE"))
             return
 
+        # Microservice: Admin Approvals (GET)
+        if path in ['/microservices/Auth/admin_approval.php', '/microservices/Auth/admin_approval']:
+            payload, status, err = self.check_admin_auth()
+            if not payload:
+                self.send_json(get_audit_envelope("error", None, None, err, action="ADMIN_APPROVAL_AUTH"), status=status)
+                return
+
+            pending_clients = [
+                {
+                    "id": u['id'],
+                    "nombre": u['nombre'],
+                    "email": email_k,
+                    "fecha_nacimiento": u.get('fecha_nacimiento', '1995-01-01'),
+                    "ci_url": u.get('ci_url', '/uploads/ci/default.jpg'),
+                    "ci_status": u['ci_status']
+                }
+                for email_k, u in USERS_DB.items()
+                if u.get('role') == 'cliente' and u.get('ci_status') == 'pending'
+            ]
+
+            pending_riders = []
+            for d in RIDER_DOCS_DB:
+                if d.get('estado_aprobacion') == 'pendiente':
+                    r_user = next((u for u in USERS_DB.values() if u['id'] == d.get('rider_id')), None)
+                    r_email = next((k for k, v in USERS_DB.items() if v['id'] == d.get('rider_id')), '')
+                    pending_riders.append({
+                        "doc_id": d['id'],
+                        "rider_id": d.get('rider_id'),
+                        "nombre": r_user['nombre'] if r_user else 'Rider Desconocido',
+                        "email": r_email,
+                        "fecha_nacimiento": r_user.get('fecha_nacimiento', '1995-01-01') if r_user else '1995-01-01',
+                        "licencia_url": d.get('licencia_url', ''),
+                        "seguro_url": d.get('seguro_url', ''),
+                        "cv_url": d.get('cv_url', ''),
+                        "estado_aprobacion": d.get('estado_aprobacion')
+                    })
+
+            self.send_json(get_audit_envelope("success", {
+                "pending_customers": pending_clients,
+                "pending_riders": pending_riders
+            }, user_id=payload.get('user_id'), action="GET_PENDING_APPROVALS"))
+            return
+
         # Microservice: Catalog REST (GET)
         if path in ['/microservices/Catalog/catalog.php', '/microservices/Catalog/catalog']:
             prod_id = query_params.get('id', [None])[0]
@@ -436,16 +523,20 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             path = path[len('/Bebidas-E-Commerce'):]
 
         content_len = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_len).decode('utf-8', errors='ignore') if content_len > 0 else ""
+        raw_body = self.rfile.read(content_len) if content_len > 0 else b""
+        body = raw_body.decode('utf-8', errors='ignore')
 
-        # Parse form data or JSON
+        # Parse form data, multipart or JSON
         data = {}
+        files = {}
         content_type = self.headers.get('Content-Type', '')
         if 'application/json' in content_type:
             try:
                 data = json.loads(body)
             except Exception:
                 pass
+        elif 'multipart/form-data' in content_type:
+            data, files = parse_multipart_body(raw_body, content_type)
         else:
             parsed_form = urllib.parse.parse_qs(body)
             data = {k: v[0] for k, v in parsed_form.items()}
@@ -514,6 +605,318 @@ class BebidasHandler(SimpleHTTPRequestHandler):
                 }
             }, user_id=user_id, action="SESSION_RESTORE"))
             return
+
+        # Microservice: Register Client (POST)
+        if path in ['/microservices/Auth/register.php', '/microservices/Auth/register']:
+            nombre = str(data.get('nombre', '')).strip()
+            correo = str(data.get('correo', data.get('email', ''))).strip().lower()
+            password = str(data.get('password', '')).strip()
+            fecha_nac = str(data.get('fecha_nacimiento', '')).strip()
+
+            if not nombre or not correo or not password or not fecha_nac:
+                self.send_json(get_audit_envelope("error", None, None, "Faltan campos obligatorios.", action="REGISTER_CLIENT"), status=400)
+                return
+
+            try:
+                dob = datetime.strptime(fecha_nac, '%Y-%m-%d')
+                today = datetime.now()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                if age < 18:
+                    self.send_json(get_audit_envelope("error", None, None, f"El usuario debe ser mayor de 18 años ({age} años detectados).", action="REGISTER_CLIENT"), status=400)
+                    return
+            except Exception:
+                pass
+
+            if correo in USERS_DB:
+                self.send_json(get_audit_envelope("error", None, None, "El correo electrónico ya se encuentra registrado.", action="REGISTER_CLIENT"), status=409)
+                return
+
+            new_id = max([u['id'] for u in USERS_DB.values()], default=0) + 1
+
+            ci_filename = f"ci_{new_id}.jpg"
+            ci_file = files.get('ci_image') or files.get('ci_file') or files.get('ci')
+            if ci_file and ci_file.get('content'):
+                orig_name = ci_file.get('filename', 'ci.jpg')
+                ext = orig_name.split('.')[-1] if '.' in orig_name else 'jpg'
+                ci_filename = f"ci_{new_id}_{int(datetime.now().timestamp())}.{ext}"
+                for target_dir in [os.path.join(ROOT_DIR, 'uploads', 'ci'), os.path.join(ROOT_DIR, 'microservices', 'Auth', 'uploads', 'ci')]:
+                    os.makedirs(target_dir, exist_ok=True)
+                    with open(os.path.join(target_dir, ci_filename), 'wb') as f:
+                        f.write(ci_file['content'])
+
+            ci_url = f"/uploads/ci/{ci_filename}"
+
+            new_user = {
+                'id': new_id,
+                'nombre': nombre,
+                'pass': password,
+                'role': 'cliente',
+                'ci_status': 'pending',
+                'fecha_nacimiento': fecha_nac,
+                'ci_url': ci_url
+            }
+            USERS_DB[correo] = new_user
+
+            AUDIT_LOGS.append({
+                "id": len(AUDIT_LOGS) + 1,
+                "tabla_afectada": "users",
+                "registro_id": new_id,
+                "accion": "INSERT",
+                "datos_anteriores": None,
+                "datos_nuevos": json.dumps({"nombre": nombre, "email": correo, "role": "cliente", "ci_status": "pending", "ci_url": ci_url}),
+                "ip_address": self.get_client_ip(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": new_id,
+                "updated_by": new_id
+            })
+
+            token = generate_jwt({
+                "user_id": new_id,
+                "role": "cliente",
+                "email": correo,
+                "nombre": nombre,
+                "ci_status": "pending"
+            })
+
+            self.send_json(get_audit_envelope("success", {
+                "mensaje": "Usuario registrado correctamente y C.I. guardado.",
+                "token": token,
+                "user": {
+                    "id": new_id,
+                    "nombre": nombre,
+                    "email": correo,
+                    "role": "cliente",
+                    "ci_status": "pending",
+                    "ci_url": ci_url
+                }
+            }, user_id=new_id, action="REGISTER_CLIENT"))
+            return
+
+        # Microservice: Register Rider (POST)
+        if path in ['/microservices/Auth/register_rider.php', '/microservices/Auth/register_rider']:
+            nombre = str(data.get('nombre', '')).strip()
+            correo = str(data.get('correo', data.get('email', ''))).strip().lower()
+            password = str(data.get('password', '')).strip()
+            fecha_nac = str(data.get('fecha_nacimiento', '')).strip()
+
+            if not nombre or not correo or not password or not fecha_nac:
+                self.send_json(get_audit_envelope("error", None, None, "Faltan campos obligatorios.", action="REGISTER_RIDER"), status=400)
+                return
+
+            try:
+                dob = datetime.strptime(fecha_nac, '%Y-%m-%d')
+                today = datetime.now()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                if age < 18:
+                    self.send_json(get_audit_envelope("error", None, None, f"El rider debe ser mayor de 18 años ({age} años detectados).", action="REGISTER_RIDER"), status=400)
+                    return
+            except Exception:
+                pass
+
+            if correo in USERS_DB:
+                self.send_json(get_audit_envelope("error", None, None, "El correo electrónico ya se encuentra registrado.", action="REGISTER_RIDER"), status=409)
+                return
+
+            new_id = max([u['id'] for u in USERS_DB.values()], default=0) + 1
+
+            saved_docs = {}
+            for doc_key in ['licencia', 'seguro', 'cv']:
+                f_obj = files.get(doc_key)
+                doc_fname = f"doc_{doc_key}_{new_id}.pdf"
+                if f_obj and f_obj.get('content'):
+                    orig_name = f_obj.get('filename', f"{doc_key}.pdf")
+                    ext = orig_name.split('.')[-1] if '.' in orig_name else 'pdf'
+                    doc_fname = f"doc_{doc_key}_{new_id}_{int(datetime.now().timestamp())}.{ext}"
+                    for target_dir in [os.path.join(ROOT_DIR, 'uploads', 'docs'), os.path.join(ROOT_DIR, 'microservices', 'Auth', 'uploads', 'docs')]:
+                        os.makedirs(target_dir, exist_ok=True)
+                        with open(os.path.join(target_dir, doc_fname), 'wb') as f:
+                            f.write(f_obj['content'])
+                saved_docs[doc_key] = f"/uploads/docs/{doc_fname}"
+
+            new_rider = {
+                'id': new_id,
+                'nombre': nombre,
+                'pass': password,
+                'role': 'rider',
+                'ci_status': 'pending',
+                'fecha_nacimiento': fecha_nac,
+                'ci_url': saved_docs['licencia']
+            }
+            USERS_DB[correo] = new_rider
+
+            new_doc_id = max([d['id'] for d in RIDER_DOCS_DB], default=0) + 1
+            new_rider_doc = {
+                "id": new_doc_id,
+                "rider_id": new_id,
+                "licencia_url": saved_docs['licencia'],
+                "seguro_url": saved_docs['seguro'],
+                "cv_url": saved_docs['cv'],
+                "estado_aprobacion": "pendiente",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": new_id,
+                "updated_by": new_id
+            }
+            RIDER_DOCS_DB.append(new_rider_doc)
+
+            AUDIT_LOGS.append({
+                "id": len(AUDIT_LOGS) + 1,
+                "tabla_afectada": "users",
+                "registro_id": new_id,
+                "accion": "INSERT",
+                "datos_anteriores": None,
+                "datos_nuevos": json.dumps({"nombre": nombre, "email": correo, "role": "rider", "ci_status": "pending"}),
+                "ip_address": self.get_client_ip(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_by": new_id,
+                "updated_by": new_id
+            })
+
+            token = generate_jwt({
+                "user_id": new_id,
+                "role": "rider",
+                "email": correo,
+                "nombre": nombre,
+                "ci_status": "pending"
+            })
+
+            self.send_json(get_audit_envelope("success", {
+                "mensaje": "Rider registrado y expediente digital creado exitosamente.",
+                "token": token,
+                "documentos": saved_docs,
+                "user": {
+                    "id": new_id,
+                    "nombre": nombre,
+                    "email": correo,
+                    "role": "rider",
+                    "ci_status": "pending"
+                }
+            }, user_id=new_id, action="REGISTER_RIDER"))
+            return
+
+        # Microservice: Admin Approvals (POST)
+        if path in ['/microservices/Auth/admin_approval.php', '/microservices/Auth/admin_approval']:
+            payload, status, err = self.check_admin_auth()
+            if not payload:
+                self.send_json(get_audit_envelope("error", None, None, err, action="ADMIN_APPROVAL_AUTH"), status=status)
+                return
+
+            admin_id = payload.get('user_id')
+            target_id = data.get('target_id')
+            tipo = data.get('tipo')
+            nuevo_estado = data.get('estado')
+
+            if tipo == 'pending_list':
+                pending_clients = [
+                    {
+                        "id": u['id'],
+                        "nombre": u['nombre'],
+                        "email": email_k,
+                        "fecha_nacimiento": u.get('fecha_nacimiento', '1995-01-01'),
+                        "ci_url": u.get('ci_url', '/uploads/ci/default.jpg'),
+                        "ci_status": u['ci_status']
+                    }
+                    for email_k, u in USERS_DB.items()
+                    if u.get('role') == 'cliente' and u.get('ci_status') == 'pending'
+                ]
+                pending_riders = []
+                for d in RIDER_DOCS_DB:
+                    if d.get('estado_aprobacion') == 'pendiente':
+                        r_user = next((u for u in USERS_DB.values() if u['id'] == d.get('rider_id')), None)
+                        r_email = next((k for k, v in USERS_DB.items() if v['id'] == d.get('rider_id')), '')
+                        pending_riders.append({
+                            "doc_id": d['id'],
+                            "rider_id": d.get('rider_id'),
+                            "nombre": r_user['nombre'] if r_user else 'Rider Desconocido',
+                            "email": r_email,
+                            "fecha_nacimiento": r_user.get('fecha_nacimiento', '1995-01-01') if r_user else '1995-01-01',
+                            "licencia_url": d.get('licencia_url', ''),
+                            "seguro_url": d.get('seguro_url', ''),
+                            "cv_url": d.get('cv_url', ''),
+                            "estado_aprobacion": d.get('estado_aprobacion')
+                        })
+                self.send_json(get_audit_envelope("success", {
+                    "pending_customers": pending_clients,
+                    "pending_riders": pending_riders
+                }, user_id=admin_id, action="GET_PENDING_APPROVALS"))
+                return
+
+            if not target_id or not tipo:
+                self.send_json(get_audit_envelope("error", None, admin_id, "Faltan parámetros básicos.", action="ADMIN_APPROVAL"), status=400)
+                return
+
+            try:
+                target_id = int(target_id)
+            except ValueError:
+                self.send_json(get_audit_envelope("error", None, admin_id, "target_id inválido.", action="ADMIN_APPROVAL"), status=400)
+                return
+
+            if tipo == 'user':
+                mapped_state = 'verified' if nuevo_estado in ['aprobado', 'verified'] else 'rejected'
+                user_found = next((u for u in USERS_DB.values() if u['id'] == target_id), None)
+                if not user_found:
+                    self.send_json(get_audit_envelope("error", None, admin_id, "Usuario no encontrado.", action="ADMIN_APPROVAL"), status=404)
+                    return
+
+                old_status = user_found.get('ci_status')
+                user_found['ci_status'] = mapped_state
+                AUDIT_LOGS.append({
+                    "id": len(AUDIT_LOGS) + 1,
+                    "tabla_afectada": "users",
+                    "registro_id": target_id,
+                    "accion": "UPDATE",
+                    "datos_anteriores": json.dumps({"ci_status": old_status}),
+                    "datos_nuevos": json.dumps({"ci_status": mapped_state}),
+                    "ip_address": self.get_client_ip(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_by": admin_id,
+                    "updated_by": admin_id
+                })
+                self.send_json(get_audit_envelope("success", {
+                    "mensaje": "Estado de usuario actualizado exitosamente.",
+                    "target_id": target_id,
+                    "nuevo_estado": mapped_state
+                }, user_id=admin_id, action="APPROVE_USER"))
+                return
+
+            elif tipo == 'rider':
+                doc_state = 'aprobado' if nuevo_estado in ['aprobado', 'verified'] else 'rechazado'
+                doc_found = next((d for d in RIDER_DOCS_DB if d.get('rider_id') == target_id or d['id'] == target_id), None)
+                if not doc_found:
+                    self.send_json(get_audit_envelope("error", None, admin_id, "Expediente del rider no encontrado.", action="ADMIN_APPROVAL"), status=404)
+                    return
+
+                old_doc_status = doc_found.get('estado_aprobacion')
+                doc_found['estado_aprobacion'] = doc_state
+                doc_found['updated_at'] = datetime.now(timezone.utc).isoformat()
+                doc_found['updated_by'] = admin_id
+
+                rider_id = doc_found.get('rider_id')
+                user_rider = next((u for u in USERS_DB.values() if u['id'] == rider_id), None)
+                if user_rider:
+                    user_rider['ci_status'] = 'verified' if doc_state == 'aprobado' else 'rejected'
+
+                AUDIT_LOGS.append({
+                    "id": len(AUDIT_LOGS) + 1,
+                    "tabla_afectada": "documentacion_rider",
+                    "registro_id": doc_found['id'],
+                    "accion": "UPDATE",
+                    "datos_anteriores": json.dumps({"estado_aprobacion": old_doc_status}),
+                    "datos_nuevos": json.dumps({"estado_aprobacion": doc_state}),
+                    "ip_address": self.get_client_ip(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_by": admin_id,
+                    "updated_by": admin_id
+                })
+                self.send_json(get_audit_envelope("success", {
+                    "mensaje": "Documentación de rider actualizada exitosamente.",
+                    "target_id": target_id,
+                    "nuevo_estado": doc_state
+                }, user_id=admin_id, action="APPROVE_RIDER"))
+                return
+            else:
+                self.send_json(get_audit_envelope("error", None, admin_id, "Tipo inválido. Use 'user' o 'rider'.", action="ADMIN_APPROVAL"), status=400)
+                return
 
         # Microservice: Catalog REST (POST)
         if path in ['/microservices/Catalog/catalog.php', '/microservices/Catalog/catalog']:

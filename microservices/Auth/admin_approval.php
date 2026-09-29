@@ -17,8 +17,8 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
 }
 
 try {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception("Solo se permite método POST.");
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET') {
+        throw new Exception("Método no permitido. Use GET o POST.");
     }
 
     require_once 'jwt.php';
@@ -26,19 +26,33 @@ try {
     $adminId = $payload['user_id'];
     $adminRole = $payload['role'];
 
-    if ($adminRole !== 'super_usuario') {
+    if ($adminRole !== 'super_usuario' && $adminRole !== 'admin') {
         throw new Exception("Permiso denegado. Se requiere rol de super_usuario.");
     }
 
-    $targetId = $_POST['target_id'] ?? null;
-    $tipo = $_POST['tipo'] ?? null; // 'user', 'rider', 'view_user', 'view_rider'
-    $nuevoEstado = $_POST['estado'] ?? null; // 'aprobado' o 'rechazado'
+    $db = DatabaseConnection::getInstance()->getConnection();
+
+    $tipo = $_REQUEST['tipo'] ?? ($_SERVER['REQUEST_METHOD'] === 'GET' ? 'pending_list' : null);
+    $targetId = $_REQUEST['target_id'] ?? null;
+    $nuevoEstado = $_REQUEST['estado'] ?? null; // 'aprobado' o 'rechazado'
+
+    if ($tipo === 'pending_list') {
+        $stmtUsers = $db->query("SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at FROM users WHERE role = 'cliente' AND ci_status = 'pending'");
+        $pendingUsers = $stmtUsers->fetchAll();
+
+        $stmtRiders = $db->query("SELECT u.id as rider_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status, d.id as doc_id, d.licencia_url, d.seguro_url, d.cv_url, d.estado_aprobacion, d.created_at FROM documentacion_rider d JOIN users u ON d.rider_id = u.id WHERE d.estado_aprobacion = 'pendiente'");
+        $pendingRiders = $stmtRiders->fetchAll();
+
+        echo formatResponse("success", [
+            "pending_customers" => $pendingUsers,
+            "pending_riders" => $pendingRiders
+        ], $adminId);
+        exit;
+    }
 
     if (!$targetId || !$tipo) {
         throw new Exception("Faltan parámetros básicos.");
     }
-
-    $db = DatabaseConnection::getInstance()->getConnection();
 
     $db->beginTransaction();
 

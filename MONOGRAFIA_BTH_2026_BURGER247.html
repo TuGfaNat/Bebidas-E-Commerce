@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monografía BTH 2026 - Burger 24/7 E-Commerce</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'Arial, sans-serif'
+        });
+    </script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-dark: #0f172a;
+            --secondary: #d97706;
+            --text: #1f2937;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 50px 70px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        .cover {
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 40px;
+            margin-bottom: 40px;
+        }
+        .cover h1 {
+            color: var(--primary-dark);
+            font-size: 1.6rem;
+            margin-bottom: 5px;
+        }
+        .cover h2 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .cover .subtitle {
+            color: var(--secondary);
+            font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .cover .title-box {
+            margin: 40px 0;
+            padding: 20px;
+            background: #eff6ff;
+            border-left: 6px solid var(--primary);
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary-dark);
+            text-align: center;
+        }
+        .cover .meta-box {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-top: 30px;
+        }
+        h2.chap-title {
+            color: var(--primary);
+            border-bottom: 2px solid #bfdbfe;
+            padding-bottom: 8px;
+            margin-top: 40px;
+            font-size: 1.35rem;
+        }
+        h3.sec-title {
+            color: var(--primary-dark);
+            margin-top: 25px;
+            font-size: 1.15rem;
+        }
+        p {
+            text-align: justify;
+            margin-bottom: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95rem;
+        }
+        table th {
+            background-color: var(--primary);
+            color: #ffffff;
+            padding: 10px;
+            text-align: left;
+        }
+        table td {
+            padding: 9px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .mermaid-container {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+        .mermaid-title {
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+        .mermaid-desc {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-style: italic;
+            margin-bottom: 15px;
+        }
+        pre.code-block {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.88rem;
+        }
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        @media print {
+            .print-btn { display: none; }
+            .container { box-shadow: none; padding: 0; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    <div class="container">
+        <div class="cover">
+            <h1>UNIDAD EDUCATIVA</h1>
+            <h2>“AMERINST”<br>(INSTITUTO AMERICANO)</h2>
+            <div class="subtitle">SISTEMAS INFORMÁTICOS - BACHILLERATO TÉCNICO HUMANÍSTICO (BTH) - GESTIÓN 2026</div>
+            <div class="title-box">SISTEMA WEB DE COMERCIO ELECTRÓNICO Y DESPACHO LOGÍSTICO EN TIEMPO REAL CON CONTROL DE INVENTARIOS APLICANDO CÓDIGOS QR Y GEORREFERENCIACIÓN PARA LA EMPRESA "BURGER 24/7"</div>
+            <div class="meta-box">
+                <strong>Postulante:</strong> Nataly Gemio<br>
+                <strong>Tutor:</strong> Lic. Tutor Académico de Sistemas Informáticos<br>
+                <strong>Curso:</strong> 6to. de Secundaria<br>
+                <strong>La Paz – Bolivia &bull; 2026</strong>
+            </div>
+        </div>
+
+        <h2 class="chap-title">I. INTRODUCCIÓN</h2>
+        <p>En la última década, la aceleración tecnológica y la masificación del acceso a Internet de alta velocidad en dispositivos móviles han transformado de manera radical los hábitos de consumo y los modelos comerciales a nivel global y nacional. En el Estado Plurinacional de Bolivia, y de forma particularmente acentuada en las urbes metropolitanas como La Paz, el comercio electrónico (e-commerce) ha dejado de ser una opción accesoria para convertirse en un canal primario e indispensable de subsistencia y crecimiento empresarial. Tras los fenómenos sociales y sanitarios globales recientes, los consumidores paceños adoptaron con celeridad plataformas digitales para la adquisición de bienes de consumo inmediato, posicionando al sector gastronómico de comida rápida en la vanguardia de esta revolución transaccional.</p><p>No obstante, el auge del comercio electrónico ha revelado severas asimetrías y vulnerabilidades en las micro y pequeñas empresas gastronómicas. Gran parte de estos negocios opera bajo un esquema tradicional o semidigitalizado altamente precario, dependiendo de canales de mensajería instantánea no estructurados (tales como WhatsApp o llamadas telefónicas) o sometiéndose a plataformas internacionales de intermediación por agregadores (delivery apps). Este último modelo impone comisiones comerciales desproporcionadas que oscilan entre el 20% y el 30% sobre el valor bruto de cada venta, asfixiando los márgenes operativos de las empresas locales e incrementando innecesariamente el precio final transferido al consumidor.</p><p>En este escenario comercial surge la empresa &#x27;Burger 24/7&#x27;, un emprendimiento paceño especializado en la elaboración y expendio de hamburguesas artesanales, complementos y bebidas con un modelo de operación enfocado en el horario nocturno y de madrugada (dark kitchen / cocina fantasma). Dicho segmento temporal, caracterizado por una alta demanda insatisfecha entre las 20:00 y las 06:00 horas, plantea retos logísticos y operativos de extrema complejidad: personal de despacho reducido, clientes dispersos geográficamente a lo largo de la topografía accidentada de la hoyada paceña, requerimiento de entregas ultrarrápidas y un flujo continuo de transacciones concurrentes.</p><p>La operación empírica de Burger 24/7 evidenció fallas sistemáticas críticas: desincronización de inventarios (sobreventa de hamburguesas y bebidas cuyos insumos ya se encontraban agotados en cocina física), demoras operativas en la confirmación de pedidos, falta de verificación fehaciente en la recepción de comprobantes de pago por código QR (lo que generaba pérdidas por estafas con comprobantes bancarios simulados o editados gráficamente), asignación desordenada de repartidores urbanos (riders) y la ausencia total de un control de caja que impidiera el desvío o la confusión de dinero en efectivo recaudado durante las entregas contra entrega.</p><p>Ante esta problemática multidimensional, la presente monografía detalla el proceso científico, técnico y metodológico seguido para diseñar, desarrollar, desplegar y verificar un &#x27;Sistema Web de Comercio Electrónico y Despacho Logístico en Tiempo Real con Control de Inventarios Aplicando Códigos QR y Georreferenciación&#x27;. El sistema propone una solución tecnológica de soberanía propia e independiente, basada en una arquitectura moderna de microservicios desacoplados (Auth, Catalog, Transactions, Rider y Logistics) comunicados mediante protocolos REST seguros, con control de concurrencia estricto en bases de datos relacionales MySQL/MariaDB (InnoDB con bloqueo pesimista `SELECT ... FOR UPDATE`), georreferenciación cartográfica mediante la fórmula matemática de Haversine y trazabilidad inmutable bajo el estándar de sobres BMAD.</p><p>La investigación y el artefacto informático resultante se enmarcan en los lineamientos pedagógicos del Bachillerato Técnico Humanístico (BTH) en la especialidad de Sistemas Informáticos del Instituto Americano &#x27;AMERINST&#x27;, respondiendo a las directrices de la Ley de Educación N° 070 &#x27;Avelino Siñani - Elizardo Pérez&#x27; para la articulación de la ciencia y la tecnología con la producción comunitaria y la solución tangible de necesidades socioeconómicas del entorno paceño.</p>
+
+        <h2 class="chap-title">VII. MARCO TEÓRICO</h2>
+        <h3 class="sec-title">7.1 SUSTENTO LEGAL</h3>
+        <p>El diseño, desarrollo, implementación y despliegue del sistema web de comercio electrónico y logística en tiempo real para la empresa gastronómica &#x27;Burger 24/7&#x27; se sustenta de forma rigurosa en el marco normativo, jurídico y regulatorio vigente en el Estado Plurinacional de Bolivia, así como en las normas y estándares internacionales de ingeniería de software. A continuación, se detallan los instrumentos legales y normativos que otorgan validez jurídica, respaldo comercial, protección de datos y garantía de calidad a la solución tecnológica propuesta:</p>
+<h4 style='color:#1e3a8a;margin-top:15px;'>7.1.1 Constitución Política del Estado Plurinacional de Bolivia (CPE)</h4><p>La Constitución Política del Estado, promulgada en febrero de 2009, constituye la norma suprema del ordenamiento jurídico boliviano y establece los principios rectores en materia de desarrollo científico, derechos socioeconómicos y protección a los usuarios:</p><p>• Artículo 103, Parágrafos I y II: Establece de manera taxativa que el Estado garantizará el desarrollo de la ciencia y la investigación científica, técnica y tecnológica en beneficio del interés general. Asimismo, dispone que el Estado asumirá como política pública la implementación y difusión de tecnologías orientadas a elevar la productividad de las diversas actividades económicas del país. En estricta concordancia con este precepto, la presente investigación aplica conocimientos avanzados de programación, bases de datos y algoritmia para transformar la productividad de una microempresa del rubro gastronómico en la ciudad de La Paz.</p><p>• Artículo 47, Parágrafo I: Consagra el derecho fundamental de toda persona a dedicarse al comercio, la industria o a cualquier actividad económica lícita, en condiciones que no perjudiquen el bien colectivo. El sistema informático provee las herramientas tecnológicas para que Burger 24/7 ejerza esta libertad económica dentro de la formalidad tributaria y comercial, facilitando la emisión de comprobantes, la transparencia contable y la bancarización de sus cobros.</p><p>• Artículo 75: Reconoce expresamente los derechos de las usuarias y los consumidores a recibir bienes y servicios de calidad, a contar con información fidedigna, veraz y oportuna sobre las características, composición y precios de los productos ofertados. La plataforma materializa este mandato mediante la publicación de un catálogo digital transparente, donde cada hamburguesa y bebida detalla su precio oficial en moneda nacional (Bolivianos), ingredientes constitutivos y tiempo estimado de entrega, evitando distorsiones o recargos no informados.</p><h4 style='color:#1e3a8a;margin-top:15px;'>7.1.2 Ley General de Telecomunicaciones, Tecnologías de Información y Comunicación (Ley N° 164)</h4><p>Promulgada el 8 de agosto de 2011, la Ley N° 164 representa el pilar normativo central que regula las tecnologías de la información, las comunicaciones digitales y el comercio electrónico en Bolivia:</p><p>• Título V (Del Comercio Electrónico y Documentos Digitales): El Artículo 78 otorga plena validez jurídica y eficacia probatoria a los mensajes de datos, documentos digitales y transacciones electrónicas. La norma estipula que ningún acto mercantil o contractual podrá ser desestimado o carecer de validez por el simple hecho de haberse celebrado por medios telemáticos o digitales. De este modo, la generación de un pedido en la plataforma Burger 24/7 constituye una relación contractual válida entre el consumidor y la empresa.</p><p>• Artículo 79 (Conservación de Mensajes de Datos): Instruye a los proveedores de servicios y comercios electrónicos a preservar de forma inalterable y segura el historial cronológico de todas las transacciones efectuadas a través de sus sistemas informáticos. Para cumplir cabalmente esta disposición, el sistema incorpora un Ledger Inmutable de Auditoría (`auditoria_logs`), donde cada compra, cancelación o movimiento de caja se almacena con marca de tiempo UTC de precisión, dirección IP de origen y código de usuario ejecutor.</p><p>• Artículo 81 (Protección de Datos Personales): Prohíbe de manera expresa la cesión, venta o tratamiento indebido de datos personales sin el consentimiento inequívoco del titular. El sistema cumple estrictamente esta normativa implementando mecanismos de cifrado unidireccional con salting (Bcrypt) para las credenciales de acceso y restringiendo el acceso a documentos confidenciales (Cédula de Identidad de repartidores) en directorios privados protegidos mediante cabeceras de autorización HTTP Bearer.</p><h4 style='color:#1e3a8a;margin-top:15px;'>7.1.3 Decreto Supremo N° 1793 (Reglamento a la Ley N° 164 en materia de TICs)</h4><p>El Decreto Supremo N° 1793 de 13 de noviembre de 2013 reglamenta de forma específica las disposiciones de la Ley N° 164 en cuanto al desarrollo de software, estándares tecnológicos y soberanía digital:</p><p>• Promoción de Estándares Abiertos y Software Libre: El reglamento instruye a las instituciones y recomienda al sector productivo nacional la adopción de tecnologías de estándares abiertos, libres de regalías y con código auditable, con el fin de evitar la dependencia tecnológica de licencias privativas foráneas. La arquitectura de Burger 24/7 sigue este lineamiento al emplear PHP 8.2, Python 3.11, MySQL / MariaDB y estándares W3C (HTML5, ECMAScript 6+ y CSS3) sin incurrir en costos abusivos de licenciamiento comercial.</p><p>• Requisitos de Seguridad en Sitios y Servicios Web: El decreto establece la obligatoriedad de incorporar medidas de protección perimetral, transporte cifrado de datos mediante certificados TLS/SSL y mecanismos contra la alteración malintencionada de información comercial, premisas integradas en la arquitectura de microservicios mediante validación de tokens JWT y cabeceras estrictas de seguridad CORS.</p><h4 style='color:#1e3a8a;margin-top:15px;'>7.1.4 Ley General de los Derechos de las Usuarias y los Usuarios y de las Consumidoras y los Consumidores (Ley N° 453)</h4><p>La Ley N° 453 de 4 de diciembre de 2013 establece los principios, derechos y garantías que asisten a la población boliviana en su calidad de consumidores de bienes y servicios:</p><p>• Principio de Publicidad Veraz e Información Oportuna (Art. 13): Exige que toda oferta comercial en medios digitales coincida de manera irrestricta con la realidad del producto entregado. El sistema garantiza que las fotografías, recetas y tamaños de porciones correspondan exactamente al producto físico elaborado en cocina.</p><p>• Prohibición de Cobros Arbitrarios o Costos Ocultos (Art. 15): Prohíbe la inclusión de cargos no aceptados explícitamente por el comensal. El cálculo del costo logístico de entrega mediante la fórmula matemática de Haversine se transparenta en la pantalla de liquidación antes de que el usuario presione el botón de confirmación de compra, desglosando con precisión el subtotal de productos y la tarifa de envío en Bolivianos.</p><p>• Derecho de Reclamación y Cancelación Justificada (Art. 21): Concede al usuario la facultad de cancelar transacciones no despachadas o formular reclamos en caso de demora excesiva. El sistema implementa la función de cancelación de orden con reversión automática de inventario a la base de datos (rollback transaccional), protegiendo la economía del cliente.</p><h4 style='color:#1e3a8a;margin-top:15px;'>7.1.5 Código de Comercio de Bolivia (Decreto Ley N° 14379)</h4><p>El Código de Comercio rige las obligaciones de los comerciantes, los actos de comercio y los contratos mercantiles en el territorio nacional:</p><p>• Artículos 36 al 65 (De la Contabilidad Comercial): Obliga a todo ente comercial a llevar una contabilidad ordenada, fidedigna y respaldada documentalmente de todas sus operaciones de compra y venta. El subsistema de arqueo y cierre ciego de caja chica desarrollado en la plataforma provee un registro contable inalterable de los flujos de dinero en efectivo recaudados por los repartidores, generando reportes diarios de balance entre ventas brutas, propinas, fondos de cambio y comisiones de envío.</p><p>• Artículos 803 al 820 (De la Compraventa Mercantil): Definen el perfeccionamiento del contrato de compraventa cuando media el consentimiento de las partes respecto a la cosa y el precio. La orden de compra generada en la plataforma formaliza dicho consentimiento, quedando constancia en los registros electrónicos de la fecha, hora, monto, comprador y producto solicitado.</p><h4 style='color:#1e3a8a;margin-top:15px;'>7.1.6 Normativa de la Autoridad de Supervisión del Sistema Financiero (ASFI) para Pagos Móviles (Simple QR)</h4><p>La ASFI, a través de la Circular ASFI/618 y normativas complementarias del Sistema de Pagos Nacional, regula la emisión, funcionamiento e interoperabilidad de los códigos QR bancarios en Bolivia:</p><p>• Estándar Nacional Simple QR: Regula el ecosistema interoperable administrado por ASOBAN y las entidades de intermediación financiera, basado en la especificación global EMVCo Merchant-Presented Mode. Este marco permite a los clientes de cualquier banco o billetera móvil del país transferir fondos instantáneamente a la cuenta recaudadora de Burger 24/7 sin comisiones interbancarias abusivas.</p><p>• Mecanismos Antifraude y Conciliación: La normativa instruye a los comercios a verificar fehacientemente la confirmación de la transferencia bancaria antes de la entrega de bienes de alto valor o perecederos. El sistema implementa una doble validación: carga obligatoria del comprobante de transferencia con captura de pantalla y revisión administrativa en el panel de control antes de enviar la comanda a preparación, previniendo fraudes con comprobantes falsos o reutilizados.</p><h4 style='color:#1e3a8a;margin-top:15px;'>7.1.7 Ley de la Educación N° 070 &#x27;Avelino Siñani - Elizardo Pérez&#x27; y Enfoque BTH</h4><p>La Ley N° 070 fundamenta el Modelo Educativo Sociocomunitario Productivo (MESCP) en el Estado Plurinacional de Bolivia:</p><p>• Artículos 13 y 14 (Educación Técnica y Tecnológica): Disponen la universalización del Bachillerato Técnico Humanístico (BTH) en el subsistema de educación regular, con el objetivo de formar bachilleres con una doble titulación: Bachiller Humanístico y Técnico Medio en una especialidad productiva o de servicios, como Sistemas Informáticos.</p><p>• Articulación entre Teoría y Práctica Productiva: La reglamentación del BTH emitida por el Ministerio de Educación exige que la monografía de titulación no sea un documento meramente bibliográfico o teórico, sino un proyecto socioproductivo tangible que responda a las potencialidades y problemas socioeconómicos de la comunidad. El presente trabajo responde a cabalidad con este mandato al dotar a una empresa paceña de una plataforma tecnológica funcional y de producción real.</p><h4 style='color:#1e3a8a;margin-top:15px;'>7.1.8 Estándares Internacionales ISO/IEC 25010 e ISO/IEC 27001</h4><p>En el ámbito de la ingeniería de software y la gobernanza de tecnologías de la información, el proyecto se alinea con los estándares de referencia internacional:</p><p>• Estándar ISO/IEC 25010 (Software Product Quality): Define el modelo de calidad para productos de software compuesto por ocho características esenciales: Adecuación funcional (completitud de requisitos de venta y caja), Eficiencia de desempeño (latencia REST &lt; 200 ms), Compatibilidad (interoperabilidad multiplataforma W3C), Usabilidad (diseño Mobile First responsivo), Fiabilidad (integridad transaccional ACID), Seguridad (control RBAC y cifrado Bcrypt), Mantenibilidad (arquitectura modular desacoplada) y Portabilidad (ejecución en cualquier navegador estándar).</p><p>• Estándar ISO/IEC 27001 (Information Security Management): Aplica los principios rectores de la seguridad de la información: Confidencialidad de las contraseñas de usuarios, Integridad de los registros de inventario mediante bloqueos pesimistas, y Disponibilidad del servicio 24/7 mediante arquitecturas de microservicios resilientes con soporte fallback offline.</p><h3 class='sec-title'>7.2 DESARROLLO DEL MARCO TEÓRICO</h3><p>El desarrollo del marco teórico profundiza en los fundamentos científicos, conceptuales, algorítmicos, matemáticos y tecnológicos que sustentan la plataforma Burger 24/7. Esta sección se estructura en diez áreas temáticas exhaustivas que abarcan desde los paradigmas de arquitectura de software hasta los algoritmos geodésicos y la seguridad criptográfica:</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.1 Comercio Electrónico y el Modelo Dark Kitchen en la Industria Gastronómica Nocturna 24/7</h4><p>El comercio electrónico (e-commerce) en la industria gastronómica ha transitado de simples directorios telefónicos digitalizados a complejas plataformas transaccionales en tiempo real. En el segmento de la comida rápida nocturna, ha cobrado una relevancia protagónica el modelo comercial &#x27;Dark Kitchen&#x27; (también conocido como cocina oculta, ghost kitchen o cocina virtual).</p><p>A diferencia de los restaurantes de formato tradicional, una dark kitchen prescinde por completo de áreas de servicio al público presencial (mesas, sillas, cubertería de porcelana, decoración temática y camareros). Su infraestructura física se concentra exclusivamente en un centro de manufactura culinaria industrial altamente tecnificado y optimizado para la recepción de pedidos digitales, preparación en línea de ensamble y despacho expedito a repartidores motorizados.</p><p>En una metrópoli de alta altitud y topografía irregular como La Paz, el modelo dark kitchen nocturno de Burger 24/7 resuelve una falla estructural del mercado: la escasez de alternativas de alimentación caliente y de calidad durante las horas de la madrugada (de 22:00 a 06:00 horas), cuando los restaurantes convencionales cierran sus puertas debido al alto costo de mantener personal de sala y los riesgos de seguridad en la vía pública.</p><p>No obstante, este modelo presenta retos operativos de extrema rigurosidad. La ausencia de un salón físico implica que el 100% de la percepción de marca y la experiencia del cliente se canalizan a través de la interfaz web y la eficiencia de la entrega. Una caída en el servidor, un error de stock que obligue a llamar al cliente a las 02:00 AM para cancelar su pedido, o un cobro logístico desmedido provocan la deserción irreversible del comensal. Por ello, la plataforma de software se convierte en el núcleo transaccional indispensable que articula cocina, repartidores y clientes con precisión milimétrica.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.2 Arquitectura de Software: De Arquitecturas Monolíticas a Microservicios Desacoplados y DDD</h4><p>En la historia de la ingeniería de software, la evolución arquitectónica ha respondido a la necesidad de gestionar la complejidad y la escalabilidad. La arquitectura monolítica tradicional agrupa en una única base de código la interfaz de usuario, la lógica de negocio y el acceso a datos. Si bien un monolito es sencillo de desplegar en etapas embrionarias, a medida que el sistema crece presenta severas patologías: el fallo en un módulo secundario (como el procesador de reportes o la subida de avatares) puede ocasionar una fuga de memoria o un bloqueo del hilo principal que colapse la totalidad del servidor, paralizando las ventas en momentos críticos.</p><p>Para superar estas restricciones, Burger 24/7 implementa una Arquitectura de Microservicios Desacoplados guiada por los principios del Diseño Orientado al Dominio (Domain-Driven Design - DDD), formalizado por Eric Evans. Bajo este enfoque, el dominio comercial de la empresa se fragmenta en Contextos Delimitados (Bounded Contexts) bien diferenciados, donde cada contexto se materializa como un microservicio independiente con responsabilidades funcionales únicas y cohesión interna elevada.</p><p>La arquitectura de Burger 24/7 se estructura en cinco microservicios RESTful autónomos:
+1. Microservicio Auth (Gestión de Identidad y Acceso): Encapsula el registro de usuarios, control de mayoría de edad, subida multipart de Cédula de Identidad en formato seguro, encriptación Bcrypt y emisión de credenciales stateless JWT.
+2. Microservicio Catalog (Gestión Comercial y Productos): Controla el inventario de hamburguesas, acompañamientos, salsas y bebidas, organizados jerárquicamente por categorías con filtrado dinámico.
+3. Microservicio Transactions (Motor Transaccional y Checkout): Núcleo financiero responsable del procesamiento de compras con aislamiento ACID, adquisición de bloqueos pesimistas, registro de pagos y cancelación de pedidos con reintegro de existencias.
+4. Microservicio Rider (Logística y Flota de Reparto): Administra la cola de despachos en espera, asignación de pedidos a repartidores en ruta, georreferenciación domiciliaria y arqueo de caja chica en efectivo.
+5. Microservicio Logistics (Motor Geodésico): Servicio algorítmico implementado en Python 3.11 que efectúa cálculos trigonométricos de distancia sobre el esferoide terrestre para tarifación automatizada.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.3 Tecnologías de Frontend Web: Vanilla JavaScript ES6+, Componentes Reactivos y Single Page Applications</h4><p>En el desarrollo de interfaces de usuario para plataformas de comercio electrónico moderno, la selección de la pila tecnológica en el cliente es determinante para la velocidad y la experiencia del usuario. En los últimos años, la industria ha abusado de frameworks pesados (como React, Angular o Vue), los cuales descargan sobre el dispositivo del usuario complejas bibliotecas de virtual DOM y miles de dependencias npm que suelen superar los 500 KB o 1 MB de código JavaScript comprimido.</p><p>En un entorno móvil nocturno en la ciudad de La Paz, donde los clientes suelen navegar desde teléfonos inteligentes de gama baja o media a través de redes celulares 3G o 4G con fluctuaciones de señal, estos frameworks conllevan tiempos de bloqueo excesivos en la interacción (Total Blocking Time - TBT) y retrasan el primer renderizado con contenido (First Contentful Paint - FCP), deteriorando la conversión comercial.</p><p>Por estas razones técnicas, la plataforma Burger 24/7 fue construida con Vanilla JavaScript nativo bajo la especificación moderna ECMAScript 2022+ (ES6+), prescindiendo totalmente de dependencias pesadas y ejecutándose con el máximo rendimiento sobre el motor V8 del navegador.</p><p>La arquitectura del cliente implementa el patrón Single Page Application (SPA):
+• El cliente carga un documento base ligero (`index.html`) estilizado con utilidades CSS responsivas inspiradas en Tailwind CSS.
+• El enrutamiento y la renderización dinámica de vistas se gestionan en memoria mediante `app.js`, que conmuta las vistas de Catálogo, Carrito de Compras, Checkout Georreferenciado, Monitoreo de Pedidos en Vivo y Paneles de Control sin recargar la página.
+• La arquitectura frontend es completamente modular: `api.js` centraliza la capa de transporte con Fetch API y cabeceras de autorización Bearer; `cart.js` encapsula el cálculo de totales, descuentos y persistencia en `localStorage`; `rider.js` gestiona el expediente y navegación en mapa del repartidor; y `admin.js` coordina el refresco periódico y las aprobaciones documentales.
+• Modo Dual Resiliente: Si la conexión a internet del usuario se interrumpe momentáneamente, el frontend activa de forma transparente un almacenamiento local en `localStorage`, impidiendo que el cliente pierda los ítems añadidos a su carrito y restableciendo la sincronización al retornar la conectividad.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.4 Backend y Servicios Web RESTful: Protocolo HTTP, PHP 8.2 PDO, Python 3.11 y Sobres BMAD</h4><p>La capa de servicios de backend opera bajo el paradigma de transferencia de estado representacional (REST - Representational State Transfer), formalizado por Roy Fielding en su tesis doctoral del año 2000. Una arquitectura REST utiliza los métodos nativos del protocolo de transferencia de hipertexto (HTTP) con semántica clara:
+• GET: Consulta idempotente de recursos sin efectos colaterales sobre el estado del servidor (ej. listar categorías o consultar estado de orden).
+• POST: Creación de recursos y ejecución de operaciones transaccionales no idempotentes (ej. procesar checkout o registrar un nuevo usuario).
+• PUT: Modificación o actualización completa del estado de un recurso (ej. aprobar repartidor o actualizar estado de despacho a &#x27;en camino&#x27;).
+• DELETE: Eliminación lógica o física de una entidad comercial.</p><p>En la implementación del backend se seleccionó PHP 8.2 utilizando la extensión PDO (PHP Data Objects). A diferencia de las antiguas funciones no preparadas, PDO ofrece una capa de abstracción orientada a objetos de alto rendimiento que implementa Sentencias Preparadas (Prepared Statements) obligatorias a nivel de controlador. Esto separa de forma radical la estructura sintáctica de la consulta SQL respecto a los valores provistos por el cliente, neutralizando en un 100% los vectores de ataque por Inyección SQL.</p><p>En paralelo, se integró Python 3.11 para ejecutar tareas computacionales complejas de algoritmia espacial mediante el script `calculator.py`. Python ofrece una precisión matemática superior y una biblioteca estándar optimizada para funciones trigonométricas en coma flotante de doble precisión.</p><p>Un componente fundamental de interoperabilidad es la adopción del Estándar de Sobres BMAD (Base Model Architecture Definition). Todo endpoint REST de Burger 24/7 responde de manera uniforme mediante un sobre JSON estructurado en cuatro claves canónicas obligatorias:
+1. `status`: Cadena que indica el resultado de la operación (&#x27;success&#x27;, &#x27;error&#x27;, &#x27;pending&#x27;, &#x27;unauthorized&#x27;).
+2. `data`: Carga útil (payload) con los datos procesados (objeto de usuario, arreglo de productos, identificador de orden, token JWT).
+3. `audit`: Metadatos de observabilidad y trazabilidad forense, incluyendo timestamp UTC, ID de transacción y usuario ejecutor.
+4. `error_details`: Objeto presente en caso de fallos, que incluye un código de error normalizado (ej. &#x27;STOCK_INSUFFICIENT&#x27;, &#x27;INVALID_CREDENTIALS&#x27;) y un mensaje legible para el usuario.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.5 Sistemas de Gestión de Bases de Datos Relacionales: MySQL/MariaDB, Motor InnoDB, 3FN y Bloqueo Pesimista FOR UPDATE</h4><p>El almacenamiento persistente y la consistencia de los datos en Burger 24/7 reposan sobre el Sistema de Gestión de Bases de Datos Relacionales (RDBMS) MySQL / MariaDB 8.0, empleando exclusivamente el motor de almacenamiento transaccional InnoDB.</p><p>A. Normalización en Tercera Forma Normal (3FN):
+El esquema de la base de datos fue normalizado rigurosamente en 3FN para eliminar redundancias y anomalías de inserción, actualización y borrado:
+• Primera Forma Normal (1FN): Todos los atributos son atómicos y no existen grupos repetitivos.
+• Segunda Forma Normal (2FN): Todos los atributos no clave tienen dependencia funcional completa de la clave primaria.
+• Tercera Forma Normal (3FN): No existen dependencias transitivas entre atributos no clave (ej. la categoría de un producto se referencia mediante `categoria_id` foránea hacia la tabla `categorias`, en lugar de duplicar su descripción en cada producto).</p><p>B. Propiedades ACID en InnoDB:
+InnoDB asegura el cumplimiento irrestricto de las propiedades fundamentales de las transacciones:
+1. Atomicidad (Atomicity): Una operación compleja de checkout (descuento de stock de múltiples productos, inserción del registro maestro en `pedidos`, inserción de tuplas en `pedido_items` y registro en `auditoria_logs`) se ejecuta bajo una misma unidad transaccional (`$pdo-&gt;beginTransaction()`). Si cualquier instrucción arroja una excepción, el sistema ejecuta un `ROLLBACK` total, restaurando la base de datos a su estado original sin dejar registros huérfanos o transacciones a medias.
+2. Consistencia (Consistency): Todas las restricciones de integridad de claves foráneas (`FOREIGN KEY ... ON DELETE RESTRICT`) y de dominio de datos se validan en el motor, impidiendo saldos negativos de stock o referencias a usuarios inexistentes.
+3. Aislamiento (Isolation): El motor opera bajo el nivel de aislamiento REPEATABLE READ, implementando Control de Concurrencia Multiversión (MVCC) y bloqueos de rango de clave (Next-Key Locks) que protegen contra lecturas sucias (Dirty Reads) y lecturas no repetibles (Non-Repeatable Reads).
+4. Durabilidad (Durability): Mediante el registro de escritura adelantada (Write-Ahead Logging / Redo Log), una vez confirmada la transacción con `COMMIT`, los datos quedan asegurados en disco magnético o de estado sólido incluso si el servidor sufre una pérdida repentina de energía.</p><p>C. Control de Concurrencia mediante Bloqueo Pesimista (`SELECT ... FOR UPDATE`):
+En los sistemas de comercio electrónico gastronómico, uno de los fallos más destructivos es la sobreventa de productos por condiciones de carrera (Race Conditions). Si dos clientes intentan comprar simultáneamente la última hamburguesa artesanal en inventario, un sistema ingenuo sin bloqueo consultará el stock disponible (stock = 1) para ambos usuarios al mismo tiempo, autorizará ambas compras y dejará el inventario en un estado inconsistente (-1), provocando la frustración del comensal.</p><p>Para erradicar de forma matemática este problema, Burger 24/7 implementa el Bloqueo Pesimista (Pessimistic Locking) a nivel de tupla en MySQL InnoDB:</p><p>```sql
+SELECT id, nombre, precio, stock 
+FROM productos 
+WHERE id = ? 
+FOR UPDATE;
+```</p><p>Al ejecutar `FOR UPDATE` dentro de una transacción activa, InnoDB adquiere un bloqueo exclusivo (Exclusive Lock o X-Lock) sobre las filas consultadas. Si otra petición transaccional concurrente intenta acceder a esos mismos registros de productos, el motor de la base de datos la suspende de inmediato en una cola de espera segura. La primera transacción verifica que el stock sea suficiente, descuenta las unidades vendidas mediante `UPDATE`, inserta la orden y ejecuta `COMMIT`. Recién en ese instante se libera el bloqueo; la segunda transacción se reanuda, vuelve a leer el stock actualizado (ahora igual a 0), detecta que el producto se ha agotado y rechaza la compra de forma ordenada, devolviendo al cliente un mensaje amigable sin corromper el balance de inventario.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.6 Criptografía, Seguridad Web y Gestión de Identidades: Bcrypt, JWT HMAC-SHA256, RBAC y Mitigación OWASP</h4><p>La seguridad informática y la protección de los activos de información en Burger 24/7 se diseñaron bajo el principio arquitectónico de &#x27;Defensa en Profundidad&#x27; (Defense in Depth), garantizando que si una capa perimetral es superada, las subsiguientes salvaguarden la confidencialidad e integridad del sistema.</p><p>A. Criptografía de Contraseñas mediante Bcrypt:
+El almacenamiento de contraseñas de usuarios en texto plano o utilizando funciones de dispersión obsoletas (como MD5 o SHA-1) constituye una negligencia técnica inadmisible, pues dichos algoritmos son extremadamente rápidos de calcular, permitiendo ataques de colisión y cracking mediante tablas arcoíris (Rainbow Tables) a razón de miles de millones de intentos por segundo en tarjetas gráficas modernas (GPU).</p><p>Burger 24/7 adopta el algoritmo de hashing adaptativo Bcrypt, diseñado por Niels Provos y David Mazières en 1999 sobre la base del cifrador por bloques Blowfish. Bcrypt introduce dos salvaguardas insoslayables:
+1. Salting Criptográfico Aleatorio: Cada contraseña procesada se combina con una sal de 128 bits generada por un generador de números pseudoaleatorios criptográficamente seguro (CSPRNG). Esto garantiza que dos usuarios que compartan exactamente la misma clave generen hashes completamente disímiles, inutilizando los ataques con tablas precalculadas.
+2. Factor de Costo Adaptativo (Work Factor): Configurado en factor 12 ($2^{12} = 4.096$ iteraciones del algoritmo Eksblowfish). Este costo introduce un retardo deliberado de aproximadamente 250 milisegundos en el servidor para cada cálculo de hash, velocidad imperceptible para un usuario humano pero que convierte un ataque de fuerza bruta por diccionario masivo en una tarea computacionalmente imposible que tomaría siglos de cómputo ininterrumpido.</p><p>B. Autenticación Stateless basada en JSON Web Tokens (JWT):
+El mantenimiento de sesiones mediante cookies de sesión PHP tradicionales (`PHPSESSID`) requiere que el servidor almacene el estado en memoria o disco, limitando la escalabilidad y exponiendo al sistema a ataques de falsificación de peticiones en sitios cruzados (CSRF). Por ello, el sistema implementa tokens JWT bajo el estándar RFC 7519.</p><p>Un token JWT consta de tres componentes compactos codificados en Base64Url y unidos por puntos (`header.payload.signature`):
+• Header: Especifica el tipo de token (`&quot;typ&quot;: &quot;JWT&quot;`) y el algoritmo de firma criptográfica (`&quot;alg&quot;: &quot;HS256&quot;`).
+• Payload: Contiene las aserciones (claims) de identidad del usuario, incluyendo `sub` (ID de usuario), `nombre`, `email`, `role` (rol de acceso) y `exp` (timestamp de expiración).
+• Signature: Firma digital generada mediante el algoritmo simétrico HMAC-SHA256, calculada como:
+  Signature = HMACSHA256(Base64Url(Header) + &quot;.&quot; + Base64Url(Payload), SecretKey)</p><p>Cuando el cliente envía su token en la cabecera HTTP `Authorization: Bearer &lt;token&gt;`, el microservicio de backend valida matemáticamente la firma utilizando la clave secreta del servidor. Si algún atacante intenta adulterar su rol (por ejemplo, cambiar su rol de &#x27;cliente&#x27; a &#x27;admin&#x27; dentro del payload Base64), la firma resultante será matemáticamente incompatible, rechazando la petición de inmediato con código HTTP 401 Unauthorized sin necesidad de consultar la base de datos.</p><p>C. Control de Acceso Basado en Roles (RBAC):
+El sistema implementa una matriz jerárquica de permisos basada en cuatro roles:
+• `cliente`: Acceso al catálogo, armado de carrito, checkout, seguimiento y subida de comprobante.
+• `rider`: Acceso restringido al portal logístico, aceptación de órdenes asignadas, actualización de ruta y arqueo de caja.
+• `admin`: Gestión de catálogo CRUD, aprobación de repartidores, monitoreo cada 10 segundos y visualización de auditoría.
+• `super_usuario`: Control total del sistema, configuración de parámetros y auditoría forense avanzada.</p><p>D. Mitigación de Vulnerabilidades del OWASP Top 10:
+• Inyección SQL (A03:2021-Injection): Mitigada al 100% mediante el uso exclusivo de sentencias preparadas en PDO.
+• Fallas Criptográficas (A02:2021-Cryptographic Failures): Resueltas con Bcrypt (costo 12) y JWT con HMAC-SHA256.
+• Pérdida de Control de Acceso (A01:2021-Broken Access Control): Controlada mediante middlewares de verificación de rol en cada endpoint.
+• Cross-Site Scripting (A03:2021-XSS): Evitada renderizando datos textuales mediante `textContent` en el DOM y sanitizando entradas HTML.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.7 Sistemas de Información Geográfica (GIS) y Algoritmia Geodésica: Fórmula del Semiverseno (Haversine)</h4><p>La determinación precisa de distancias físicas entre el centro de preparación y el comensal es indispensable para el cálculo automatizado de tarifas de despacho y la planificación logística en Burger 24/7. En la geometría elemental euclidiana, la distancia entre dos puntos $(x_1, y_1)$ y $(x_2, y_2)$ en un plano bidimensional se calcula mediante el teorema de Pitágoras ($d = \sqrt{\Delta x^2 + \Delta y^2}$). Sin embargo, la superficie de la Tierra no es plana sino un esferoide oblato tridimensional; la curvatura del planeta provoca que el cálculo euclidiano sobre coordenadas geográficas de latitud y longitud arroje distorsiones inaceptables a medida que los puntos se separan.</p><p>Para resolver este desafío matemático sobre la esfera terrestre, el subsistema logístico implementa en Python la Fórmula del Semiverseno (Haversine Formula), formulada históricamente en la navegación astronómica y formalizada por James Inman y R. W. Sinnott.</p><p>Dada una coordenada de origen (cocina en Sopocachi) con latitud $\varphi_1$ y longitud $\lambda_1$, y una coordenada de destino del comensal con latitud $\varphi_2$ y longitud $\lambda_2$, las diferencias angulares en radianes se definen como:
+$$\Delta \varphi = \varphi_2 - \varphi_1$$
+$$\Delta \lambda = \lambda_2 - \lambda_1$$</p><p>La función semiverseno de un ángulo $\theta$ se define matemáticamente como:
+$$\text{hav}(\theta) = \sin^2\left(\frac{\theta}{2}\right) = \frac{1 - \cos(\theta)}{2}$$</p><p>Aplicando la ley de los semiversenos sobre el triángulo esférico formado por los dos puntos y el polo norte, se calcula la distancia angular $c$ a través del término intermedio $a$:
+$$a = \sin^2\left(\frac{\Delta \varphi}{2}\right) + \cos(\varphi_1) \cdot \cos(\varphi_2) \cdot \sin^2\left(\frac{\Delta \lambda}{2}\right)$$
+$$c = 2 \cdot \arcsin(\min(1, \sqrt{a})) = 2 \cdot \text{arctan2}(\sqrt{a}, \sqrt{1 - a})$$</p><p>La distancia ortodrómica $d$ (la longitud del arco más corto que une ambos puntos a lo largo de la superficie del esferoide) se obtiene multiplicando la distancia angular $c$ por el radio medio volumétrico de la Tierra $R$ ($R = 6.371,0$ kilómetros o $6.371.000$ metros):
+$$d = R \cdot c$$</p><p>A partir del valor exacto de la distancia $d$ en kilómetros provisto por `calculator.py`, el sistema aplica la función tarifaria de Burger 24/7:
+$$T(d) = \begin{cases} T_{\text{base}} &amp; \text{si } d \le d_{\text{base}} \\ T_{\text{base}} + (d - d_{\text{base}}) \cdot C_{\text{km}} &amp; \text{si } d &gt; d_{\text{base}} \end{cases}$$</p><p>Donde $T_{\text{base}} = 5,00$ Bs. para un radio base $d_{\text{base}} = 2,0$ km, y $C_{\text{km}} = 1,50$ Bs. por kilómetro adicional. En el horario de madrugada (00:00 a 06:00 horas), la tarifa se multiplica por un coeficiente de recargo nocturno de $1,20$ ($+20\%$), remunerando de forma justa el riesgo y esfuerzo del repartidor nocturno.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.8 Pasarelas de Pago Digital y Ecosistema de Códigos QR: Estándar EMVCo y Protocolo Simple QR Bolivia</h4><p>El ecosistema de pagos móviles en Bolivia ha experimentado una transformación histórica gracias a la iniciativa interbancaria &#x27;SIMPLE: Pago Móvil&#x27;, promovida por ASOBAN y normada por la ASFI. Este sistema permite realizar transferencias monetarias electrónicas entre clientes de distintas entidades financieras sin costo transaccional para personas naturales y con acreditación inmediata de fondos las 24 horas del día.</p><p>El protocolo Simple QR adopta los lineamientos globales de la especificación EMVCo (QR Code Specification for Payment Systems: Merchant-Presented Mode). Bajo este estándar técnico, el código bidimensional almacena una trama de datos codificada en formato TLV (Tag-Length-Value):
+• Tag 00: Payload Format Indicator (valor &#x27;01&#x27;).
+• Tag 01: Point of Initiation Method (&#x27;12&#x27; para QR dinámico de uso único con monto predefinido).
+• Tag 26 a 51: Merchant Account Information (datos de la cuenta bancaria de destino, entidad financiera y código de comercio).
+• Tag 52: Merchant Category Code (&#x27;5812&#x27; correspondiente a restaurantes y locales de comida rápida).
+• Tag 53: Transaction Currency (&#x27;068&#x27; código numérico ISO 4217 correspondiente al Boliviano - BOB).
+• Tag 54: Transaction Amount (monto exacto a pagar en formato decimal &#x27;XX.XX&#x27;).
+• Tag 58: Country Code (&#x27;BO&#x27; para Bolivia).
+• Tag 59: Merchant Name (&#x27;BURGER 24/7&#x27;).
+• Tag 62: Additional Data Field Template (incluye el número de orden como etiqueta de referencia para conciliación).
+• Tag 63: Cyclic Redundancy Check (CRC-16 con polinomio generador 0x1021), que garantiza que el código QR no haya sido alterado durante la transmisión o impresión digital.</p><p>Para neutralizar el fraude por duplicación de comprobantes (usuarios inescrupulosos que reutilizan comprobantes bancarios antiguos o editados gráficamente), Burger 24/7 implementa un flujo de conciliación en dos fases: el comensal sube el comprobante emitido por su banca móvil (`/uploads/qr/`); el sistema vincula la imagen al pedido y la presenta en el Centro de Control del Administrador, donde se verifica el código de transacción antes de autorizar la cocción de los alimentos, eliminando pérdidas económicas.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.9 Auditoría de Sistemas, Logs Inmutables y Trazabilidad Forense de Eventos Transaccionales</h4><p>La seguridad transaccional y el cumplimiento de las normativas legales (especialmente el Artículo 79 de la Ley N° 164) exigen que todo sistema informático que gestione valores monetarios y pedidos comerciales mantenga un registro de auditoría estricto, exhaustivo e inmutable (Audit Trail).</p><p>En arquitecturas tradicionales vulnerables, los registros suelen guardarse en archivos planos de texto volátiles o carecen de trazabilidad, permitiendo que un administrador o atacante modifique los registros de ventas o borre evidencias de compras para desviar fondos. Para prevenir esto, Burger 24/7 implementa un Ledger Inmutable de Auditoría en la tabla relacional `auditoria_logs`.</p><p>Cada evento transaccional del sistema genera una tupla de auditoría que registra de forma irreversible:
+• `id`: Identificador autoincremental único.
+• `user_id`: Identificador del usuario que detonó la acción (clave foránea hacia `users`).
+• `accion`: Verbo de negocio estandarizado (ej. `AUTH_LOGIN`, `CHECKOUT_ACID_SUCCESS`, `ORDER_CANCELLED_ROLLBACK`, `RIDER_APPROVED`, `CASH_BOX_CLOSED`).
+• `entidad` y `entidad_id`: Nombre de la tabla y clave primaria del registro afectado.
+• `detalles`: Snapshot en formato JSON con el estado previo y posterior de los datos alterados.
+• `ip_address`: Dirección IP del cliente solicitante (IPv4 o IPv6).
+• `created_at`: Marca de tiempo de precisión UTC provista por el motor de base de datos.</p><p>Desde el punto de vista de los privilegios del motor MySQL, el usuario de la aplicación web cuenta únicamente con privilegios `INSERT` y `SELECT` sobre la tabla `auditoria_logs`, teniendo revocados de forma explícita los privilegios `UPDATE` y `DELETE`. Esto garantiza que el ledger sea de solo anexión (append-only), convirtiéndolo en una prueba pericial digital inalterable ante cualquier peritaje judicial o auditoría contable.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.10 Metodologías de Calidad de Software, Pruebas Automatizadas End-to-End (E2E) y Mantenibilidad</h4><p>En el estándar internacional ISO/IEC 25010, la calidad del software no es una propiedad accidental, sino el resultado de un proceso de ingeniería sistemático respaldado por pruebas de verificación continuas. Las pruebas de software se estructuran típicamente en la Pirámide de Pruebas de Mike Cohn, que comprende tres estratos esenciales: Pruebas Unitarias en la base, Pruebas de Integración en el medio, y Pruebas End-to-End (E2E) en la cúspide.</p><p>Para Burger 24/7, el aseguramiento de la calidad se apoya en una batería automatizada de pruebas E2E ejecutables mediante el comando centralizado `npm test` del repositorio. Estas pruebas simulan el ciclo de vida completo de la aplicación sobre un entorno local controlado:
+1. Aislamiento y Resiliencia Transaccional: Se simulan múltiples conexiones simultáneas de compra sobre un ítem con inventario restringido (stock = 1), verificando que el motor InnoDB ejecute el bloqueo pesimista `SELECT ... FOR UPDATE`, permitiendo una sola compra y rechazando las demás con mensajes BMAD limpios.
+2. Verificación de Autenticación y Criptografía: Se valida que las contraseñas generen hashes Bcrypt válidos y que los tokens JWT no puedan ser adulterados en su payload.
+3. Prueba del Algoritmo Geodésico: Se ejecutan aserciones matemáticas sobre `calculator.py` corroborando que las distancias calculadas entre la cocina en Sopocachi y destinos en Calacoto, Miraflores o el Centro coincidan con las tablas geodésicas de referencia con un margen de error menor al 0.5%.
+4. Arqueo Ciego de Caja Chica: Se verifica que la máquina de estados de caja compute la recaudación en efectivo de forma hermética y detecte sobrantes o faltantes al momento de la declaración del repartidor.</p><p>El reporte de la suite automatizada de pruebas arroja un 100% de aserciones aprobadas (passing), asegurando que el software cumple con los más altos estándares de calidad, mantenibilidad y robustez técnica exigidos por el Bachillerato Técnico Humanístico (BTH).</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.11 Modelado Matemático de la Cadena de Suministro, Control de Insumos y Gestión de Mermas en Cocina Nocturna</h4><p>La gestión operativa de una dark kitchen nocturna exige un balance riguroso entre la disponibilidad inmediata de insumos perecederos y la minimización de mermas por vencimiento o sobreproducción. En el rubro gastronómico de hamburguesas artesanales, ingredientes clave como el pan brioche recién horneado, los medallones de carne fresca y los vegetales hidropónicos poseen una vida útil restringida de 24 a 48 horas bajo refrigeración controlada.</p><p>Para optimizar el punto de reorden y el lote económico de compra en Burger 24/7, se aplica el modelo de Wilson adaptado a bienes perecederos con demanda estocástica:
+$$Q^* = \sqrt{\frac{2 \cdot D \cdot S}{H \cdot (1 - \theta)}}$$
+Donde $D$ representa la demanda promedio proyectada para el turno de madrugada, $S$ es el costo fijo de preparación de la comanda, $H$ es el costo de mantenimiento de inventario en frío, y $\theta$ es la tasa marginal de merma por expiración de insumos.</p><p>A nivel de software, el sistema vincula cada producto del catálogo con su matriz de insumos mediante relaciones relacionales normalizadas. Al confirmarse un pedido, el descuento de existencias en `productos` permite al administrador prever con exactitud cuándo el stock alcanzará el nivel de seguridad crítico, generando alertas tempranas en el Centro de Control para reposición o desactivación preventiva del ítem en la vitrina pública.</p><h4 style='color:#0f172a;margin-top:20px;font-size:1.1rem;'>7.2.12 Estudio del Arte y Evaluación Comparativa de Soluciones Tecnológicas de E-Commerce Gastronómico</h4><p>El análisis del estado del arte en plataformas de comercio electrónico para restaurantes revela una dicotomía histórica entre dos alternativas dominantes:</p><p>1. Plataformas de Agregación Internacional (PedidosYa, Uber Eats, Rappi): Ofrecen una base instalada de usuarios masiva, pero a expensas de imponer comisiones draconianas (20% al 30% del importe bruto), retener la titularidad de los datos de los clientes (impidiendo estrategias de fidelización directa) y liquidar fondos de forma diferida semanal o quincenalmente, privando a la dark kitchen de liquidez diaria en efectivo.</p><p>2. Plugins Genéricos sobre CMS Tradicionales (WooCommerce en WordPress, Shopify): Si bien reducen las comisiones por pedido, introducen una excesiva sobrecarga de rendimiento (decenas de consultas SQL redundantes por petición), tiempos de carga superiores a 4 segundos en redes móviles paceñas y carencia de un módulo nativo adaptado a las dinámicas bolivianas: pasarela Simple QR interoperable, arqueo ciego de repartidores y cálculo geodésico Haversine con recargo nocturno.</p><p>Frente a este panorama, la solución desarrollada en Burger 24/7 se erige como una alternativa innovadora y altamente especializada, combinando lo mejor de ambos mundos: la agilidad y experiencia de usuario fluida de una Single Page Application (SPA), la soberanía económica de comisiones 0% y la adaptación nativa a las realidades tributarias, bancarias (Simple QR) y orográficas de la ciudad de La Paz.</p><h2 class='chap-title'>X. DIAGRAMAS Y MODELADO DEL SISTEMA (MERMAID.JS)</h2>
+        <div class="mermaid-container">
+            <div class="mermaid-title">Figura 10.1: Diagrama C4 Nivel 1: Contexto del Sistema Burger 24/7</div>
+            <div class="mermaid-desc">Ilustra a los usuarios (Cliente, Repartidor, Administrador), el sistema central Burger 24/7 y las interacciones con sistemas externos (Servicio Cartográfico OpenStreetMap y Red Bancaria Simple QR).</div>
+            <div class="mermaid">
+graph TD
+    UserCliente["👤 Cliente Paceño<br/>(Navegador Móvil/Desktop)"]
+    UserRider["🛵 Repartidor / Rider<br/>(Smartphone Android/iOS)"]
+    UserAdmin["👨‍💼 Administrador / Cocina<br/>(Centro de Control)"]
+
+    SystemBurger["🍔 Sistema Web Burger 24/7<br/>(Plataforma E-Commerce & Despacho)"]
+
+    ExtMaps["🗺️ OpenStreetMap / Leaflet<br/>(Servicio Cartográfico CartoDB)"]
+    ExtBank["🏦 Ecosistema Simple QR / Bancos<br/>(Interoperabilidad Bancaria Bolivia)"]
+
+    UserCliente -->|"Explora menú, compra y envía comprobante QR"| SystemBurger
+    UserRider -->|"Acepta despachos, navega ruta y liquida efectivo"| SystemBurger
+    UserAdmin -->|"Gestiona inventario, aprueba riders y audita ventas"| SystemBurger
+
+    SystemBurger -->|"Consulta georreferenciación y mosaicos de mapas"| ExtMaps
+    SystemBurger -->|"Valida comprobantes de pago interbancario"| ExtBank
+            </div>
+        </div>
+        
+        <div class="mermaid-container">
+            <div class="mermaid-title">Figura 10.2: Diagrama C4 Nivel 2: Contenedores y Microservicios del Sistema</div>
+            <div class="mermaid-desc">Desglosa la arquitectura en capas: Frontend SPA, Capa de Red y Seguridad, Microservicios REST (Auth, Catalog, Transactions, Rider, Logistics) y Capa de Persistencia.</div>
+            <div class="mermaid">
+graph TD
+    subgraph Frontend ["Capa Cliente (Frontend SPA Vanilla JS ES6+)"]
+        UI_Client["Portal Cliente<br/>(Catálogo, Carrito, Tracking)"]
+        UI_Rider["Portal Rider<br/>(Expediente, Despachos, Caja)"]
+        UI_Admin["Control Admin<br/>(Aprobaciones, Monitoreo, Auditoría)"]
+        APILayer["api.js<br/>(Fetch REST & Fallback LocalStorage)"]
+    end
+
+    subgraph Gateway ["Capa de Seguridad & Gateway"]
+        JWTAuth["Bearer JWT Token (HMAC-SHA256)<br/>+ Cabeceras CORS"]
+    end
+
+    subgraph Microservicios ["Capa de Microservicios REST (PHP 8.2 & Python 3.11)"]
+        MS_Auth["Microservicio Auth<br/>(Login, Register, Upload CI, Approve)"]
+        MS_Catalog["Microservicio Catalog<br/>(CRUD Productos, Categorías)"]
+        MS_Trans["Microservicio Transactions<br/>(Checkout ACID, FOR UPDATE, Cancel)"]
+        MS_Rider["Microservicio Rider<br/>(Asignación, Estado Ruta, Settle Cash)"]
+        MS_Logistics["Microservicio Logistics<br/>(calculator.py - Haversine Geodésico)"]
+    end
+
+    subgraph Persistencia ["Capa de Datos & Almacenamiento"]
+        MySQL[("MySQL / MariaDB 8.0<br/>Motor InnoDB (3FN Relacional)")]
+        Storage["Almacenamiento Seguro<br/>(/uploads/ci/, /uploads/qr/)"]
+        Ledger[("Ledger Inmutable<br/>(auditoria_logs)")]
+    end
+
+    UI_Client --> APILayer
+    UI_Rider --> APILayer
+    UI_Admin --> APILayer
+
+    APILayer --> JWTAuth
+    JWTAuth --> MS_Auth
+    JWTAuth --> MS_Catalog
+    JWTAuth --> MS_Trans
+    JWTAuth --> MS_Rider
+    JWTAuth --> MS_Logistics
+
+    MS_Auth --> MySQL
+    MS_Auth --> Storage
+    MS_Catalog --> MySQL
+    MS_Trans --> MySQL
+    MS_Trans --> Ledger
+    MS_Rider --> MySQL
+    MS_Rider --> Ledger
+    MS_Logistics -.-> MS_Trans
+            </div>
+        </div>
+        
+        <div class="mermaid-container">
+            <div class="mermaid-title">Figura 10.3: Diagrama Entidad-Relación (DER) Físico Normalizado en 3FN</div>
+            <div class="mermaid-desc">Estructura de las tablas principales de la base de datos MySQL, sus atributos de clave primaria (PK), foránea (FK), restricciones y cardinalidad de relaciones.</div>
+            <div class="mermaid">
+erDiagram
+    USERS ||--o{ PEDIDOS : "realiza"
+    USERS ||--o{ CAJAS : "opera"
+    USERS ||--o{ AUDITORIA_LOGS : "ejecuta"
+    CATEGORIAS ||--o{ PRODUCTOS : "contiene"
+    PEDIDOS ||--|{ PEDIDO_ITEMS : "desglosa"
+    PRODUCTOS ||--o{ PEDIDO_ITEMS : "incluye"
+    USERS ||--o{ PEDIDOS : "despacha_rider"
+    CAJAS ||--o{ MOVIMIENTOS_CAJA : "registra"
+
+    USERS {
+        int id PK
+        string nombre
+        string email UK
+        string password_hash
+        string role
+        string ci_url
+        string ci_status
+        timestamp created_at
+    }
+
+    CATEGORIAS {
+        int id PK
+        string nombre
+        string descripcion
+        boolean activo
+    }
+
+    PRODUCTOS {
+        int id PK
+        int categoria_id FK
+        string nombre
+        decimal precio
+        int stock
+        boolean activo
+    }
+
+    PEDIDOS {
+        int id PK
+        int user_id FK
+        int rider_id FK
+        decimal total
+        decimal costo_envio
+        string metodo_pago
+        string estado
+        string comprobante_pago_url
+        decimal latitud
+        decimal longitud
+        timestamp created_at
+    }
+
+    PEDIDO_ITEMS {
+        int id PK
+        int pedido_id FK
+        int producto_id FK
+        int cantidad
+        decimal precio_unitario
+        decimal subtotal
+    }
+
+    CAJAS {
+        int id PK
+        int rider_id FK
+        decimal saldo_inicial
+        decimal total_efectivo_recaudado
+        decimal total_declarado_rider
+        string estado
+        timestamp fecha_cierre
+    }
+
+    AUDITORIA_LOGS {
+        int id PK
+        int user_id FK
+        string accion
+        string entidad
+        int entidad_id
+        text detalles
+        string ip_address
+        timestamp created_at
+    }
+            </div>
+        </div>
+        
+        <div class="mermaid-container">
+            <div class="mermaid-title">Figura 10.4: Diagrama de Secuencia: Checkout Concurrente con Bloqueo ACID y Pago QR</div>
+            <div class="mermaid-desc">Detalla el intercambio de mensajes entre Cliente, Frontend, API Gateway, Microservicio Transactions, MySQL (InnoDB FOR UPDATE) y el Ledger de Auditoría.</div>
+            <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Cliente as 👤 Cliente
+    participant FE as 💻 Frontend (cart.js)
+    participant GW as 🛡️ API Gateway (Bearer JWT)
+    participant TX as ⚙️ MS Transactions (checkout.php)
+    participant DB as 🗄️ MySQL (InnoDB Engine)
+    participant AUD as 📝 Ledger Auditoría
+
+    Cliente->>FE: Confirma pedido y presiona 'Pagar con QR'
+    FE->>GW: POST /api/transactions/checkout (payload + token)
+    GW->>TX: Valida Bearer JWT y reenvía petición
+    TX->>DB: $pdo->beginTransaction()
+    Note over TX,DB: Adquisición de Bloqueo Pesimista Exclusivo
+    TX->>DB: SELECT stock FROM productos WHERE id IN (...) FOR UPDATE
+    DB-->>TX: Retorna stock actual protegido contra lecturas sucias
+    alt Stock Insuficiente en algún ítem
+        TX->>DB: $pdo->rollBack()
+        TX-->>FE: HTTP 400 (BMAD Error: 'Stock no disponible')
+        FE-->>Cliente: Notifica producto agotado y actualiza carrito
+    else Stock Válido y Suficiente
+        TX->>DB: UPDATE productos SET stock = stock - ? WHERE id = ?
+        TX->>DB: INSERT INTO pedidos (user_id, total, estado='pendiente_pago', ...)
+        TX->>DB: INSERT INTO pedido_items (pedido_id, producto_id, cantidad, ...)
+        TX->>AUD: INSERT INTO auditoria_logs ('CHECKOUT_CREATED', order_id)
+        TX->>DB: $pdo->commit()
+        TX-->>FE: HTTP 201 (BMAD Success: order_id, total, QR_string)
+        FE-->>Cliente: Despliega Código QR dinámico Simple para escaneo
+        Cliente->>FE: Carga foto del comprobante bancario emitido
+        FE->>GW: POST /api/transactions/upload-voucher (order_id, file)
+        GW->>TX: Guarda imagen y actualiza estado = 'pagado'
+        TX-->>FE: Pedido confirmado exitosamente
+    end
+            </div>
+        </div>
+        
+        <div class="mermaid-container">
+            <div class="mermaid-title">Figura 10.5: Diagrama de Máquina de Estados: Ciclo de Vida del Pedido</div>
+            <div class="mermaid-desc">Modela las transiciones válidas de un pedido comercial desde su creación hasta su entrega exitosa o cancelación con reintegro automático de inventario.</div>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> Creado : Cliente envía carrito de compras
+    Creado --> PendientePago : Stock bloqueado (FOR UPDATE)
+    
+    PendientePago --> Pagado : Cliente adjunta comprobante QR o selecciona Efectivo
+    PendientePago --> Cancelado : Expiración de tiempo (Timeout) o cancelación
+    
+    Pagado --> EnPreparacion : Cocina acepta comanda en pantalla
+    Pagado --> Cancelado : Administrador rechaza comprobante inválido
+    
+    EnPreparacion --> ListoDespacho : Cocina finaliza empaque de alimentos
+    ListoDespacho --> EnCamino : Repartidor (Rider) asignado retira pedido
+    
+    EnCamino --> Entregado : Rider entrega comida al comensal y cobra
+    EnCamino --> NoEntregado : Domicilio inaccesible / No contesta
+    
+    Cancelado --> [*] : Reintegro de stock inmediato (Rollback/Update)
+    NoEntregado --> [*] : Registro de incidencia en auditoría
+    Entregado --> [*] : Fondos asignados a arqueo de caja chica
+            </div>
+        </div>
+        
+        <div class="mermaid-container">
+            <div class="mermaid-title">Figura 10.6: Diagrama de Máquina de Estados: Arqueo y Cierre Ciego de Caja Chica</div>
+            <div class="mermaid-desc">Ilustra el proceso de control financiero de los cobros en efectivo realizados por los repartidores, garantizando el cuadre exacto sin información sesgada.</div>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> CajaCerrada
+    CajaCerrada --> CajaAbierta : Rider inicia turno con fondo de cambio (Bs. 50.00)
+    
+    state CajaAbierta {
+        [*] --> AcumulandoRecaudacion
+        AcumulandoRecaudacion --> CobroEfectivoRegistrado : Entrega pedido en efectivo
+        CobroEfectivoRegistrado --> AcumulandoRecaudacion : Sistema suma monto a saldo teórico
+    }
+    
+    CajaAbierta --> EnArqueoCiego : Rider solicita cierre de turno e ingresa monto físico contado
+    
+    state EnArqueoCiego {
+        [*] --> ComparacionAutomatica
+        ComparacionAutomatica --> CuadreExacto : Declarado == Saldo Teórico
+        ComparacionAutomatica --> DescuadreDetectado : Declarado != Saldo Teórico (Faltante/Sobrante)
+    }
+    
+    CuadreExacto --> AprobacionAdministrativa : Administrador verifica dinero físico
+    DescuadreDetectado --> RevisionIncidencia : Justificación y ajuste de liquidación
+    
+    RevisionIncidencia --> AprobacionAdministrativa
+    AprobacionAdministrativa --> CajaCerrada : Emisión de comprobante de cierre y depósito
+    CajaCerrada --> [*]
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>

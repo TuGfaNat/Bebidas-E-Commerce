@@ -24,3 +24,8 @@ __pycache__/
 *~
 .DS_Store
 Thumbs.db
+
+# Test uploads
+uploads/
+microservices/Auth/uploads/ci/*.jpg
+microservices/Auth/uploads/docs/

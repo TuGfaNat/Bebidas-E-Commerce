@@ -2214,7 +2214,13 @@ class BebidasHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def log_message(self, format, *args):
-        sys.stderr.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {args[0]} {args[1]} -> {args[2]}\n")
+        try:
+            if len(args) >= 3:
+                sys.stderr.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {args[0]} {args[1]} -> {args[2]}\n")
+            else:
+                sys.stderr.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] " + (format % args) + "\n")
+        except Exception:
+            pass
 
 def run():
     server = ThreadingHTTPServer(('0.0.0.0', PORT), BebidasHandler)

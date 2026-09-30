@@ -67,6 +67,7 @@ Bebidas-E-Commerce/
 ├── schema.dbml                      # Modelo conceptual en Database Markup Language (DBML)
 ├── migrate.php                      # Motor de migración asistida sobre base de datos MySQL
 ├── migrate.py                       # Wrapper de ejecución rápida para migraciones
+├── view_db.py                       # Visor CLI interactivo de tablas y registros de base de datos
 ├── export_tesina.py                 # Compilador de la documentación técnica a Markdown y PDF
 ├── docs/                            # Capítulos técnicos completos de la tesina académica
 │   ├── tesina_infrastructure.md     # Capítulo 1: Infraestructura, Arquitectura y Despliegue
@@ -263,6 +264,87 @@ python migrate.py
 
 ---
 
+#### 🚀 Inspección Rápida de Base de Datos por Consola (`python view_db.py`)
+
+Para auditar, verificar o demostrar el estado de la base de datos relacional directamente desde la terminal (sin necesidad de abrir phpMyAdmin ni instalar herramientas pesadas), el proyecto cuenta con el script **`view_db.py`**:
+
+```bash
+python view_db.py
+```
+
+Esta herramienta imprime las tablas normalizadas con formato tabular ASCII legible:
+
+1. **`users`:** Muestra los 7 usuarios del sistema clasificados por rol (`cliente`, `rider`, `super_usuario`) junto a su correo y estado de C.I. (`verified`, `pending`, `rejected`).
+2. **`productos`:** Muestra el catálogo activo con categoría, nombre, precio en Bolivianos (Bs) y existencias de inventario (`stock`).
+3. **`pedidos`:** Detalla cada orden con cliente remitente, repartidor asignado, método de pago (`contraentrega`, `pagado_qr`, `liquidado`), estado del pedido y total.
+4. **`documentacion_rider`:** Muestra los expedientes de conductores (licencia, seguro, CV) y su dictamen de aprobación.
+5. **`auditoria_logs`:** Registra las últimas transacciones en el Ledger inmutable con tabla afectada, acción (`INSERT`, `UPDATE`, `DELETE`), IP del emisor y marca de tiempo.
+
+---
+
+#### 📋 Consultas SQL Esenciales (Queries para Exposición y Reportes)
+
+El archivo maestro [`init_schema.sql`](file:///D:/Bebidas-E-Commerce/init_schema.sql) contiene el DDL completo. A continuación se presentan las consultas analíticas y operativas más representativas:
+
+##### 1. Listado de Pedidos con JOIN Relacional Completo
+```sql
+SELECT 
+    p.id AS pedido_id,
+    c.nombre AS cliente,
+    IFNULL(r.nombre, 'Sin Asignar') AS repartidor,
+    p.total,
+    p.estado_pago,
+    p.estado_pedido,
+    p.created_at
+FROM pedidos p
+INNER JOIN users c ON p.cliente_id = c.id
+LEFT JOIN users r ON p.rider_id = r.id
+ORDER BY p.id DESC;
+```
+
+##### 2. Desglose de Artículos por Pedido (JOIN con Catálogo)
+```sql
+SELECT 
+    pd.pedido_id,
+    pr.nombre AS producto,
+    pr.categoria,
+    pd.cantidad,
+    pd.precio_unitario,
+    (pd.cantidad * pd.precio_unitario) AS subtotal
+FROM pedido_detalles pd
+INNER JOIN productos pr ON pd.producto_id = pr.id
+WHERE pd.pedido_id = 1;
+```
+
+##### 3. Liquidación de Efectivo por Cobros Contraentrega para Riders
+```sql
+SELECT 
+    r.id AS rider_id,
+    r.nombre AS rider,
+    COUNT(p.id) AS entregas_efectivo,
+    SUM(p.total) AS total_por_liquidar_bs
+FROM pedidos p
+INNER JOIN users r ON p.rider_id = r.id
+WHERE p.estado_pedido = 'entregado' 
+  AND p.estado_pago = 'pagado_efectivo'
+GROUP BY r.id, r.nombre;
+```
+
+##### 4. Transacción Atómica de Compra (Descuento Concurrente de Stock)
+```sql
+START TRANSACTION;
+UPDATE productos SET stock = stock - 1 WHERE id = 1 AND stock >= 1;
+INSERT INTO pedidos (cliente_id, estado_pago, estado_pedido, total, latitud, longitud) 
+VALUES (1, 'contraentrega', 'pendiente', 30.08, -16.5090, -68.1340);
+INSERT INTO pedido_detalles (pedido_id, producto_id, cantidad, precio_unitario) 
+VALUES (LAST_INSERT_ID(), 1, 1, 22.00);
+INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_nuevos, created_by)
+VALUES ('pedidos', LAST_INSERT_ID(), 'INSERT', '{"total": 30.08, "pago": "contraentrega"}', 1);
+COMMIT;
+```
+
+---
+
 ### Paso 4: Puesta en Marcha del Servidor
 
 Inicia el entorno de ejecución mediante cualquiera de los siguientes métodos:
@@ -293,15 +375,20 @@ Verás la aplicación de Burger 24/7 funcionando con catálogo, carrito, mapas i
 
 ## 6. Credenciales de Acceso Preconfiguradas (Seed Data)
 
-El sistema viene preconfigurado con cuentas de prueba para evaluar cada uno de los roles y flujos de negocio:
+El sistema viene preconfigurado con **7 cuentas de prueba** para evaluar exhaustivamente cada uno de los roles y sus tres estados posibles (Habilitado, Pendiente y Rechazado):
 
-| Rol de Usuario | Nombre Completo | Correo Electrónico | Contraseña | Estado de Identidad | Funcionalidades Habilitadas |
+| Rol de Usuario | Nombre Completo | Correo Electrónico | Contraseña | Estado C.I. / Expediente | Funcionalidades Habilitadas |
 |---|---|---|---|---|---|
-| **Super Usuario** | Admin Central | `admin@mail.com` | `admin` | Verificado | Control de catálogo (crear/editar hamburguesas), monitoreo de repartidores en tiempo real, aprobación de identificaciones C.I. y liquidación de caja física. |
-| **Rider (Repartidor)** | Pedro Gómez | `pedro@mail.com` | `pedro` | Aprobado | Recepción de pedidos asignados, cálculo de flete con fórmula Haversine, navegación de ruta GPS, entrega de pedidos y cobro en efectivo. |
-| **Cliente** | Carlos Pérez | `carlos@mail.com` | `carlos` | Verificado | Catálogo de hamburguesas, selección de dirección en mapa GPS, checkout con QR o Contraentrega y seguimiento en vivo. |
-| **Cliente (Pendiente)** | María López | `maria@mail.com` | `maria` | Pendiente | Cuenta de prueba para evaluar el flujo de aprobación de documentos de identidad por el Administrador. |
-| **Rider (Pendiente)** | Juan Rodríguez | `juan@mail.com` | `juan` | Pendiente | Cuenta de conductor pendiente de aprobación de licencia, seguro y currículum. |
+| **Super Usuario** | Admin Central | `admin@mail.com` | `admin` | ✅ Verificado | Control de catálogo (crear/editar hamburguesas), gestión de usuarios y filtros por estado, monitoreo en tiempo real, aprobación de C.I./expedientes y liquidación de caja física. |
+| **Cliente** | Carlos Pérez | `carlos@mail.com` | `carlos` | ✅ Verificado | Catálogo desbloqueado con precios, carrito de compras, checkout con Contraentrega (efectivo) o QR Simple y rastreo GPS en vivo. |
+| **Cliente (Pendiente)** | María López | `maria@mail.com` | `maria` | ⏳ Pendiente | Precios ocultos y compras deshabilitadas con aviso de *"C.I. pendiente de verificación"*. |
+| **Cliente (Rechazado)** | Roberto Flores | `roberto@mail.com` | `roberto` | ❌ Rechazado | Catálogo bloqueado con aviso de *"C.I. rechazado por la administración"*. |
+| **Rider (Repartidor)** | Pedro Gómez | `pedro@mail.com` | `pedro` | ✅ Aprobado | Recepción de pedidos en cola, botones Aceptar/Rechazar, cálculo de flete Haversine, navegación de ruta GPS, entrega/cobro y consulta de Historial de Despachos. |
+| **Rider (Pendiente)** | Juan Rodríguez | `juan@mail.com` | `juan` | ⏳ Pendiente | Documentos subidos pero en revisión; no puede aceptar órdenes hasta aprobación. |
+| **Rider (Rechazado)** | Marcos Vargas | `marcos@mail.com` | `marcos` | ❌ Rechazado | Cuenta bloqueada con aviso de expediente de conductor rechazado. |
+
+> 💡 **Acceso Rápido en la Interfaz Web:**  
+> En la esquina inferior izquierda de la pantalla encontrarás la cápsula plegable **`🔑 Cuentas Demo (Abrir ▴)`**. Al hacer clic sobre ella, puedes iniciar sesión instantáneamente con cualquiera de estas cuentas sin tener que escribir correo ni contraseña. Al hacer clic, se pliega automáticamente para no interrumpir tus operaciones.
 
 ---
 

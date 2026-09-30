@@ -127,7 +127,9 @@ INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, c
 (2, 'rider', 'Pedro Gómez', 'pedro@mail.com', '$2y$10$VS6OqUtJEgrTYIL2Ad3ypeZ1MBsqg/D5booI.pGQ.HMzs0RFcKbtO', '1992-08-25', '/uploads/ci/ci_pedro.jpg', 'verified', 1, 1),
 (3, 'super_usuario', 'Admin Central', 'admin@mail.com', '$2y$10$iwDft1al.qObBhKDoy9QMOfs3mmXxKY8SVPyYSklzFhgeWdYdnaAS', '1988-11-03', '/uploads/ci/ci_admin.jpg', 'verified', 3, 3),
 (4, 'cliente', 'María López (Pendiente)', 'maria@mail.com', '$2y$10$NJr/sBFl68EH/xi5t.pe0eD/NfCJf3syzayjCwsoGm0SKD.WUtfqC', '2001-02-14', '/uploads/ci/ci_maria.jpg', 'pending', 1, 1),
-(5, 'rider', 'Juan Rodríguez (Pendiente)', 'juan@mail.com', '$2y$10$L99DK8wwYYK6KlhfFAxxKubImqZOn3eyHpVy2iWA0bA4qi.jhpeNW', '1999-07-19', '/uploads/ci/ci_juan.jpg', 'pending', 1, 1)
+(5, 'rider', 'Juan Rodríguez (Pendiente)', 'juan@mail.com', '$2y$10$L99DK8wwYYK6KlhfFAxxKubImqZOn3eyHpVy2iWA0bA4qi.jhpeNW', '1999-07-19', '/uploads/ci/ci_juan.jpg', 'pending', 1, 1),
+(6, 'cliente', 'Roberto Flores (Rechazado)', 'roberto@mail.com', '$2y$10$GB.kzxC2cpj2ylTUbm/KzuZsZW/FFg4q0P99Tx1gwxRu.MpXfKx9y', '1996-05-20', '/uploads/ci/ci_roberto.jpg', 'rejected', 1, 3),
+(7, 'rider', 'Marcos Vargas (Rechazado)', 'marcos@mail.com', '$2y$10$VS6OqUtJEgrTYIL2Ad3ypeZ1MBsqg/D5booI.pGQ.HMzs0RFcKbtO', '1994-09-10', '/uploads/ci/ci_marcos.jpg', 'rejected', 2, 3)
 ON DUPLICATE KEY UPDATE 
     password_hash = VALUES(password_hash),
     ci_status = VALUES(ci_status),
@@ -153,12 +155,35 @@ ON DUPLICATE KEY UPDATE
     precio = VALUES(precio),
     stock = VALUES(stock);
 
--- Seed Documentación de Riders (Pedro aprobado, Juan pendiente)
+-- Seed Documentación de Riders (Pedro aprobado, Juan pendiente, Marcos rechazado)
 INSERT INTO documentacion_rider (id, rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by) VALUES
 (1, 2, '/uploads/docs/licencia_pedro.jpg', '/uploads/docs/seguro_pedro.jpg', '/uploads/docs/cv_pedro.pdf', 'aprobado', 3, 3),
-(2, 5, '/uploads/docs/licencia_juan.jpg', '/uploads/docs/seguro_juan.jpg', '/uploads/docs/cv_juan.pdf', 'pendiente', 5, 5)
+(2, 5, '/uploads/docs/licencia_juan.jpg', '/uploads/docs/seguro_juan.jpg', '/uploads/docs/cv_juan.pdf', 'pendiente', 5, 5),
+(3, 7, '/uploads/docs/licencia_marcos.jpg', '/uploads/docs/seguro_marcos.jpg', '/uploads/docs/cv_marcos.pdf', 'rechazado', 3, 3)
 ON DUPLICATE KEY UPDATE 
     estado_aprobacion = VALUES(estado_aprobacion);
+
+-- Seed Pedidos de Ejemplo (Entregados, Rechazados, Pendientes)
+INSERT INTO pedidos (id, cliente_id, rider_id, estado_pago, estado_pedido, total, latitud, longitud, qr_comprobante_url, created_by, updated_by) VALUES
+(1, 1, 2, 'liquidado', 'entregado', 45.00, -16.50200000, -68.13100000, NULL, 1, 3),
+(2, 4, 2, 'contraentrega', 'cancelado', 36.00, -16.51200000, -68.12500000, NULL, 4, 2),
+(3, 1, 2, 'pagado_qr', 'entregado', 58.00, -16.50800000, -68.13300000, '/uploads/qr/comprobante_carlos1.jpg', 1, 2),
+(4, 1, NULL, 'contraentrega', 'pendiente', 44.00, -16.50900000, -68.13400000, NULL, 1, 1)
+ON DUPLICATE KEY UPDATE
+    estado_pago = VALUES(estado_pago),
+    estado_pedido = VALUES(estado_pedido),
+    total = VALUES(total);
+
+-- Seed Detalles de Pedido
+INSERT INTO pedido_detalles (id, pedido_id, producto_id, cantidad, precio_unitario, created_by, updated_by) VALUES
+(1, 1, 1, 1, 22.00, 1, 1),
+(2, 2, 3, 1, 36.00, 4, 4),
+(3, 3, 2, 1, 32.00, 1, 1),
+(4, 3, 10, 2, 6.00, 1, 1),
+(5, 4, 6, 1, 44.00, 1, 1)
+ON DUPLICATE KEY UPDATE
+    cantidad = VALUES(cantidad),
+    precio_unitario = VALUES(precio_unitario);
 
 -- Seed Auditoría Inicial
 INSERT INTO auditoria_logs (id, tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_by, updated_by) VALUES

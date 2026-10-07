@@ -73,3 +73,44 @@ class DatabaseConnection {
         return $this->connection;
     }
 }
+
+// Si este script es accedido directamente vía HTTP como endpoint de salud/conexión:
+if (isset($_SERVER['SCRIPT_FILENAME']) && realpath(__FILE__) === realpath($_SERVER['SCRIPT_FILENAME'])) {
+    require_once __DIR__ . '/security.php';
+    applyCorsMiddleware();
+    header('Content-Type: application/json; charset=utf-8');
+
+    try {
+        $conn = DatabaseConnection::getInstance()->getConnection();
+        $dbName = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'burger_shop');
+        echo json_encode([
+            "status" => "success",
+            "data" => [
+                "database" => $dbName,
+                "connected" => true,
+                "engine" => "MySQL/MariaDB",
+                "message" => "Conexión exitosa a la base de datos de Burger 24/7"
+            ],
+            "audit" => [
+                "user_id" => "ANONYMOUS",
+                "timestamp" => date("c"),
+                "action" => "CONNECTION_TEST"
+            ],
+            "error_details" => null
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            "status" => "error",
+            "data" => [
+                "connected" => false
+            ],
+            "audit" => [
+                "user_id" => "ANONYMOUS",
+                "timestamp" => date("c"),
+                "action" => "CONNECTION_TEST"
+            ],
+            "error_details" => $e->getMessage()
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    }
+}

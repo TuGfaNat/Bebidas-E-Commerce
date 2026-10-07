@@ -18,12 +18,19 @@ let currentSession = {
     currentUser: null
 };
 
-// Configuration & Connectivity State — always connected to local Python server
+// Configuration & Connectivity State — connects automatically to Apache (XAMPP) or local dev server
+const detectMicroservicesUrl = () => {
+    if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
+        const basePath = window.location.pathname ? window.location.pathname.replace(/\/[^\/]*$/, '') : '';
+        const url = `${window.location.origin}${basePath}/microservices`;
+        return url.replace(/([^:]\/)\/+/g, '$1');
+    }
+    return 'http://localhost:8000/microservices';
+};
+
 let config = {
     connectedMode: true,
-    apiUrl: (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:'))
-        ? `${window.location.origin}/microservices`
-        : 'http://localhost:8000/microservices'
+    apiUrl: detectMicroservicesUrl()
 };
 
 // Cart State
@@ -136,7 +143,8 @@ function initDatabase() {
     apiGet('/Auth/connection.php', null, { skipAuth: true })
         .then(res => {
             if (apiDot) apiDot.className = res.ok ? 'status-dot active' : 'status-dot inactive';
-            if (apiStatusTxt) apiStatusTxt.innerText = res.ok ? 'Conectado · localhost:8000' : 'Servidor no disponible';
+            const currentHost = (typeof window !== 'undefined' && window.location && window.location.host) ? window.location.host : 'servidor';
+            if (apiStatusTxt) apiStatusTxt.innerText = res.ok ? `Conectado · ${currentHost}` : 'Servidor no disponible';
         })
         .catch(() => {
             if (apiDot) apiDot.className = 'status-dot inactive';

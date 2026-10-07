@@ -16,8 +16,8 @@ if (!function_exists('getallheaders')) {
 
 class JWTHelper {
     private static function getSecret() {
-        // Ensure DatabaseConnection instance is initialized to load environmental variables
-        DatabaseConnection::getInstance();
+        // Ensure environmental variables are loaded from .env
+        DatabaseConnection::loadEnv();
         $secret = getenv('JWT_SECRET') ?: ($_ENV['JWT_SECRET'] ?? null);
         if (empty($secret)) {
             throw new Exception("Error de configuración de seguridad: JWT_SECRET no está definido en el entorno.");

@@ -155,19 +155,20 @@ cp microservices/Auth/.env.example .env
 #### Parámetros Principales de Configuración:
 Si abres cualquiera de los archivos `.env`, verás la configuración estándar:
 ```ini
-# Base de Datos MySQL
+# Base de Datos MySQL (XAMPP / Producción)
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_NAME=bebidas_247
+DB_NAME=burger_shop
 DB_USER=root
 DB_PASS=
 DB_CHARSET=utf8mb4
 
-# Clave Secreta para Firmado Criptográfico de Tokens JWT
-JWT_SECRET=c53a0c7a8788d5ed3e796f49c7de19b493cf5ffc6f657fe0377e993a80bd2d98
+# Clave Secreta para Firmado Criptográfico de Tokens JWT (Mínimo 32 caracteres)
+# IMPORTANTE: Genere una clave criptográfica única para su entorno
+JWT_SECRET=tu_clave_secreta_jwt_de_al_menos_32_caracteres_hexadecimal
 
 # Orígenes Permitidos por CORS
-ALLOWED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://localhost
+ALLOWED_ORIGINS=http://localhost,http://127.0.0.1,http://localhost:80,http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000
 ```
 
 ---
@@ -219,12 +220,13 @@ La plataforma ofrece **dos modos de ejecución**:
 5. **Ejecutar las Migraciones Automáticas:**
    * Con MySQL iniciado en XAMPP, abre tu terminal en la carpeta del proyecto y ejecuta:
      ```bash
-     npm run migrate
-     # o alternativamente:
+     php migrate.php
+     # o alternativamente con Python:
      python migrate.py
      ```
-   * El asistente creará automáticamente la base de datos `bebidas_247`, creará las 6 tablas relacionales normalizadas y cargará los datos iniciales de prueba (usuarios, hamburguesas, documentos de riders y logs de auditoría).
-   * Actualiza phpMyAdmin y verás la base de datos `bebidas_247` lista para ser mostrada en tu exposición.
+   * El asistente creará automáticamente la base de datos `burger_shop`, creará las 6 tablas relacionales normalizadas (con `CREATE TABLE IF NOT EXISTS`) y cargará los datos iniciales de prueba (usuarios con Bcrypt real, hamburguesas, documentos de riders y logs de auditoría).
+   * Actualiza phpMyAdmin y verás la base de datos `burger_shop` lista para ser mostrada en tu exposición.
+   * Para una guía detallada paso a paso sobre cómo desplegar con Apache y MySQL real, consulte la **[Guía de Despliegue en XAMPP](docs/GUIA_DESPLIEGUE_XAMPP.md)**.
 
 ---
 
@@ -255,12 +257,20 @@ Si prefieres instalar solo el motor de base de datos sin Apache:
 Si tienes instalado **Docker Desktop**, puedes levantar MariaDB con un solo comando en tu terminal:
 
 ```bash
-docker run -d --name burger-mariadb -p 3306:3306 -e MYSQL_DATABASE=bebidas_247 -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mariadb:10.5
+docker run -d --name burger-mariadb -p 3306:3306 -e MYSQL_DATABASE=burger_shop -e MYSQL_ALLOW_EMPTY_PASSWORD=yes mariadb:10.5
 ```
 Luego ejecuta:
 ```bash
 python migrate.py
 ```
+
+---
+
+#### 🔍 Diagnóstico Automatizado de Despliegue (`check_deploy`)
+
+Para verificar que Apache, PHP 8.2+, MySQL 8 (`burger_shop`), permisos de carpetas `uploads/` y claves `.env` están listos:
+* **Desde consola:** `php check_deploy.php` o `check_deploy.bat`
+* **Desde navegador:** Abra `http://localhost/Bebidas-E-Commerce/check_deploy.php` para ver el panel de diagnóstico interactivo.
 
 ---
 

@@ -6,42 +6,58 @@ class DatabaseConnection {
     private $connection;
 
     private function __construct() {
-        $this->loadEnv();
+        self::loadEnv();
 
-        $host = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? '127.0.0.1');
-        $db   = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'bebidas_247');
-        $user = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'root');
-        $pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : ($_ENV['DB_PASS'] ?? '');
+        $host    = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? '127.0.0.1');
+        $port    = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? '3306');
+        $db      = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'burger_shop');
+        $user    = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? 'root');
+        $pass    = getenv('DB_PASS') !== false ? getenv('DB_PASS') : ($_ENV['DB_PASS'] ?? '');
         $charset = getenv('DB_CHARSET') ?: ($_ENV['DB_CHARSET'] ?? 'utf8mb4');
 
-        $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+        $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
         ];
+        if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+            $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES $charset COLLATE utf8mb4_unicode_ci";
+        }
 
         try {
             $this->connection = new PDO($dsn, $user, $pass, $options);
         } catch (\PDOException $e) {
-            throw new \PDOException($e->getMessage(), (int)$e->getCode());
+            throw new \PDOException("Error de conexión a la base de datos '$db' en $host:$port: " . $e->getMessage(), (int)$e->getCode());
         }
     }
 
-    private function loadEnv() {
-        $envPath = __DIR__ . '/.env';
-        if (file_exists($envPath)) {
-            $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (empty($line) || strpos($line, '#') === 0) continue;
-                if (strpos($line, '=') !== false) {
-                    list($name, $value) = explode('=', $line, 2);
-                    $name = trim($name);
-                    $value = trim($value);
-                    $_ENV[$name] = $value;
-                    putenv("$name=$value");
+    public static function loadEnv() {
+        $possiblePaths = [
+            __DIR__ . '/.env',
+            __DIR__ . '/../../.env',
+            dirname(dirname(__DIR__)) . '/.env'
+        ];
+
+        foreach ($possiblePaths as $envPath) {
+            if (file_exists($envPath)) {
+                $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line) || strpos($line, '#') === 0) continue;
+                    if (strpos($line, '=') !== false) {
+                        list($name, $value) = explode('=', $line, 2);
+                        $name = trim($name);
+                        $value = trim($value, "\"' \t\n\r\0\x0B");
+                        if (!isset($_ENV[$name])) {
+                            $_ENV[$name] = $value;
+                        }
+                        if (getenv($name) === false) {
+                            putenv("$name=$value");
+                        }
+                    }
                 }
+                break;
             }
         }
     }

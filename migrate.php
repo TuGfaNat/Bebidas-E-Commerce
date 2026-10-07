@@ -29,7 +29,7 @@ foreach ($envFiles as $envPath) {
 
 $host = getenv('DB_HOST') ?: '127.0.0.1';
 $port = getenv('DB_PORT') ?: '3306';
-$db   = getenv('DB_NAME') ?: 'bebidas_247';
+$db   = getenv('DB_NAME') ?: 'burger_shop';
 $user = getenv('DB_USER') ?: 'root';
 $pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
 $charset = getenv('DB_CHARSET') ?: 'utf8mb4';

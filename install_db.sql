@@ -1,11 +1,22 @@
 -- ============================================================================
--- Sistema E-commerce Burger 24/7 - DDL Completo e Inicialización de Base de Datos
--- Base de Datos: burger_shop (Idempotente: IF NOT EXISTS y ON DUPLICATE KEY UPDATE)
--- Incluye estructura normalizada, restricciones de integridad referencial
--- y datos de prueba (seed) con password_hash real (bcrypt).
+-- Burger 24/7 - Script de Instalación Idempotente de Base de Datos
+-- Base de Datos: burger_shop (MySQL 8.0+ / MariaDB 10.4+ / XAMPP)
+-- Juego de Caracteres: utf8mb4 / Collation: utf8mb4_unicode_ci
+--
+-- Uso:
+--   1. Vía MySQL CLI:
+--      mysql -u root -p < install_db.sql
+--   2. Vía phpMyAdmin:
+--      Pestaña "Importar" o "SQL" y ejecutar este archivo completo.
+--   3. Vía Asistente PHP / Python:
+--      php migrate.php   O   python migrate.py
 -- ============================================================================
 
-CREATE DATABASE IF NOT EXISTS `burger_shop` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- 0. Creación Idempotente de la Base de Datos
+CREATE DATABASE IF NOT EXISTS `burger_shop` 
+    CHARACTER SET utf8mb4 
+    COLLATE utf8mb4_unicode_ci;
+
 USE `burger_shop`;
 
 -- 1. Tabla de Usuarios (users)
@@ -116,15 +127,17 @@ CREATE TABLE IF NOT EXISTS auditoria_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
--- SEED DATA (Datos Iniciales con password_hash bcrypt real)
+-- SEED DATA IDEMPOTENTE (password_hash real bcrypt)
 -- ============================================================================
 
--- Contraseñas reales:
--- carlos: carlos
--- pedro: pedro
--- admin: admin
--- maria: maria
--- juan: juan
+-- Contraseñas reales demo:
+-- carlos@mail.com   -> carlos
+-- pedro@mail.com    -> pedro
+-- admin@mail.com    -> admin
+-- maria@mail.com    -> maria
+-- juan@mail.com     -> juan
+-- roberto@mail.com  -> roberto
+-- marcos@mail.com   -> marcos
 
 INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, ci_url, ci_status, created_by, updated_by) VALUES
 (1, 'cliente', 'Carlos Pérez', 'carlos@mail.com', '$2y$10$GB.kzxC2cpj2ylTUbm/KzuZsZW/FFg4q0P99Tx1gwxRu.MpXfKx9y', '1995-04-12', '/uploads/ci/ci_carlos.jpg', 'verified', 1, 1),
@@ -137,9 +150,10 @@ INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, c
 ON DUPLICATE KEY UPDATE 
     password_hash = VALUES(password_hash),
     ci_status = VALUES(ci_status),
-    `role` = VALUES(`role`);
+    `role` = VALUES(`role`),
+    nombre = VALUES(nombre);
 
--- Seed Catálogo de Hamburguesas, Combos, Acompañamientos y Bebidas
+-- Catálogo de Productos (Hamburguesas, Combos, Acompañamientos, Bebidas)
 INSERT INTO productos (id, categoria, nombre, marca, sabor, precio, stock, created_by, updated_by) VALUES
 (1, 'Hamburguesas', 'Hamburguesa Clásica Simple', 'Burger 24/7', 'Carne 150g, lechuga, tomate y salsa especial', 22.00, 85, 3, 3),
 (2, 'Hamburguesas', 'Doble Queso Smash Burger', 'Gourmet', 'Doble medallón smash, queso cheddar x2 y cebolla grillada', 32.00, 70, 3, 3),
@@ -159,7 +173,7 @@ ON DUPLICATE KEY UPDATE
     precio = VALUES(precio),
     stock = VALUES(stock);
 
--- Seed Documentación de Riders (Pedro aprobado, Juan pendiente, Marcos rechazado)
+-- Documentación de Riders (Pedro aprobado, Juan pendiente, Marcos rechazado)
 INSERT INTO documentacion_rider (id, rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by) VALUES
 (1, 2, '/uploads/docs/licencia_pedro.jpg', '/uploads/docs/seguro_pedro.jpg', '/uploads/docs/cv_pedro.pdf', 'aprobado', 3, 3),
 (2, 5, '/uploads/docs/licencia_juan.jpg', '/uploads/docs/seguro_juan.jpg', '/uploads/docs/cv_juan.pdf', 'pendiente', 5, 5),
@@ -167,7 +181,7 @@ INSERT INTO documentacion_rider (id, rider_id, licencia_url, seguro_url, cv_url,
 ON DUPLICATE KEY UPDATE 
     estado_aprobacion = VALUES(estado_aprobacion);
 
--- Seed Pedidos de Ejemplo (Entregados, Rechazados, Pendientes)
+-- Pedidos de Ejemplo
 INSERT INTO pedidos (id, cliente_id, rider_id, estado_pago, estado_pedido, total, latitud, longitud, qr_comprobante_url, created_by, updated_by) VALUES
 (1, 1, 2, 'liquidado', 'entregado', 45.00, -16.50200000, -68.13100000, NULL, 1, 3),
 (2, 4, 2, 'contraentrega', 'cancelado', 36.00, -16.51200000, -68.12500000, NULL, 4, 2),
@@ -178,7 +192,7 @@ ON DUPLICATE KEY UPDATE
     estado_pedido = VALUES(estado_pedido),
     total = VALUES(total);
 
--- Seed Detalles de Pedido
+-- Detalles de Pedidos
 INSERT INTO pedido_detalles (id, pedido_id, producto_id, cantidad, precio_unitario, created_by, updated_by) VALUES
 (1, 1, 1, 1, 22.00, 1, 1),
 (2, 2, 3, 1, 36.00, 4, 4),
@@ -189,8 +203,7 @@ ON DUPLICATE KEY UPDATE
     cantidad = VALUES(cantidad),
     precio_unitario = VALUES(precio_unitario);
 
--- Seed Auditoría Inicial
+-- Auditoría Inicial
 INSERT INTO auditoria_logs (id, tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_by, updated_by) VALUES
 (1, 'productos', 1, 'INSERT', NULL, '{"nombre":"Hamburguesa Clásica Simple","stock":85,"precio":22.00}', '127.0.0.1', 3, 3)
 ON DUPLICATE KEY UPDATE accion = VALUES(accion);
-

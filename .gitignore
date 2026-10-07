@@ -4,6 +4,7 @@
 *.env
 !.env.example
 !**/.env.example
+!.env.production.example
 
 # Logs and temp files
 *.log
@@ -25,7 +26,26 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Test uploads
-uploads/
-microservices/Auth/uploads/ci/*.jpg
-microservices/Auth/uploads/docs/
+# User uploads (preserve .gitkeep and .htaccess)
+uploads/*
+!uploads/.gitkeep
+!uploads/.htaccess
+uploads/ci/*
+!uploads/ci/.gitkeep
+!uploads/ci/.htaccess
+uploads/docs/*
+!uploads/docs/.gitkeep
+!uploads/docs/.htaccess
+uploads/qr/*
+!uploads/qr/.gitkeep
+!uploads/qr/.htaccess
+
+microservices/Auth/uploads/ci/*
+!microservices/Auth/uploads/ci/.gitkeep
+!microservices/Auth/uploads/ci/.htaccess
+microservices/Auth/uploads/docs/*
+!microservices/Auth/uploads/docs/.gitkeep
+!microservices/Auth/uploads/docs/.htaccess
+microservices/Auth/uploads/qr/*
+!microservices/Auth/uploads/qr/.gitkeep
+!microservices/Auth/uploads/qr/.htaccess

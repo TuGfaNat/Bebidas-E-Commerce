@@ -15,28 +15,47 @@ import hmac
 import hashlib
 import base64
 import math
+import secrets
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from datetime import datetime, timezone, timedelta
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 
-def load_jwt_secret():
-    env_path = os.path.join(ROOT_DIR, 'microservices', 'Auth', '.env')
-    if os.path.exists(env_path):
-        try:
-            with open(env_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith('#') and '=' in line:
-                        k, v = line.split('=', 1)
-                        if k.strip() == 'JWT_SECRET':
-                            return v.strip().strip('"').strip("'")
-        except Exception:
-            pass
-    return os.environ.get('JWT_SECRET', 'c53a0c7a8788d5ed3e796f49c7de19b493cf5ffc6f657fe0377e993a80bd2d98')
+def load_env():
+    env = {}
+    for candidate in [
+        os.path.join(ROOT_DIR, '.env'),
+        os.path.join(ROOT_DIR, 'microservices', 'Auth', '.env'),
+        os.path.join(ROOT_DIR, 'microservices', 'Catalog', '.env'),
+    ]:
+        if os.path.exists(candidate):
+            try:
+                with open(candidate, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            k, v = line.split('=', 1)
+                            k = k.strip()
+                            v = v.strip().strip('"').strip("'")
+                            if k not in env:
+                                env[k] = v
+            except Exception:
+                pass
+    return env
 
-JWT_SECRET = load_jwt_secret()
+ENV_VARS = load_env()
+
+def get_jwt_secret():
+    secret = ENV_VARS.get('JWT_SECRET') or os.environ.get('JWT_SECRET')
+    if secret and secret != 'your_jwt_secret_here_change_in_production':
+        return secret
+    # No hardcoded static secret in repository - generate an ephemeral key for dev session
+    ephemeral = secrets.token_hex(32)
+    sys.stderr.write("[SEGURIDAD] JWT_SECRET no configurado en .env. Se generó un secreto efímero en memoria para la sesión de desarrollo.\n")
+    return ephemeral
+
+JWT_SECRET = get_jwt_secret()
 
 def base64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode('utf-8').rstrip('=')
@@ -94,13 +113,20 @@ def haversine_km(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
-ALLOWED_ORIGINS = [
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'http://localhost:3000',
-    'http://localhost',
-    'http://127.0.0.1'
-]
+def get_allowed_origins():
+    allowed_str = ENV_VARS.get('ALLOWED_ORIGINS') or os.environ.get('ALLOWED_ORIGINS', '')
+    if allowed_str:
+        return [o.strip() for o in allowed_str.split(',') if o.strip()]
+    return [
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://localhost:3000',
+        'http://localhost',
+        'http://127.0.0.1'
+    ]
+
+ALLOWED_ORIGINS = get_allowed_origins()
+DB_NAME = ENV_VARS.get('DB_NAME') or os.environ.get('DB_NAME', 'burger_shop')
 
 LOGIN_ATTEMPTS = {}  # ip -> [timestamps]
 
@@ -456,7 +482,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
         # Microservice health / connection test
         if path in ['/microservices/Auth/connection.php', '/microservices/Auth/connection']:
             self.send_json(get_audit_envelope("success", {
-                "database": "bebidas_247",
+                "database": DB_NAME,
                 "connected": True,
                 "engine": "MySQL/Local",
                 "message": "Conexión exitosa a la base de datos de Burger 24/7"
@@ -1193,7 +1219,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
         # Microservice: Auth connection test (POST)
         if path in ['/microservices/Auth/connection.php', '/microservices/Auth/connection']:
             self.send_json(get_audit_envelope("success", {
-                "database": "bebidas_247",
+                "database": DB_NAME,
                 "connected": True,
                 "engine": "MySQL/Local",
                 "message": "Conexión exitosa a la base de datos de Burger 24/7"

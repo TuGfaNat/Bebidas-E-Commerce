@@ -220,16 +220,36 @@ ESTADO: EL ENTORNO ESTÁ COMPLETAMENTE CONFIGURADO PARA PRODUCCIÓN.
 
 ## 6. Guía Operativa de Instalación Paso a Paso
 
-Siga estos pasos para reproducir el despliegue en un servidor con XAMPP:
+### 6.1 Método Automatizado (1 Solo Clic - Recomendado)
+El proyecto incluye un asistente integral que automatiza la configuración completa del entorno:
+* **En Windows:** Ejecute con doble clic el archivo [`install.bat`](../install.bat).
+* **Por Línea de Comandos:**
+  ```powershell
+  python setup.py
+  ```
 
-### Paso 1: Ubicación del Proyecto en `htdocs`
+El asistente realiza automáticamente las siguientes acciones:
+1. Instala paquetes requeridos desde [`requirements.txt`](../requirements.txt) (`python-docx`, `python-dotenv`, `requests`, `bcrypt`).
+2. Configura los archivos `.env` protegidos en raíz y microservicios.
+3. Asegura las carpetas `uploads/` (`ci/`, `docs/`, `qr/`) con archivos `.htaccess` anti-RCE.
+4. Detecta compiladores C++ (`g++`, `clang++`, `cl`) y compila el módulo de alto rendimiento [`microservices/Logistics/calculator.cpp`](../microservices/Logistics/calculator.cpp).
+5. Detecta la ruta de instalación de XAMPP y enlaza el proyecto en `htdocs\Bebidas-E-Commerce` vía *Directory Junction*.
+6. Conecta con el servicio MySQL en `127.0.0.1:3306` y ejecuta [`install_db.sql`](../install_db.sql), creando `burger_shop` con sus 6 tablas y usuarios demo.
+
+---
+
+### 6.2 Método Manual Paso a Paso
+
+Siga estos pasos si prefiere realizar la configuración de forma manual:
+
+#### Paso 1: Ubicación del Proyecto en `htdocs`
 Copie o vincule el repositorio dentro del directorio público de Apache:
 ```text
 C:\xampp\htdocs\Bebidas-E-Commerce\
 ```
 *(Si instaló XAMPP en el disco `F:`, la ruta correspondiente será `F:\xampp\htdocs\Bebidas-E-Commerce\`)*.
 
-### Paso 2: Iniciar Servicios en XAMPP Control Panel
+#### Paso 2: Iniciar Servicios en XAMPP Control Panel
 1. Abra **XAMPP Control Panel**.
 2. En la fila **Apache**, haga clic en **Start** (quedará en color verde, escuchando en los puertos `80` y `443`).
 3. En la fila **MySQL**, haga clic en **Start** (quedará en color verde, escuchando en el puerto `3306`).

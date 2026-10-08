@@ -41,9 +41,9 @@
 
 ---
 
-## 📦 2. Instalación de Dependencias y Preparación (`requirements.txt`)
+## 📦 2. Instalación Integral y Preparación del Entorno (`install.bat` / `setup.py`)
 
-Para instalar automáticamente todas las librerías necesarias y dejar las carpetas configuradas, dispones de tres formas muy sencillas:
+Para automatizar la instalación de todas las dependencias y preparar todo el entorno (Python, variables `.env`, carpetas seguras, módulo C++, detección de XAMPP e inicialización de la base de datos MySQL), tienes 3 formas muy sencillas:
 
 ### Método A: En Windows con 1 Solo Clic (Recomendado)
 Haz doble clic sobre el archivo:
@@ -55,20 +55,34 @@ Abre tu consola en la carpeta del proyecto y ejecuta:
 python setup.py
 ```
 
-### Método C: Vía PIP Directo
-Si prefieres instalar únicamente las dependencias de Python:
+### Método C: Vía PIP Directo (Solo paquetes Python)
+Si únicamente deseas instalar las librerías de Python:
 ```powershell
 pip install -r requirements.txt
 ```
 
-### ¿Qué hace el instalador automáticamente?
-1. **Instala paquetes de Python ([`requirements.txt`](requirements.txt)):**
-   * `python-docx`: Generación y exportación de la tesina y monografía académica en formato Microsoft Word (`.docx`).
+---
+
+### 🛠️ ¿Qué hace el instalador (`setup.py` / `install.bat`) de forma 100% automática?
+
+1. **📦 Instala paquetes de Python ([`requirements.txt`](requirements.txt)):**
+   * `python-docx`: Generación y exportación de la tesina y monografía académica a formato Microsoft Word (`.docx`).
    * `python-dotenv`: Lectura y gestión segura de variables de entorno del archivo `.env`.
    * `requests`: Cliente HTTP para pruebas de integración con los microservicios.
    * `bcrypt`: Cifrado y validación de contraseñas seguras.
-2. **Inicializa archivos de entorno `.env`:** Si no existen, copia automáticamente las plantillas `.env.example` tanto en la raíz como en los microservicios.
-3. **Crea y asegura los directorios `uploads/`:** Crea las carpetas para carnets de identidad (`uploads/ci`), licencias de repartidores (`uploads/docs`) y comprobantes QR (`uploads/qr`), configurando en cada una un archivo protector `.htaccess` que bloquea la ejecución de scripts (Anti-RCE).
+2. **🔐 Inicializa archivos de entorno `.env`:** Si no existen, copia automáticamente las plantillas `.env.example` tanto en la raíz como en los microservicios (`microservices/Auth/.env` y `microservices/Catalog/.env`).
+3. **🛡️ Crea y asegura los directorios `uploads/`:** Crea las carpetas para carnets de identidad (`uploads/ci`), licencias de repartidores (`uploads/docs`) y comprobantes QR (`uploads/qr`), configurando en cada una un archivo protector `.htaccess` que bloquea la ejecución de scripts (Anti-RCE).
+4. **⚡ Módulo de Alto Rendimiento C++ ([`SPEC.md`](SPEC.md) Sección 2):**
+   * Ubicación: [`microservices/Logistics/calculator.cpp`](microservices/Logistics/calculator.cpp).
+   * Si detecta un compilador C++ (`g++`, `clang++` o `cl`), compila automáticamente el ejecutable nativo optimizado `calculator.exe`.
+   * Si no hay compilador C++ instalado, el sistema activa de forma transparente el motor de cálculo en Python ([`calculator.py`](microservices/Logistics/calculator.py)) sin interrumpir el funcionamiento ni requerir configuración manual.
+5. **🏢 Detección e Integración de XAMPP (Apache):**
+   * Detecta la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.).
+   * Si el proyecto no está en `htdocs`, crea un *Directory Junction* (`mklink /J`) hacia `<xampp>\htdocs\Bebidas-E-Commerce` para que Apache pueda servir la web inmediatamente sin duplicar archivos.
+6. **🗄️ Inicialización Automática de Base de Datos MySQL (`burger_shop`):**
+   * Comprueba si el servicio MySQL está activo en el puerto `3306`.
+   * Si MySQL está iniciado, ejecuta automáticamente el script idempotente [`install_db.sql`](install_db.sql) creando la base de datos `burger_shop`, sus 6 tablas relacionales y los usuarios demo con contraseñas Bcrypt.
+   * Si MySQL no está iniciado aún, te informa que basta con pulsar *Start* en el Panel de XAMPP para completar la persistencia.
 
 ---
 

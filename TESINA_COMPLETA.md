@@ -42,6 +42,7 @@ La plataforma **Burger 24/7** ha sido construida seleccionando tecnologías robu
 | **Criptografía Cliente** | Bcrypt.js | v2.4.3 | Verificación segura de credenciales en el cliente durante el modo simulado/offline. |
 | **Backend Primario (REST)** | PHP (con extensión PDO) | v8.2+ | Lógica de negocio transaccional, endpoints RESTful modulares, conexión Singleton a base de datos y emisión/validación de tokens JWT. |
 | **Procesamiento Geoespacial** | Python | v3.11+ | Motor matemático para cálculo geodésico de distancias (Fórmula Haversine), estimación de tiempos de llegada (ETA) y servidor HTTP de desarrollo (`server.py`). |
+| **Módulo Crítico de Rendimiento**| C++ (Estándar C++17) | C++17 / Nativo | Módulo nativo compilado de alto rendimiento para cálculo geoespacial Haversine intensivo (`calculator.cpp` / `calculator.exe`), en conformidad con SPEC.md Sección 2. |
 | **Motor de Base de Datos** | MySQL Server / MariaDB | v8.0+ / v10.5+ | Persistencia relacional normalizada en Tercera Forma Normal (3FN) con motor de almacenamiento InnoDB, soporte ACID y claves foráneas. |
 | **Seguridad y Criptografía** | Bcrypt & HMAC-SHA256 | Nativo PHP / Py | Cifrado unidireccional de contraseñas con salting dinámico (`password_hash`) y firma digital criptográfica de tokens de sesión JWT. |
 
@@ -75,7 +76,9 @@ microservices/
 │   ├── delivery.php        # Transiciones de estado (asignado -> en_camino -> entregado)
 │   └── settle_cash.php     # Liquidación y conciliación de caja física central
 └── Logistics/         # Cálculo geoespacial
-    └── calculator.py       # Algoritmo Haversine de cálculo de distancia, flete y ETA
+    ├── calculator.cpp      # Módulo compilado C++ de alto rendimiento (Haversine & ETA)
+    ├── calculator.py       # Wrapper de ejecución y motor Python de alta precisión
+    └── build.bat           # Script de compilación por lotes C++
 ```
 
 ### Estándar de Respuesta Unificada BMAD
@@ -385,27 +388,32 @@ La ejecución de la suite de diagnóstico arrojó una efectividad del **100% (30
 
 ---
 
-### 4.6 Procedimiento de Despliegue Rápido en XAMPP
+### 4.6 Procedimiento de Despliegue y Asistente Automatizado (`setup.py` / `install.bat`)
 
-Para replicar el despliegue en cualquier equipo con Windows y XAMPP:
+Para simplificar al máximo la replicación del entorno en cualquier servidor o equipo evaluador, el sistema incorpora un asistente de configuración integral:
 
-1. **Ubicación del Proyecto:**
-   Copie la carpeta del repositorio dentro de `C:\xampp\htdocs\Bebidas-E-Commerce` (o `F:\xampp\htdocs\Bebidas-E-Commerce`).
-2. **Inicio de Servicios:**
-   Inicie los módulos **Apache** y **MySQL** desde el Panel de Control de XAMPP.
-3. **Instalación de la Base de Datos:**
-   Importe el script [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql) desde phpMyAdmin (`http://localhost/phpmyadmin/`) o mediante el comando de consola:
-   ```powershell
-   mysql -u root < install_db.sql
-   ```
-4. **Configuración del Entorno:**
-   Cree el archivo `.env` en la raíz del proyecto copiando `.env.example`:
-   ```powershell
-   copy .env.example .env
-   ```
-5. **Certificación del Despliegue:**
-   Ejecute el verificador en consola (`check_deploy.bat` o `php check_deploy.php`) o abra en su navegador:
-   👉 **`http://localhost/Bebidas-E-Commerce/check_deploy.php`**
+#### Método Automatizado (Recomendado):
+* **En Windows:** Ejecutar con un solo clic el archivo [`install.bat`](file:///F:/Bebidas-E-Commerce/install.bat).
+* **Por Consola:**
+  ```powershell
+  python setup.py
+  ```
+
+El asistente ejecuta de forma transparente las siguientes 6 fases:
+1. **Instalación de Dependencias:** Instala automáticamente los paquetes declarados en [`requirements.txt`](file:///F:/Bebidas-E-Commerce/requirements.txt) (`python-docx`, `python-dotenv`, `requests`, `bcrypt`).
+2. **Inyección de Configuración (.env):** Copia y genera los archivos de variables de entorno protegidos.
+3. **Aseguramiento de Directorios de Subida:** Crea las carpetas `uploads/` (`uploads/ci/`, `uploads/docs/`, `uploads/qr/`) y deposita las directivas restrictivas `.htaccess` (Anti-RCE).
+4. **Módulo de Alto Rendimiento C++:** Detecta si existe un compilador (`g++`, `clang++`, `cl`) y compila [`microservices/Logistics/calculator.cpp`](file:///F:/Bebidas-E-Commerce/microservices/Logistics/calculator.cpp) a binario nativo `calculator.exe`, o activa el motor de fallback en Python.
+5. **Detección e Integración de XAMPP:** Localiza la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.) y crea automáticamente el *Directory Junction* hacia `htdocs/Bebidas-E-Commerce` para que Apache sirva la aplicación sin duplicar archivos.
+6. **Inicialización de Base de Datos MySQL:** Verifica si el servicio MySQL está escuchando en el puerto 3306 y ejecuta el script idempotente [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql), creando la base de datos `burger_shop` y los usuarios demo con hash Bcrypt.
+
+#### Método Manual Tradicional:
+1. **Ubicación del Proyecto:** Copiar la carpeta dentro de `C:\xampp\htdocs\Bebidas-E-Commerce` (o crear enlace simbólico).
+2. **Inicio de Servicios:** Iniciar **Apache** y **MySQL** desde el Panel de Control de XAMPP.
+3. **Instalación de la Base de Datos:** Importar [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql) desde phpMyAdmin (`http://localhost/phpmyadmin/`) o por consola: `mysql -u root < install_db.sql`.
+4. **Configuración del Entorno:** Copiar `.env.example` a `.env`.
+5. **Certificación del Despliegue:** Ejecutar el verificador en consola ([`check_deploy.bat`](file:///F:/Bebidas-E-Commerce/check_deploy.bat)) o abrir en el navegador: 👉 **`http://localhost/Bebidas-E-Commerce/check_deploy.php`**.
+
 
 
 

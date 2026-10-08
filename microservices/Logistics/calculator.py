@@ -1,4 +1,6 @@
 import sys
+import os
+import subprocess
 import json
 import math
 from datetime import datetime, timezone
@@ -36,6 +38,17 @@ def main():
     if len(sys.argv) < 6:
         print(format_response("error", None, None, "Se requieren argumentos: user_id lat_cliente lon_cliente lat_tienda lon_tienda"))
         sys.exit(1)
+
+    # Si existe el ejecutable nativo compilado en C++ (SPEC.md Sección 2), delegamos para máximo rendimiento
+    cpp_binary = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calculator.exe")
+    if os.path.exists(cpp_binary):
+        try:
+            res = subprocess.run([cpp_binary] + sys.argv[1:], capture_output=True, text=True, check=True)
+            print(res.stdout.strip())
+            sys.exit(0)
+        except Exception:
+            # Fallback transparente al motor de cálculo en Python si el binario C++ falla
+            pass
 
     try:
         user_id = sys.argv[1]

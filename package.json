@@ -10,7 +10,8 @@
     "export:tesina": "python export_tesina.py",
     "export:word": "python generate_word_tesina.py",
     "export:bth": "python generate_monografia_bth.py",
-    "test": "python test_auth_approvals.py"
+    "test": "python test_auth_approvals.py",
+    "check:deploy": "python check_deploy.py"
   },
   "keywords": ["ecommerce", "microservices", "python", "php", "javascript", "leaflet"],
   "author": "TuGfaNat",

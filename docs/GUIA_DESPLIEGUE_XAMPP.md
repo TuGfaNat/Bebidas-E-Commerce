@@ -193,3 +193,6 @@ Las contraseñas se encuentran procesadas en MySQL con hash Bcrypt real:
 - [x] **CORS estricto desde `.env`**: `security.php` restringe las cabeceras `Access-Control-Allow-Origin` estrictamente a los dominios listados en `ALLOWED_ORIGINS`.
 - [x] **Sin `JWT_SECRET` por defecto en el repositorio**: El servidor autónomo genera un secreto efímero si no existe `.env`, y en PHP se exige definirlo en `.env`.
 - [x] **Base de Datos estándar**: Configurada por defecto para la base `burger_shop`.
+
+---
+*Documento verificado y validado para el entorno de producción XAMPP 8.2 en Windows.*

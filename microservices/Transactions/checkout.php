@@ -64,17 +64,74 @@ try {
         exit;
     }
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        http_response_code(405);
-        echo formatResponse("error", null, null, "Método no permitido. Use POST.", "METHOD_NOT_ALLOWED");
+    // 2. Autenticación vía JWT (Bearer token)
+    $payload = JWTHelper::authenticate();
+    $userId = (int)$payload['user_id'];
+    $userRole = $payload['role'];
+
+    $db = DatabaseConnection::getInstance()->getConnection();
+
+    // ACCIÓN GET: Obtener pedidos y pedido activo del cliente autenticado
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $stmt = $db->prepare("
+            SELECT p.id, p.cliente_id, p.rider_id, p.estado_pago, p.estado_pedido,
+                   p.total, p.latitud, p.longitud, p.qr_comprobante_url, p.created_at, p.updated_at
+            FROM pedidos p
+            WHERE p.cliente_id = ?
+            ORDER BY p.id DESC
+        ");
+        $stmt->execute([$userId]);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $pedidoActivo = null;
+        $formattedOrders = [];
+
+        foreach ($orders as $ord) {
+            $stmtDet = $db->prepare("
+                SELECT d.id, d.pedido_id, d.producto_id, d.cantidad, d.precio_unitario, pr.nombre
+                FROM pedido_detalles d
+                LEFT JOIN productos pr ON d.producto_id = pr.id
+                WHERE d.pedido_id = ?
+            ");
+            $stmtDet->execute([$ord['id']]);
+            $detalles = $stmtDet->fetchAll(PDO::FETCH_ASSOC);
+
+            $formatted = [
+                'id' => (int)$ord['id'],
+                'pedido_id' => (int)$ord['id'],
+                'cliente_id' => (int)$ord['cliente_id'],
+                'rider_id' => $ord['rider_id'] ? (int)$ord['rider_id'] : null,
+                'estado_pago' => $ord['estado_pago'],
+                'estado_pedido' => $ord['estado_pedido'],
+                'total' => floatval($ord['total']),
+                'latitud' => floatval($ord['latitud'] ?? -16.5050),
+                'longitud' => floatval($ord['longitud'] ?? -68.1290),
+                'qr_comprobante_url' => $ord['qr_comprobante_url'],
+                'created_at' => $ord['created_at'],
+                'updated_at' => $ord['updated_at'],
+                'detalles' => $detalles
+            ];
+
+            if (!$pedidoActivo && !in_array($ord['estado_pedido'], ['entregado', 'cancelado'], true)) {
+                $pedidoActivo = $formatted;
+            }
+
+            $formattedOrders[] = $formatted;
+        }
+
+        echo formatResponse("success", [
+            "pedido_activo" => $pedidoActivo,
+            "pedidos" => $formattedOrders,
+            "total" => count($formattedOrders)
+        ], $userId, null, "GET_CLIENT_ORDERS");
         exit;
     }
 
-    // 2. Autenticación vía JWT (Bearer token)
-    $payload = JWTHelper::authenticate();
-    $userId = $payload['user_id'];
-
-    $db = DatabaseConnection::getInstance()->getConnection();
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo formatResponse("error", null, null, "Método no permitido. Use GET o POST.", "METHOD_NOT_ALLOWED");
+        exit;
+    }
 
     // 3. Verificar que el usuario tenga CI verificado
     $stmtUser = $db->prepare("SELECT ci_status, role FROM users WHERE id = ?");

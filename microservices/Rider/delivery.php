@@ -50,10 +50,52 @@ try {
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'PUT');
     $input = getRequestData();
 
+    if ($method === 'GET') {
+        $db = DatabaseConnection::getInstance()->getConnection();
+        $stmtActive = $db->prepare("
+            SELECT p.id, p.cliente_id, p.rider_id, p.estado_pedido, p.estado_pago, p.total,
+                   p.latitud, p.longitud, p.created_at, u.nombre as cliente_nombre
+            FROM pedidos p
+            LEFT JOIN users u ON p.cliente_id = u.id
+            WHERE p.rider_id = ? AND p.estado_pedido IN ('asignado', 'en_camino')
+            LIMIT 1
+        ");
+        $stmtActive->execute([$userId]);
+        $activeOrder = $stmtActive->fetch(PDO::FETCH_ASSOC);
+
+        if ($activeOrder) {
+            $stmtDet = $db->prepare("
+                SELECT d.producto_id, d.cantidad, d.precio_unitario, pr.nombre
+                FROM pedido_detalles d
+                LEFT JOIN productos pr ON d.producto_id = pr.id
+                WHERE d.pedido_id = ?
+            ");
+            $stmtDet->execute([$activeOrder['id']]);
+            $activeOrder['items'] = $stmtDet->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $stmtHist = $db->prepare("
+            SELECT p.id, p.cliente_id, p.estado_pedido, p.estado_pago, p.total, p.created_at, p.updated_at,
+                   u.nombre as cliente_nombre
+            FROM pedidos p
+            LEFT JOIN users u ON p.cliente_id = u.id
+            WHERE p.rider_id = ? AND p.estado_pedido = 'entregado'
+            ORDER BY p.id DESC
+        ");
+        $stmtHist->execute([$userId]);
+        $hist = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
+
+        echo formatResponse("success", [
+            "active_order" => $activeOrder ?: null,
+            "historial_pedidos" => $hist
+        ], $userId, null, "GET_RIDER_DELIVERY_STATUS");
+        exit;
+    }
+
     // Soporte para PUT y POST
     if ($method !== 'PUT' && $method !== 'POST') {
         http_response_code(405);
-        echo formatResponse("error", null, $userId, "Método HTTP no permitido. Utilice PUT o POST.", "METHOD_NOT_ALLOWED");
+        echo formatResponse("error", null, $userId, "Método HTTP no permitido. Utilice GET, PUT o POST.", "METHOD_NOT_ALLOWED");
         exit;
     }
 

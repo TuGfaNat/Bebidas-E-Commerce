@@ -16,6 +16,11 @@ if exist "C:\xampp\php\php.exe" (
     goto end
 )
 
+if exist "F:\xampp\php\php.exe" (
+    "F:\xampp\php\php.exe" "%~dp0check_deploy.php"
+    goto end
+)
+
 REM Fallback a script Python
 python "%~dp0check_deploy.py"
 

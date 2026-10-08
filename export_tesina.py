@@ -21,6 +21,7 @@ DOC_ORDER = [
     ("Capítulo 2: Diagramas del Sistema y Modelado C4", "tesina_diagrams.md"),
     ("Capítulo 3: Arquitectura de Seguridad y Criptografía", "tesina_security.md"),
     ("Capítulo 4: Transacciones, Máquinas de Estados y Reglas de Negocio", "tesina_transactions.md"),
+    ("Capítulo 4.1: Módulo Crítico de Rendimiento en C++ (SPEC §2)", "modulo_critico_cpp.md"),
     ("Capítulo 5: Manual de Integración Frontend-Backend y Catálogo de APIs", "tesina_integration.md"),
     ("Capítulo 6: Interfaz de Usuario y Componentes Frontend", "tesina_frontend.md"),
     ("Capítulo 7: Manual de Usuario, Pruebas Operativas y Conclusiones", "tesina_manual_conclusion.md")

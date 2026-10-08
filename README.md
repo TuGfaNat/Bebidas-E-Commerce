@@ -4,6 +4,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-4479A1?style=flat&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Apache](https://img.shields.io/badge/Apache-2.4%2B-D22128?style=flat&logo=apache&logoColor=white)](https://httpd.apache.org/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?style=flat&logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![Leaflet](https://img.shields.io/badge/Leaflet-1.9.4-199900?style=flat&logo=leaflet&logoColor=white)](https://leafletjs.com/)
 [![Estado](https://img.shields.io/badge/Estado-100%25%20Operativo-brightgreen?style=flat)]()
 [![Licencia](https://img.shields.io/badge/Licencia-ISC-blue?style=flat)]()
@@ -337,6 +338,7 @@ Burger-E-Commerce/
 ├── .env.production.example      # Plantilla de variables de entorno de producción
 ├── docs/                        # Capítulos formales de la tesina académica
 │   ├── GUIA_DESPLIEGUE_XAMPP.md # Guía y módulo de despliegue en XAMPP (Ticket 29-BE-009)
+│   ├── modulo_critico_cpp.md    # Módulo Crítico C++: Tarifas y Stock (SPEC §2 y §5)
 │   ├── tesina_infrastructure.md # Cap 1: Infraestructura, Arquitectura y Despliegue
 │   ├── tesina_diagrams.md       # Cap 2: Diagramas C4, ER y Secuencia UML
 │   ├── tesina_security.md       # Cap 3: Seguridad, Criptografía Bcrypt y JWT
@@ -344,6 +346,10 @@ Burger-E-Commerce/
 │   ├── tesina_integration.md    # Cap 5: Catálogo de APIs REST y BMAD
 │   ├── tesina_frontend.md       # Cap 6: Interfaz de Usuario y Mapas Leaflet.js
 │   └── tesina_manual_conclusion.md # Cap 7: Manual de Usuario y Pruebas
+├── cpp/                         # Módulo Crítico de Rendimiento en C++ (SPEC §2)
+│   ├── motor_core.cpp           # Motor de cálculo de tarifas y validación de stock (C++17)
+│   ├── motor_core.exe           # Binario nativo compilado de latencia ultra-baja (<150us)
+│   └── build.bat                # Script de compilación nativa automatizada (MinGW / GCC)
 ├── microservices/               # Microservicios modulares en PHP
 │   ├── Auth/                    # Autenticación, registro, JWT y aprobaciones
 │   ├── Catalog/                 # Catálogo de hamburguesas y combos con stock

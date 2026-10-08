@@ -125,53 +125,47 @@ def step_3_upload_directories():
 # =========================================================================
 def step_4_cpp_performance_module():
     print("\n[Paso 4/6] Verificando módulo de alto rendimiento C++ (SPEC.md Sección 2)...")
-    cpp_file = os.path.join(ROOT_DIR, "microservices", "Logistics", "calculator.cpp")
-    exe_file = os.path.join(ROOT_DIR, "microservices", "Logistics", "calculator.exe")
+    cpp_dir = os.path.join(ROOT_DIR, "cpp")
+    cpp_file = os.path.join(cpp_dir, "motor_core.cpp")
+    exe_file = os.path.join(cpp_dir, "motor_core.exe")
+    bat_file = os.path.join(cpp_dir, "build.bat")
     
     if not os.path.exists(cpp_file):
-        print("  [-] Archivo calculator.cpp no encontrado.")
+        print("  [-] Archivo cpp/motor_core.cpp no encontrado.")
         return
     
-    print(f"  [OK] Código fuente C++ verificado: microservices/Logistics/calculator.cpp")
+    print("  [OK] Código fuente C++ verificado: cpp/motor_core.cpp")
     
-    # Comprobar si hay un compilador C++ disponible
-    compiler_gcc = shutil.which("g++")
-    compiler_clang = shutil.which("clang++")
-    compiler_cl = shutil.which("cl")
+    # Si existe build.bat, ejecutarlo
+    if os.name == 'nt' and os.path.exists(bat_file):
+        print("  [+] Ejecutando script de compilación cpp/build.bat...")
+        try:
+            res = subprocess.run([bat_file], cwd=cpp_dir, capture_output=True, text=True, shell=True)
+            if res.returncode == 0 and os.path.exists(exe_file):
+                print("  [OK] Módulo C++ compilado exitosamente: cpp/motor_core.exe")
+                return
+            else:
+                print(f"  [!] build.bat finalizó con código {res.returncode}: {res.stdout.strip()}")
+        except Exception as e:
+            print(f"  [!] Error ejecutando build.bat: {e}")
+
+    # Fallback: buscar compilador manual
+    compiler_gcc = shutil.which("g++") or (r"D:\w64devkit\bin\g++.exe" if os.path.exists(r"D:\w64devkit\bin\g++.exe") else None)
     
-    compiled = False
     if compiler_gcc:
-        print("  [+] Compilador GCC detectado. Compilando binario nativo...")
+        print(f"  [+] Compilador g++ detectado ({compiler_gcc}). Compilando binario nativo...")
         try:
-            subprocess.run([compiler_gcc, "-O3", cpp_file, "-o", exe_file], check=True)
-            print("  [OK] Módulo C++ compilado exitosamente: calculator.exe")
-            compiled = True
+            subprocess.run([compiler_gcc, "-O2", "-std=c++17", cpp_file, "-o", exe_file], check=True)
+            print("  [OK] Módulo C++ compilado exitosamente: cpp/motor_core.exe")
+            return
         except Exception as e:
-            print(f"  [!] Error compilando con GCC: {e}")
-    elif compiler_clang:
-        print("  [+] Compilador Clang detectado. Compilando binario nativo...")
-        try:
-            subprocess.run([compiler_clang, "-O3", cpp_file, "-o", exe_file], check=True)
-            print("  [OK] Módulo C++ compilado exitosamente: calculator.exe")
-            compiled = True
-        except Exception as e:
-            print(f"  [!] Error compilando con Clang: {e}")
-    elif compiler_cl:
-        print("  [+] Compilador MSVC detectado. Compilando binario nativo...")
-        try:
-            subprocess.run([compiler_cl, "/O2", "/EHsc", cpp_file, f"/Fe:{exe_file}"], check=True)
-            print("  [OK] Módulo C++ compilado exitosamente: calculator.exe")
-            compiled = True
-        except Exception as e:
-            print(f"  [!] Error compilando con MSVC: {e}")
-            
-    if not compiled:
-        if os.path.exists(exe_file):
-            print("  [OK] Binario compilado preexistente detectado: calculator.exe")
-        else:
-            print("  [INFO] No se detectó compilador C++ en PATH (g++/clang/cl).")
-            print("         El sistema utilizará automáticamente el motor Python de alta precisión")
-            print("         en 'microservices/Logistics/calculator.py' sin interrumpir la ejecución.")
+            print(f"  [!] Error compilando con g++: {e}")
+
+    if os.path.exists(exe_file):
+        print("  [OK] Binario precompilado verificado: cpp/motor_core.exe")
+    else:
+        print("  [ADVERTENCIA] No se pudo generar cpp/motor_core.exe.")
+        print("                Ejecute 'cpp\\build.bat' manualmente en consola con MinGW instalado.")
 
 # =========================================================================
 # 5. Detección de XAMPP y Enlace Web en htdocs (Apache)

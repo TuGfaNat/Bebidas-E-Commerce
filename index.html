@@ -727,11 +727,31 @@
         </div>
     </div>
 
-    <!-- DOCUMENT / PHOTO VIEWER MODAL (For C.I. & QR verification) -->
+    <!-- DOCUMENT / PHOTO / PDF VIEWER MODAL DINÁMICO (C.I., Recibos, Licencias, QR) -->
     <div class="file-view-modal" id="fileViewerModal">
-        <div class="file-view-body">
-            <button class="file-view-close" id="btnFileViewerClose">&times;</button>
-            <img src="" alt="Vista Previa de Documento" id="imgFileViewer">
+        <div class="file-view-container">
+            <div class="file-view-header">
+                <div class="file-view-title-wrap">
+                    <i data-lucide="file-text" id="fileViewerIcon" style="color: #f97316; width: 20px; height: 20px;"></i>
+                    <div>
+                        <h4 id="fileViewerTitle" style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #f8fafc;">Visor de Documento</h4>
+                        <span id="fileViewerSubtitle" style="font-size: 0.75rem; color: var(--text-muted);">Burger 24/7 · Documento Oficial</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <a href="#" target="_blank" class="btn btn-secondary btn-sm" id="btnFileViewerExternal" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; text-decoration: none; padding: 0.35rem 0.65rem;" title="Abrir en pestaña nueva">
+                        <i data-lucide="external-link" style="width: 13px; height: 13px;"></i> Abrir
+                    </a>
+                    <button class="close-drawer" id="btnFileViewerClose" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.2rem 0.5rem;" title="Cerrar">&times;</button>
+                </div>
+            </div>
+            <div class="file-view-content" id="fileViewerContent">
+                <div id="fileViewerLoading" style="display: none; color: var(--text-secondary); font-size: 0.9rem;">
+                    <i data-lucide="loader-2" class="spin"></i> Cargando documento...
+                </div>
+                <img src="" alt="Vista Previa de Imagen" id="imgFileViewer" style="display: none;">
+                <iframe id="pdfFileViewer" src="" style="display: none;"></iframe>
+            </div>
         </div>
     </div>
 

@@ -15,18 +15,19 @@
 ## 📑 Tabla de Contenido Rápido
 
 1. [¿Qué es Burger 24/7?](#-1-qué-es-burger-247)
-2. [⚡ Inicio Rápido: ¿Cómo Levantar el Proyecto?](#-2-inicio-rápido-cómo-levantar-el-proyecto)
+2. [📦 Instalación de Dependencias y Preparación (`requirements.txt`)](#-2-instalación-de-dependencias-y-preparación-requirementstxt)
+3. [⚡ Puesta en Marcha: ¿Cómo Levantar el Proyecto?](#-3-puesta-en-marcha-cómo-levantar-el-proyecto)
    - [Opción 1: Desarrollo Ultrarrápido (Recomendado para pruebas en 10 segundos)](#opción-1-modo-desarrollo-ultrarrápido-con-python-sin-instalar-mysql-ni-apache)
    - [Opción 2: Modo Producción con XAMPP (Apache + PHP 8.2 + MySQL Real para Tesina)](#opción-2-modo-producción--tesina-con-xampp-apache--php-82--mysql-8-real)
-3. [🔑 Cuentas de Acceso Preconfiguradas (Credenciales Demo)](#-3-cuentas-de-acceso-preconfiguradas-credenciales-demo)
-4. [🧭 URLs Principales del Sistema](#-4-urls-principales-del-sistema)
-5. [🔍 Diagnóstico Automatizado del Sistema (`check_deploy`)](#-5-diagnóstico-automatizado-del-sistema-check_deploy)
-6. [📚 Tesina Académica y Documentación Formal](#-6-tesina-académica-y-documentación-formal)
+4. [🔑 Cuentas de Acceso Preconfiguradas (Credenciales Demo)](#-4-cuentas-de-acceso-preconfiguradas-credenciales-demo)
+5. [🧭 URLs Principales del Sistema](#-5-urls-principales-del-sistema)
+6. [🔍 Diagnóstico Automatizado del Sistema (`check_deploy`)](#-6-diagnóstico-automatizado-del-sistema-check_deploy)
+7. [📚 Tesina Académica y Documentación Formal](#-7-tesina-académica-y-documentación-formal)
    - [Capítulos Disponibles](#capítulos-disponibles-en-docs)
    - [Compilación a Documento Maestro y Exportación a PDF](#compilación-a-documento-maestro-y-exportación-a-pdf)
-7. [🏗️ Arquitectura de Microservicios y Estándar BMAD](#-7-arquitectura-de-microservicios-y-estándar-bmad)
-8. [📂 Estructura del Repositorio](#-8-estructura-del-repositorio)
-9. [❓ Solución de Problemas Frecuentes (FAQ)](#-9-solución-de-problemas-frecuentes-faq)
+8. [🏗️ Arquitectura de Microservicios y Estándar BMAD](#-8-arquitectura-de-microservicios-y-estándar-bmad)
+9. [📂 Estructura del Repositorio](#-9-estructura-del-repositorio)
+10. [❓ Solución de Problemas Frecuentes (FAQ)](#-10-solución-de-problemas-frecuentes-faq)
 
 ---
 
@@ -40,7 +41,38 @@
 
 ---
 
-## ⚡ 2. Inicio Rápido: ¿Cómo Levantar el Proyecto?
+## 📦 2. Instalación de Dependencias y Preparación (`requirements.txt`)
+
+Para instalar automáticamente todas las librerías necesarias y dejar las carpetas configuradas, dispones de tres formas muy sencillas:
+
+### Método A: En Windows con 1 Solo Clic (Recomendado)
+Haz doble clic sobre el archivo:
+📁 **`install.bat`**
+
+### Método B: Mediante el Asistente Python (Multiplataforma)
+Abre tu consola en la carpeta del proyecto y ejecuta:
+```powershell
+python setup.py
+```
+
+### Método C: Vía PIP Directo
+Si prefieres instalar únicamente las dependencias de Python:
+```powershell
+pip install -r requirements.txt
+```
+
+### ¿Qué hace el instalador automáticamente?
+1. **Instala paquetes de Python ([`requirements.txt`](requirements.txt)):**
+   * `python-docx`: Generación y exportación de la tesina y monografía académica en formato Microsoft Word (`.docx`).
+   * `python-dotenv`: Lectura y gestión segura de variables de entorno del archivo `.env`.
+   * `requests`: Cliente HTTP para pruebas de integración con los microservicios.
+   * `bcrypt`: Cifrado y validación de contraseñas seguras.
+2. **Inicializa archivos de entorno `.env`:** Si no existen, copia automáticamente las plantillas `.env.example` tanto en la raíz como en los microservicios.
+3. **Crea y asegura los directorios `uploads/`:** Crea las carpetas para carnets de identidad (`uploads/ci`), licencias de repartidores (`uploads/docs`) y comprobantes QR (`uploads/qr`), configurando en cada una un archivo protector `.htaccess` que bloquea la ejecución de scripts (Anti-RCE).
+
+---
+
+## ⚡ 3. Puesta en Marcha: ¿Cómo Levantar el Proyecto?
 
 La plataforma ofrece **dos formas de ejecución**. Elige la que mejor se adapte a tu necesidad:
 
@@ -65,14 +97,21 @@ Si solo deseas ver la aplicación funcionando, hacer pedidos, probar los roles y
    cd Bebidas-E-Commerce
    ```
 
-2. **Iniciar el servidor:**
+2. **Instalar dependencias:**
+   ```bash
+   python setup.py
+   # o bien:
+   pip install -r requirements.txt
+   ```
+
+3. **Iniciar el servidor:**
    * En Windows: Haz doble clic sobre el archivo **`start_services.bat`**  
    * O ejecuta en tu terminal:
      ```bash
      python server.py 8000
      ```
 
-3. **Abrir en el navegador:**  
+4. **Abrir en el navegador:**  
    👉 **[http://localhost:8000/](http://localhost:8000/)**
 
 ¡Listo! El servidor autónomo levantará la web con todos los usuarios demo, el catálogo de productos y la simulación de APIs lista para usar.
@@ -109,7 +148,7 @@ El archivo [`install_db.sql`](install_db.sql) crea la base de datos `burger_shop
   ```
 
 #### Paso 4: Configurar Variables de Entorno (`.env`)
-En la carpeta del proyecto, crea tu archivo `.env` a partir de la plantilla:
+En la carpeta del proyecto, crea tu archivo `.env` a partir de la plantilla (o ejecuta `python setup.py`):
 ```powershell
 copy .env.example .env
 ```
@@ -130,7 +169,7 @@ Abre tu navegador en:
 
 ---
 
-## 🔑 3. Cuentas de Acceso Preconfiguradas (Credenciales Demo)
+## 🔑 4. Cuentas de Acceso Preconfiguradas (Credenciales Demo)
 
 El sistema incluye **7 cuentas de prueba** para verificar todos los roles y estados posibles de usuario:
 
@@ -149,7 +188,7 @@ El sistema incluye **7 cuentas de prueba** para verificar todos los roles y esta
 
 ---
 
-## 🧭 4. URLs Principales del Sistema
+## 🧭 5. URLs Principales del Sistema
 
 | Módulo / Servicio | URL en Apache (XAMPP) | URL en Servidor Python | Propósito |
 |---|---|---|---|
@@ -164,7 +203,7 @@ El sistema incluye **7 cuentas de prueba** para verificar todos los roles y esta
 
 ---
 
-## 🔍 5. Diagnóstico Automatizado del Sistema (`check_deploy`)
+## 🔍 6. Diagnóstico Automatizado del Sistema (`check_deploy`)
 
 El proyecto incorpora una suite de pruebas diagnósticas que verifica **30 puntos críticos** de la instalación antes de operar o exponer el proyecto:
 
@@ -187,7 +226,7 @@ php check_deploy.php
 
 ---
 
-## 📚 6. Tesina Académica y Documentación Formal
+## 📚 7. Tesina Académica y Documentación Formal
 
 El repositorio incluye una monografía técnica y tesina de grado completa, redactada con rigor metodológico de ingeniería de software en conformidad con la especificación del proyecto ([`SPEC.md`](SPEC.md)):
 
@@ -229,7 +268,7 @@ Este comando genera automáticamente:
 
 ---
 
-## 🏗️ 7. Arquitectura de Microservicios y Estándar BMAD
+## 🏗️ 8. Arquitectura de Microservicios y Estándar BMAD
 
 Todos los endpoints devuelven información estructurada bajo el formato estándar **BMAD (Bounded Microservice Architecture Delivery)**, asegurando respuestas determinísticas con auditoría obligatoria:
 
@@ -257,10 +296,13 @@ Todos los endpoints devuelven información estructurada bajo el formato estánda
 
 ---
 
-## 📂 8. Estructura del Repositorio
+## 📂 9. Estructura del Repositorio
 
 ```text
 Bebidas-E-Commerce/
+├── requirements.txt             # Dependencias del sistema (python-docx, dotenv, requests, bcrypt)
+├── setup.py                     # Asistente instalador y configurador multiplataforma
+├── install.bat                  # Instalador automatizado de 1 clic para Windows
 ├── index.html                   # Interfaz de usuario Single Page Application (SPA)
 ├── style.css                    # Estilos CSS3 responsivos con tema Glassmorphism
 ├── app.js                       # Lógica de la interfaz y renderizado reactivo
@@ -300,7 +342,7 @@ Bebidas-E-Commerce/
 
 ---
 
-## ❓ 9. Solución de Problemas Frecuentes (FAQ)
+## ❓ 10. Solución de Problemas Frecuentes (FAQ)
 
 ### 1. ¿Cómo cambiar el puerto si el puerto 8000 ya está ocupado?
 Si usas el servidor autónomo en Python y el puerto 8000 está en uso por otra aplicación, puedes indicar cualquier otro puerto:

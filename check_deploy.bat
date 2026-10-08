@@ -4,6 +4,13 @@ echo ========================================================
 echo   Burger 24/7 - Verificando Despliegue en XAMPP / Apache
 echo ========================================================
 
+REM Asegurar archivo .env antes del chequeo
+if not exist "%~dp0.env" (
+    if exist "%~dp0.env.example" (
+        copy /y "%~dp0.env.example" "%~dp0.env" >nul 2>&1
+    )
+)
+
 REM Intentar ejecutar con PHP CLI si existe
 where php >nul 2>&1
 if %ERRORLEVEL% equ 0 (

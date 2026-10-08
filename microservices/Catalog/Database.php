@@ -21,8 +21,10 @@ class Database {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
         ];
-        if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
-            $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES $charset COLLATE utf8mb4_unicode_ci";
+        if (defined('Pdo\\Mysql::ATTR_INIT_COMMAND')) {
+            $options[\Pdo\Mysql::ATTR_INIT_COMMAND] = "SET NAMES $charset COLLATE utf8mb4_unicode_ci";
+        } elseif (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+            @$options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES $charset COLLATE utf8mb4_unicode_ci";
         }
 
         try {
@@ -33,15 +35,22 @@ class Database {
     }
 
     private function loadEnv() {
+        $rootPath = dirname(dirname(__DIR__));
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+
         $possiblePaths = [
+            $rootPath . '/.env',
             __DIR__ . '/.env',
             __DIR__ . '/../Auth/.env',
             __DIR__ . '/../../.env',
-            dirname(dirname(__DIR__)) . '/.env'
+            $docRoot . '/Bebidas-E-Commerce/.env',
+            $docRoot . '/Burger-E-Commerce/.env',
+            $docRoot . '/.env'
         ];
 
+        $envLoaded = false;
         foreach ($possiblePaths as $envPath) {
-            if (file_exists($envPath)) {
+            if (!empty($envPath) && file_exists($envPath)) {
                 $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                 foreach ($lines as $line) {
                     $line = trim($line);
@@ -58,7 +67,58 @@ class Database {
                         }
                     }
                 }
+                $envLoaded = true;
                 break;
+            }
+        }
+
+        if (!$envLoaded) {
+            $examplePaths = [
+                $rootPath . '/.env.example',
+                __DIR__ . '/../../.env.example',
+                $docRoot . '/Bebidas-E-Commerce/.env.example',
+                $docRoot . '/Burger-E-Commerce/.env.example'
+            ];
+            foreach ($examplePaths as $exPath) {
+                if (!empty($exPath) && file_exists($exPath)) {
+                    $targetEnv = dirname($exPath) . '/.env';
+                    @copy($exPath, $targetEnv);
+                    $lines = file($exPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (empty($line) || strpos($line, '#') === 0) continue;
+                        if (strpos($line, '=') !== false) {
+                            list($name, $value) = explode('=', $line, 2);
+                            $name = trim($name);
+                            $value = trim($value, "\"' \t\n\r\0\x0B");
+                            if (!isset($_ENV[$name])) {
+                                $_ENV[$name] = $value;
+                            }
+                            if (getenv($name) === false) {
+                                putenv("$name=$value");
+                            }
+                        }
+                    }
+                    $envLoaded = true;
+                    break;
+                }
+            }
+        }
+
+        $defaults = [
+            'DB_HOST' => '127.0.0.1',
+            'DB_PORT' => '3306',
+            'DB_NAME' => 'burger_shop',
+            'DB_USER' => 'root',
+            'DB_PASS' => '',
+            'DB_CHARSET' => 'utf8mb4'
+        ];
+
+        foreach ($defaults as $key => $val) {
+            $curVal = getenv($key) ?: ($_ENV[$key] ?? '');
+            if (empty($curVal)) {
+                $_ENV[$key] = $val;
+                putenv("$key=$val");
             }
         }
     }

@@ -59,8 +59,12 @@ def main():
     if os.path.exists(env_root):
         print("  [PASS] Archivo .env presente en la raíz.")
     elif os.path.exists(env_ex):
-        print("  [WARN] No existe .env pero .env.example está disponible.")
-        print("         ↳ Ejecute: copy .env.example .env")
+        try:
+            shutil.copy(env_ex, env_root)
+            print("  [PASS] Archivo .env generado automáticamente desde .env.example.")
+        except Exception:
+            print("  [WARN] No existe .env pero .env.example está disponible.")
+            print("         ↳ Ejecute: copy .env.example .env")
     else:
         print("  [FAIL] Falta plantilla .env.example.")
 

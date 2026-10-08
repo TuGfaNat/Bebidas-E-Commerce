@@ -13,6 +13,13 @@ if exist "D:\xampp\apache\bin\httpd.exe" set "XAMPP=D:\xampp"
 if not defined XAMPP if exist "C:\xampp\apache\bin\httpd.exe" set "XAMPP=C:\xampp"
 if not defined XAMPP if exist "E:\xampp\apache\bin\httpd.exe" set "XAMPP=E:\xampp"
 
+:: Asegurar archivo .env para configuracion de seguridad JWT
+if not exist "%~dp0.env" (
+    if exist "%~dp0.env.example" (
+        copy /y "%~dp0.env.example" "%~dp0.env" >nul 2>&1
+    )
+)
+
 :: Comprobar Apache (Puerto 80)
 netstat -ano | findstr ":80 " >nul 2>&1
 if errorlevel 1 (

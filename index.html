@@ -866,6 +866,107 @@
         </div>
     </div>
 
+    <!-- MODAL "RECIBO DIGITAL / TICKET DE COMPRA" (PRINT READY) -->
+    <div class="file-view-modal" id="orderReceiptModal">
+        <div class="receipt-modal-container glass-card" style="width: 100%; max-width: 500px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); overflow: hidden; display: flex; flex-direction: column; max-height: 92vh;">
+            <div class="receipt-header-bar" style="padding: 0.9rem 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.7);">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="receipt" style="color: #f97316; width: 18px; height: 18px;"></i>
+                    <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #f8fafc;">Recibo Digital de Compra</h3>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button class="btn btn-primary btn-sm" id="btnReceiptPrint" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.35rem; background: linear-gradient(135deg, #10b981, #059669); border: none;" title="Imprimir o Guardar como PDF">
+                        <i data-lucide="printer" style="width: 13px; height: 13px;"></i> Imprimir
+                    </button>
+                    <button class="close-drawer" id="btnReceiptClose" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.2rem 0.4rem;" title="Cerrar">&times;</button>
+                </div>
+            </div>
+
+            <!-- Contenedor Imprimible del Ticket Térmico -->
+            <div class="receipt-printable-body" id="receiptPrintableArea" style="padding: 1.25rem 1.4rem; overflow-y: auto; background: #ffffff; color: #1e293b; font-family: 'Courier New', Courier, monospace;">
+                <!-- Header del Comercio -->
+                <div style="text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.65rem; margin-bottom: 0.65rem;">
+                    <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; letter-spacing: 0.05em;">BURGER 24/7 S.R.L.</h2>
+                    <p style="margin: 0.15rem 0; font-size: 0.72rem; color: #475569;">Av. 20 de Octubre #2150, Sopocachi - La Paz</p>
+                    <p style="margin: 0.15rem 0; font-size: 0.7rem; color: #475569;">NIT: 1029384756 · Tlf: +591 2 244-1234</p>
+                    <span style="display: inline-block; margin-top: 0.35rem; padding: 0.15rem 0.55rem; background: #f1f5f9; border-radius: 4px; font-weight: 700; font-size: 0.75rem; color: #0f172a;" id="lblReceiptNumber">REC-000001</span>
+                </div>
+
+                <!-- Meta Información del Pedido -->
+                <div style="font-size: 0.72rem; line-height: 1.45; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.65rem; margin-bottom: 0.65rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>FECHA:</strong></span>
+                        <span id="lblReceiptDate">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>CLIENTE:</strong></span>
+                        <span id="lblReceiptClient">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>EMAIL:</strong></span>
+                        <span id="lblReceiptEmail">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>MÉTODO:</strong></span>
+                        <span id="lblReceiptPayment" style="font-weight: 700;">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span><strong>ESTADO:</strong></span>
+                        <span id="lblReceiptStatus" style="font-weight: 700;">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;" id="receiptRiderRow">
+                        <span><strong>REPARTIDOR:</strong></span>
+                        <span id="lblReceiptRider">Asignando conductor...</span>
+                    </div>
+                </div>
+
+                <!-- Tabla de Productos -->
+                <div style="margin-bottom: 0.65rem;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.72rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #94a3b8; text-align: left;">
+                                <th style="padding: 0.2rem 0;">CANT</th>
+                                <th style="padding: 0.2rem 0;">DESCRIPCIÓN</th>
+                                <th style="padding: 0.2rem 0; text-align: right;">P.U.</th>
+                                <th style="padding: 0.2rem 0; text-align: right;">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receiptItemsTbody">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Resumen Financiero y Cálculos C++ -->
+                <div style="border-top: 1px dashed #cbd5e1; padding-top: 0.55rem; font-size: 0.75rem; line-height: 1.45;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>SUBTOTAL PRODUCTOS:</span>
+                        <span id="lblReceiptSubtotal">0.00 Bs</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>TARIFA DE ENVÍO (C++ CORE):</span>
+                        <span id="lblReceiptShipping">0.00 Bs</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 800; border-top: 1px solid #0f172a; margin-top: 0.35rem; padding-top: 0.35rem;">
+                        <span>TOTAL FINAL:</span>
+                        <span id="lblReceiptTotal">0.00 Bs</span>
+                    </div>
+                </div>
+
+                <!-- Pie de Imprenta y Auditoría -->
+                <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.55rem; text-align: center; font-size: 0.65rem; color: #64748b;">
+                    <p style="margin: 0.1rem 0;">¡GRACIAS POR TU PREFERENCIA!</p>
+                    <p style="margin: 0.1rem 0;">Burger 24/7 · Calidad y rapidez artesanal</p>
+                    <p style="margin: 0.2rem 0; font-family: monospace;" id="lblReceiptHash">ID Transacción: #0 · Auditoría C++ Verificada</p>
+                </div>
+            </div>
+
+            <div style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; gap: 0.5rem; background: rgba(30, 41, 59, 0.4);">
+                <button class="btn btn-secondary btn-sm" id="btnReceiptCloseAction" style="padding: 0.35rem 1rem;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer>
         <div class="footer-content">

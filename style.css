@@ -1735,4 +1735,65 @@ footer {
     color: var(--text-muted);
 }
 
+/* Digital Receipt Modal Component */
+.receipt-modal-container {
+    animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.receipt-printable-body {
+    user-select: text;
+}
+
+.receipt-printable-body table th,
+.receipt-printable-body table td {
+    padding: 0.25rem 0.15rem;
+}
+
+/* Print Stylesheet for Physical and PDF Printer */
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #orderReceiptModal,
+    #orderReceiptModal *,
+    #receiptPrintableArea,
+    #receiptPrintableArea * {
+        visibility: visible !important;
+    }
+    #orderReceiptModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .receipt-modal-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #ffffff !important;
+        border-radius: 0 !important;
+    }
+    .receipt-header-bar,
+    #btnReceiptPrint,
+    #btnReceiptClose,
+    #btnReceiptCloseAction {
+        display: none !important;
+    }
+    .receipt-printable-body {
+        padding: 1cm !important;
+        color: #000000 !important;
+        background: #ffffff !important;
+        font-size: 10pt !important;
+        box-shadow: none !important;
+    }
+}
+
+
 

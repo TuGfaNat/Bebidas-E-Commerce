@@ -13,7 +13,7 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null) {
             "timestamp" => date("c")
         ],
         "error_details" => $errorDetails
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
 
 try {

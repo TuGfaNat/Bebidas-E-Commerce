@@ -1698,3 +1698,41 @@ footer {
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* User Profile Modal Component */
+.user-profile-modal-container {
+    animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+#btnHeaderProfile {
+    transition: all 0.2s ease;
+}
+
+#btnHeaderProfile:hover {
+    background: rgba(249, 115, 22, 0.15) !important;
+    border-color: rgba(249, 115, 22, 0.4) !important;
+    transform: translateY(-1px);
+}
+
+.profile-metric-card {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.profile-metric-card .metric-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-top: 0.15rem;
+}
+
+.profile-metric-card .metric-lbl {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+

@@ -122,8 +122,78 @@ try {
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
-    // ACCIÓN GET: Obtener pedidos y pedido activo del cliente autenticado
+    // ACCIÓN GET: Obtener pedidos, pedido activo o recibo individual
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $orderIdParam = isset($_GET['order_id']) ? (int)$_GET['order_id'] : null;
+
+        // Si se solicita un recibo o detalle de pedido específico
+        if ($orderIdParam) {
+            $stmtSingle = $db->prepare("
+                SELECT p.id, p.cliente_id, p.rider_id, p.estado_pago, p.estado_pedido,
+                       p.total, p.latitud, p.longitud, p.qr_comprobante_url, p.created_at, p.updated_at,
+                       u.nombre as cliente_nombre, u.email as cliente_email,
+                       r.nombre as rider_nombre
+                FROM pedidos p
+                LEFT JOIN users u ON p.cliente_id = u.id
+                LEFT JOIN users r ON p.rider_id = r.id
+                WHERE p.id = ? AND (p.cliente_id = ? OR p.rider_id = ? OR ? IN ('super_usuario', 'admin'))
+            ");
+            $stmtSingle->execute([$orderIdParam, $userId, $userId, $userRole]);
+            $ord = $stmtSingle->fetch(PDO::FETCH_ASSOC);
+
+            if (!$ord) {
+                http_response_code(404);
+                echo formatResponse("error", null, $userId, "Pedido no encontrado o acceso no autorizado.", "NOT_FOUND");
+                exit;
+            }
+
+            $stmtDet = $db->prepare("
+                SELECT d.id, d.pedido_id, d.producto_id, d.cantidad, d.precio_unitario, pr.nombre
+                FROM pedido_detalles d
+                LEFT JOIN productos pr ON d.producto_id = pr.id
+                WHERE d.pedido_id = ?
+            ");
+            $stmtDet->execute([$orderIdParam]);
+            $detalles = $stmtDet->fetchAll(PDO::FETCH_ASSOC);
+
+            $subtotalCalc = 0;
+            foreach ($detalles as $d) {
+                $subtotalCalc += floatval($d['precio_unitario']) * intval($d['cantidad']);
+            }
+            $totalVal = floatval($ord['total']);
+            $envioCalc = max(0, round($totalVal - $subtotalCalc, 2));
+
+            $recibo = [
+                'id' => (int)$ord['id'],
+                'pedido_id' => (int)$ord['id'],
+                'nro_recibo' => 'REC-' . str_pad($ord['id'], 6, '0', STR_PAD_LEFT),
+                'cliente' => [
+                    'id' => (int)$ord['cliente_id'],
+                    'nombre' => $ord['cliente_nombre'],
+                    'email' => $ord['cliente_email']
+                ],
+                'rider' => $ord['rider_id'] ? [
+                    'id' => (int)$ord['rider_id'],
+                    'nombre' => $ord['rider_nombre']
+                ] : null,
+                'estado_pago' => $ord['estado_pago'],
+                'estado_pedido' => $ord['estado_pedido'],
+                'subtotal' => round($subtotalCalc, 2),
+                'costo_envio' => $envioCalc,
+                'total' => $totalVal,
+                'latitud' => floatval($ord['latitud'] ?? -16.5050),
+                'longitud' => floatval($ord['longitud'] ?? -68.1290),
+                'qr_comprobante_url' => $ord['qr_comprobante_url'],
+                'created_at' => $ord['created_at'],
+                'detalles' => $detalles
+            ];
+
+            echo formatResponse("success", [
+                "recibo" => $recibo
+            ], $userId, null, "GET_ORDER_RECEIPT");
+            exit;
+        }
+
         $stmt = $db->prepare("
             SELECT p.id, p.cliente_id, p.rider_id, p.estado_pago, p.estado_pedido,
                    p.total, p.latitud, p.longitud, p.qr_comprobante_url, p.created_at, p.updated_at

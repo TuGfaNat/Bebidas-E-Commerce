@@ -498,6 +498,34 @@ function setupEventListeners() {
             if (e.target === profModal && window.closeUserProfile) window.closeUserProfile();
         });
     }
+
+    const btnRecPrint = document.getElementById('btnReceiptPrint');
+    if (btnRecPrint) {
+        btnRecPrint.addEventListener('click', () => {
+            window.print();
+        });
+    }
+
+    const btnRecClose = document.getElementById('btnReceiptClose');
+    if (btnRecClose) {
+        btnRecClose.addEventListener('click', () => {
+            if (window.closeReceiptModal) window.closeReceiptModal();
+        });
+    }
+
+    const btnRecCloseAct = document.getElementById('btnReceiptCloseAction');
+    if (btnRecCloseAct) {
+        btnRecCloseAct.addEventListener('click', () => {
+            if (window.closeReceiptModal) window.closeReceiptModal();
+        });
+    }
+
+    const recModal = document.getElementById('orderReceiptModal');
+    if (recModal) {
+        recModal.addEventListener('click', (e) => {
+            if (e.target === recModal && window.closeReceiptModal) window.closeReceiptModal();
+        });
+    }
 }
 
 function getActiveCategory() {
@@ -1512,6 +1540,9 @@ async function submitOrderCheckout() {
         showToast('¡Pedido registrado en MySQL exitosamente! Inventario descontado.', 'success');
         await renderClienteActiveOrderTracker();
         await renderProducts();
+        if (res.data && res.data.pedido_id && window.openReceiptModal) {
+            window.openReceiptModal(res.data.pedido_id);
+        }
     } catch (err) {
         console.error('Error enviando checkout a backend:', err);
         showToast('Error de conexión con la API PHP. No se pudo registrar el pedido.', 'danger');
@@ -1586,8 +1617,10 @@ async function renderClienteActiveOrderTracker() {
     const payEl = document.getElementById('clientActiveOrderPayment');
     if (payEl) payEl.innerHTML = `<strong>Método de Pago:</strong> ${payBadge}`;
 
+    const receiptBtn = ` <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${activeOrder.id})" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; margin-left: 0.4rem; vertical-align: middle;"><i data-lucide="receipt" style="width:12px;height:12px;"></i> Recibo Digital</button>`;
+
     const totalEl = document.getElementById('clientActiveOrderTotal');
-    if (totalEl) totalEl.innerHTML = `<strong>Total a pagar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs ${cancelBtn}`;
+    if (totalEl) totalEl.innerHTML = `<strong>Total a pagar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs ${receiptBtn} ${cancelBtn}`;
     initLucide();
 
     const latCliente = activeOrder.latitud || -16.5090;
@@ -2783,6 +2816,86 @@ window.openUserProfile = async function() {
 
 window.closeUserProfile = function() {
     const modal = document.getElementById('userProfileModal');
+    if (modal) modal.classList.remove('active');
+};
+
+// -------------------------------------------------------
+// MODAL "RECIBO DIGITAL / TICKET DE COMPRA" (PRINT READY)
+// -------------------------------------------------------
+window.openReceiptModal = async function(orderId) {
+    const modal = document.getElementById('orderReceiptModal');
+    if (!modal) return;
+
+    const lblNumber = document.getElementById('lblReceiptNumber');
+    const lblDate = document.getElementById('lblReceiptDate');
+    const lblClient = document.getElementById('lblReceiptClient');
+    const lblEmail = document.getElementById('lblReceiptEmail');
+    const lblPayment = document.getElementById('lblReceiptPayment');
+    const lblStatus = document.getElementById('lblReceiptStatus');
+    const lblRider = document.getElementById('lblReceiptRider');
+    const tbody = document.getElementById('receiptItemsTbody');
+    const lblSubtotal = document.getElementById('lblReceiptSubtotal');
+    const lblShipping = document.getElementById('lblReceiptShipping');
+    const lblTotal = document.getElementById('lblReceiptTotal');
+    const lblHash = document.getElementById('lblReceiptHash');
+
+    if (lblNumber) lblNumber.innerText = `REC-${String(orderId).padStart(6, '0')}`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 1rem; color: #64748b;">Cargando detalle del recibo...</td></tr>`;
+
+    modal.classList.add('active');
+    initLucide();
+
+    try {
+        const res = await apiGet('/Transactions/checkout.php', { params: { order_id: orderId } });
+        if (res.ok && res.data && res.data.recibo) {
+            const r = res.data.recibo;
+            if (lblNumber) lblNumber.innerText = r.nro_recibo || `REC-${String(orderId).padStart(6, '0')}`;
+            if (lblDate) lblDate.innerText = r.created_at ? new Date(r.created_at).toLocaleString('es-BO') : new Date().toLocaleString('es-BO');
+            if (lblClient) lblClient.innerText = cleanText(r.cliente ? r.cliente.nombre : 'Cliente');
+            if (lblEmail) lblEmail.innerText = r.cliente ? r.cliente.email : '-';
+            
+            const isContra = r.estado_pago === 'contraentrega' || r.estado_pago === 'pagado_efectivo';
+            if (lblPayment) lblPayment.innerText = isContra ? 'CONTRAENTREGA (EFECTIVO)' : 'PAGO QR ELECTRÓNICO';
+            if (lblStatus) lblStatus.innerText = (r.estado_pedido || 'PENDIENTE').toUpperCase();
+            if (lblRider) lblRider.innerText = r.rider ? cleanText(r.rider.nombre) : 'Asignando repartidor...';
+
+            if (tbody) {
+                const items = Array.isArray(r.detalles) ? r.detalles : [];
+                if (items.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 0.5rem; color: #64748b;">Sin productos registrados.</td></tr>`;
+                } else {
+                    tbody.innerHTML = items.map(it => {
+                        const cant = it.cantidad || 1;
+                        const pu = Number(it.precio_unitario || 0);
+                        const sub = (pu * cant).toFixed(2);
+                        return `
+                            <tr style="border-bottom: 1px dotted #e2e8f0;">
+                                <td style="padding: 0.25rem 0; font-weight: 700;">${cant}x</td>
+                                <td style="padding: 0.25rem 0;">${escapeHtml(it.nombre || 'Producto')}</td>
+                                <td style="padding: 0.25rem 0; text-align: right;">${pu.toFixed(2)}</td>
+                                <td style="padding: 0.25rem 0; text-align: right; font-weight: 700;">${sub}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            if (lblSubtotal) lblSubtotal.innerText = `${Number(r.subtotal || 0).toFixed(2)} Bs`;
+            if (lblShipping) lblShipping.innerText = `${Number(r.costo_envio || 0).toFixed(2)} Bs`;
+            if (lblTotal) lblTotal.innerText = `${Number(r.total || 0).toFixed(2)} Bs`;
+            if (lblHash) lblHash.innerText = `ID Pedido: #${r.id} · C++ Motor Core Tarifa & Stock Verificado`;
+
+        } else {
+            showToast('No se pudo cargar el recibo digital desde el servidor.', 'warning');
+        }
+    } catch (err) {
+        console.error('Error cargando recibo digital:', err);
+        showToast('Error al consultar el recibo en el servidor.', 'danger');
+    }
+};
+
+window.closeReceiptModal = function() {
+    const modal = document.getElementById('orderReceiptModal');
     if (modal) modal.classList.remove('active');
 };
 

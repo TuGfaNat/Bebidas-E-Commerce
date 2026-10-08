@@ -86,7 +86,10 @@
                     <i data-lucide="shopping-cart" style="width: 14px; height: 14px;"></i>
                     <span>Mi Carrito (<span id="headerCartCount">0</span>)</span>
                 </button>
-                <span id="lblHeaderUserName" style="font-weight: 600; font-size: 0.85rem; color: var(--accent-purple);"></span>
+                <button class="btn btn-secondary btn-sm" id="btnHeaderProfile" style="padding: 0.35rem 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer; border-radius: 9999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);" title="Ver Mi Perfil">
+                    <i data-lucide="user" style="width: 14px; height: 14px; color: #f97316;"></i>
+                    <span id="lblHeaderUserName" style="font-weight: 600; font-size: 0.82rem; color: #f8fafc;"></span>
+                </button>
                 <button class="btn btn-secondary btn-sm" id="btnHeaderLogout" style="padding: 0.35rem 0.65rem; display: inline-flex; align-items: center; gap: 0.25rem;">
                     <i data-lucide="log-out" style="width: 12px; height: 12px;"></i> Salir
                 </button>
@@ -751,6 +754,114 @@
                 </div>
                 <img src="" alt="Vista Previa de Imagen" id="imgFileViewer" style="display: none;">
                 <iframe id="pdfFileViewer" src="" style="display: none;"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL "MI PERFIL" DE USUARIO (CLIENTE, RIDER, ADMINISTRADOR) -->
+    <div class="file-view-modal" id="userProfileModal">
+        <div class="user-profile-modal-container glass-card" style="width: 100%; max-width: 620px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
+            <div class="file-view-header" style="padding: 1.15rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div id="profileRoleAvatar" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white;">
+                        U
+                    </div>
+                    <div>
+                        <h3 id="profileModalUserName" style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #f8fafc;">Mi Perfil</h3>
+                        <span id="profileModalUserEmail" style="font-size: 0.8rem; color: var(--text-muted);">correo@ejemplo.com</span>
+                    </div>
+                </div>
+                <button class="close-drawer" id="btnProfileModalClose" style="background: none; border: none; color: var(--text-secondary); font-size: 1.75rem; cursor: pointer; padding: 0.2rem 0.5rem;" title="Cerrar">&times;</button>
+            </div>
+            
+            <div class="profile-modal-body" style="padding: 1.25rem 1.4rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+                
+                <!-- Tarjeta de Resumen Rol y Estado -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 0.85rem 1rem;">
+                    <div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Rol Asignado</span>
+                        <div id="profileBadgeRole">
+                            <span class="badge badge-primary">Cliente</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Verificación C.I.</span>
+                        <div id="profileBadgeCI">
+                            <span class="badge badge-success">Verificado</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Miembro Desde</span>
+                        <div id="profileMemberSince" style="font-size: 0.8rem; font-weight: 600; color: #f1f5f9;">-</div>
+                    </div>
+                </div>
+
+                <!-- Sección: Datos Personales & Documento C.I. -->
+                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 1rem 1.2rem;">
+                    <h4 style="font-size: 0.82rem; text-transform: uppercase; color: #f97316; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700;">
+                        <i data-lucide="shield-check" style="width: 15px; height: 15px;"></i>
+                        <span>Identificación Oficial (C.I.)</span>
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.82rem; margin-bottom: 0.75rem;">
+                        <div>
+                            <span style="color: var(--text-muted); font-size: 0.72rem; display: block;">Fecha de Nacimiento:</span>
+                            <span id="profileBirthDate" style="font-weight: 600; color: #f1f5f9;">-</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: 0.72rem; display: block;">Identificador de Usuario:</span>
+                            <span id="profileUserId" style="font-weight: 600; color: #f1f5f9;">#</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btnProfileViewCI" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.45rem 0.75rem; font-size: 0.82rem;">
+                        <i data-lucide="file-text" style="width: 14px; height: 14px; color: #f97316;"></i>
+                        <span>Ver Mi C.I. Oficial (Visor Seguro)</span>
+                    </button>
+                </div>
+
+                <!-- Sección Específica Rider (Expediente Vehicular & Liquidaciones) -->
+                <div id="profileRiderSection" style="display: none; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 1rem 1.2rem;">
+                    <h4 style="font-size: 0.82rem; text-transform: uppercase; color: #3b82f6; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700;">
+                        <i data-lucide="bike" style="width: 15px; height: 15px;"></i>
+                        <span>Expediente de Repartidor & Documentos Vehiculares</span>
+                    </h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; margin-bottom: 0.85rem;">
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewLicencia" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.4rem 0.5rem;">
+                            <i data-lucide="award" style="width: 12px; height: 12px; color: #3b82f6;"></i> Licencia
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewSOAT" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.4rem 0.5rem;">
+                            <i data-lucide="shield" style="width: 12px; height: 12px; color: #10b981;"></i> SOAT
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewCV" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.4rem 0.5rem;">
+                            <i data-lucide="file-check" style="width: 12px; height: 12px; color: #a855f7;"></i> CV (PDF)
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.75rem;">
+                        <div>
+                            <span style="color: var(--text-muted); font-size: 0.72rem; display: block;">Efectivo en Mano (a liquidar):</span>
+                            <span id="profileRiderCash" style="font-weight: 700; color: #f59e0b; font-size: 1rem;">0.00 Bs</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: 0.72rem; display: block;">Entregas Exitosas:</span>
+                            <span id="profileRiderDeliveries" style="font-weight: 700; color: #10b981; font-size: 1rem;">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección Métricas / Resumen según Rol -->
+                <div id="profileMetricsSection" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 1rem 1.2rem;">
+                    <h4 id="profileMetricsTitle" style="font-size: 0.82rem; text-transform: uppercase; color: #10b981; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700;">
+                        <i data-lucide="activity" style="width: 15px; height: 15px;"></i>
+                        <span>Actividad y Estadísticas</span>
+                    </h4>
+                    <div id="profileMetricsContent" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.65rem; font-size: 0.82rem;">
+                        <!-- Poblado dinámicamente -->
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="padding: 0.85rem 1.4rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; gap: 0.75rem; background: rgba(30, 41, 59, 0.4);">
+                <button class="btn btn-secondary" id="btnProfileModalCloseAction" style="padding: 0.4rem 1.2rem; font-size: 0.85rem;">Cerrar</button>
             </div>
         </div>
     </div>

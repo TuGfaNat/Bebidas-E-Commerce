@@ -88,9 +88,23 @@ function initLucide() {
 }
 
 // Helpers de Utilidad y Diagnóstico de API PHP
-function escapeHtml(str) {
+function cleanText(str) {
     if (!str) return '';
     return String(str)
+        .replace(/P├írez/g, 'Pérez')
+        .replace(/G├│mez/g, 'Gómez')
+        .replace(/├í/g, 'á')
+        .replace(/├®/g, 'é')
+        .replace(/├¡/g, 'í')
+        .replace(/├│/g, 'ó')
+        .replace(/├║/g, 'ú')
+        .replace(/├▒/g, 'ñ');
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    const cleaned = cleanText(str);
+    return String(cleaned)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -449,6 +463,41 @@ function setupEventListeners() {
     document.getElementById('btnFileViewerClose').addEventListener('click', () => {
         document.getElementById('fileViewerModal').classList.remove('active');
     });
+
+    const fileModal = document.getElementById('fileViewerModal');
+    if (fileModal) {
+        fileModal.addEventListener('click', (e) => {
+            if (e.target === fileModal) fileModal.classList.remove('active');
+        });
+    }
+
+    const btnProf = document.getElementById('btnHeaderProfile');
+    if (btnProf) {
+        btnProf.addEventListener('click', () => {
+            if (window.openUserProfile) window.openUserProfile();
+        });
+    }
+
+    const btnProfClose = document.getElementById('btnProfileModalClose');
+    if (btnProfClose) {
+        btnProfClose.addEventListener('click', () => {
+            if (window.closeUserProfile) window.closeUserProfile();
+        });
+    }
+
+    const btnProfCloseAct = document.getElementById('btnProfileModalCloseAction');
+    if (btnProfCloseAct) {
+        btnProfCloseAct.addEventListener('click', () => {
+            if (window.closeUserProfile) window.closeUserProfile();
+        });
+    }
+
+    const profModal = document.getElementById('userProfileModal');
+    if (profModal) {
+        profModal.addEventListener('click', (e) => {
+            if (e.target === profModal && window.closeUserProfile) window.closeUserProfile();
+        });
+    }
 }
 
 function getActiveCategory() {
@@ -923,14 +972,14 @@ function onLoginSuccess(user, notify = true) {
     // Update Header Status UI
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('headerUserStatus').style.display = 'flex';
-    document.getElementById('lblHeaderUserName').innerText = `${activeUser.nombre} (${activeUser.role.toUpperCase().replace('_', ' ')})`;
+    document.getElementById('lblHeaderUserName').innerText = `${cleanText(activeUser.nombre)} (${activeUser.role.toUpperCase().replace('_', ' ')})`;
 
     // Display appropriate panel
     const roleKey = activeUser.role === 'super_usuario' ? 'admin' : activeUser.role;
     switchRole(roleKey);
 
     if (notify) {
-        showToast(`¡Sesión iniciada como ${activeUser.nombre}!`, 'success');
+        showToast(`¡Sesión iniciada como ${cleanText(activeUser.nombre)}!`, 'success');
     }
 }
 
@@ -1021,15 +1070,20 @@ function renderClienteAccountInfo() {
 
     box.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <p><strong>Nombre:</strong> ${u.nombre}</p>
-            <p><strong>Email:</strong> ${u.email}</p>
+            <p><strong>Nombre:</strong> ${escapeHtml(u.nombre)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(u.email)}</p>
             <p><strong>Edad:</strong> ${calculateAge(u.fecha_nacimiento)} años</p>
             <div>
                 <span class="badge ${badgeClass}">${statusLabel}</span>
             </div>
             ${pendingMsg}
+            <button class="btn btn-secondary btn-sm" onclick="openUserProfile()" style="margin-top: 0.4rem; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.45rem 0.75rem;">
+                <i data-lucide="user" style="width: 14px; height: 14px; color: #f97316;"></i>
+                <span>Ver Mi Perfil Completo</span>
+            </button>
         </div>
     `;
+    initLucide();
 }
 
 async function renderProducts(category = 'todos', searchQuery = '') {
@@ -1688,12 +1742,16 @@ function renderRiderProfile() {
 
     box.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
-            <p><strong>Nombre:</strong> ${r.nombre}</p>
-            <p><strong>Email:</strong> ${r.email}</p>
+            <p><strong>Nombre:</strong> ${escapeHtml(r.nombre)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(r.email)}</p>
             <div>
                 <span class="badge ${statusClass}">${statusText}</span>
             </div>
             ${riderStatusMsg}
+            <button class="btn btn-secondary btn-sm" onclick="openUserProfile()" style="margin-top: 0.4rem; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.45rem 0.75rem;">
+                <i data-lucide="user" style="width: 14px; height: 14px; color: #f97316;"></i>
+                <span>Ver Mi Perfil Completo</span>
+            </button>
         </div>
     `;
 
@@ -1708,7 +1766,9 @@ function renderRiderProfile() {
                     ${doc ? '✓ Subido' : 'No cargado'}
                 </span>
             </div>
-            ${!doc ? `<button class="btn btn-secondary btn-sm" onclick="uploadMockDoc('licencia_url')">Subir</button>` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${doc ? (doc.licencia_url || '') : ''}', 'Licencia de Conducir - ${escapeHtml(r.nombre)}', 'licencia', ${r.id})">
+                <i data-lucide="eye" style="width:12px;height:12px;"></i> Ver
+            </button>
         </div>
 
         <div class="doc-upload-item">
@@ -1718,7 +1778,9 @@ function renderRiderProfile() {
                     ${doc ? '✓ Subido' : 'No cargado'}
                 </span>
             </div>
-            ${!doc ? `<button class="btn btn-secondary btn-sm" onclick="uploadMockDoc('seguro_url')">Subir</button>` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${doc ? (doc.seguro_url || '') : ''}', 'Seguro SOAT - ${escapeHtml(r.nombre)}', 'seguro', ${r.id})">
+                <i data-lucide="eye" style="width:12px;height:12px;"></i> Ver
+            </button>
         </div>
 
         <div class="doc-upload-item">
@@ -1728,9 +1790,12 @@ function renderRiderProfile() {
                     ${doc ? '✓ Subido' : 'No cargado'}
                 </span>
             </div>
-            ${!doc ? `<button class="btn btn-secondary btn-sm" onclick="uploadMockDoc('cv_url')">Subir</button>` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${doc ? (doc.cv_url || '') : ''}', 'Currículum Vitae - ${escapeHtml(r.nombre)}', 'cv', ${r.id})">
+                <i data-lucide="eye" style="width:12px;height:12px;"></i> Ver
+            </button>
         </div>
     `;
+    initLucide();
 }
 
 window.uploadMockDoc = function(docType) {
@@ -2522,6 +2587,203 @@ window.openFileViewer = function(fileUrl, title = 'Documento Oficial', type = 'c
 
     modal.classList.add('active');
     initLucide();
+};
+
+// -------------------------------------------------------
+// MODAL "MI PERFIL" INTERACTIVO (CLIENTE, RIDER, ADMIN)
+// -------------------------------------------------------
+window.openUserProfile = async function() {
+    const modal = document.getElementById('userProfileModal');
+    if (!modal) return;
+
+    const u = currentSession.currentUser;
+    if (!u) {
+        showToast('Debes iniciar sesión para consultar tu perfil.', 'warning');
+        return;
+    }
+
+    const nameEl = document.getElementById('profileModalUserName');
+    const emailEl = document.getElementById('profileModalUserEmail');
+    const avatarEl = document.getElementById('profileRoleAvatar');
+    const roleBadgeEl = document.getElementById('profileBadgeRole');
+    const ciBadgeEl = document.getElementById('profileBadgeCI');
+    const memberSinceEl = document.getElementById('profileMemberSince');
+    const birthEl = document.getElementById('profileBirthDate');
+    const userIdEl = document.getElementById('profileUserId');
+    const btnViewCI = document.getElementById('btnProfileViewCI');
+    const riderSection = document.getElementById('profileRiderSection');
+    const metricsContent = document.getElementById('profileMetricsContent');
+
+    const cleanUserName = cleanText(u.nombre || 'Usuario');
+    if (nameEl) nameEl.innerText = cleanUserName;
+    if (emailEl) emailEl.innerText = u.email || '';
+    if (avatarEl) avatarEl.innerText = (cleanUserName.charAt(0) || 'U').toUpperCase();
+    if (userIdEl) userIdEl.innerText = `#${u.id}`;
+
+    // Role badge
+    let roleText = 'Cliente';
+    let roleBadgeClass = 'badge-primary';
+    if (u.role === 'rider') {
+        roleText = 'Repartidor / Rider';
+        roleBadgeClass = 'badge-warning';
+    } else if (u.role === 'super_usuario' || u.role === 'admin') {
+        roleText = 'Administrador Central';
+        roleBadgeClass = 'badge-danger';
+    }
+    if (roleBadgeEl) roleBadgeEl.innerHTML = `<span class="badge ${roleBadgeClass}">${roleText}</span>`;
+
+    // CI badge
+    let ciText = 'Verificado';
+    let ciClass = 'badge-verified';
+    if (u.ci_status === 'pending') {
+        ciText = 'Pendiente de Aprobación';
+        ciClass = 'badge-pending';
+    } else if (u.ci_status === 'rejected') {
+        ciText = 'Rechazado';
+        ciClass = 'badge-rejected';
+    }
+    if (ciBadgeEl) ciBadgeEl.innerHTML = `<span class="badge ${ciClass}">${ciText}</span>`;
+
+    // Wire view CI button
+    if (btnViewCI) {
+        btnViewCI.onclick = () => {
+            window.openFileViewer(u.ci_url || '', `C.I. Oficial - ${cleanUserName}`, 'ci', u.id);
+        };
+    }
+
+    // Default loading metrics
+    if (metricsContent) {
+        metricsContent.innerHTML = `<div style="grid-column: span 2; color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 0.5rem;">
+            <i data-lucide="loader-2" class="spin"></i> Cargando métricas actualizadas...
+        </div>`;
+    }
+
+    // Show modal immediately
+    modal.classList.add('active');
+    initLucide();
+
+    // Query microservices/Auth/profile.php for real MySQL data
+    try {
+        const res = await apiGet('/Auth/profile.php');
+        if (res.ok && res.data) {
+            const data = res.data;
+            const fullUser = data.user || {};
+            const metrics = data.metrics || {};
+            const riderDocs = data.rider_docs || {};
+
+            if (birthEl) {
+                birthEl.innerText = fullUser.fecha_nacimiento ? `${fullUser.fecha_nacimiento} (${calculateAge(fullUser.fecha_nacimiento)} años)` : 'No especificada';
+            }
+            if (memberSinceEl) {
+                memberSinceEl.innerText = fullUser.created_at ? fullUser.created_at.substring(0, 10) : 'Semilla / Demo';
+            }
+
+            // Rider Section
+            if (fullUser.role === 'rider') {
+                if (riderSection) riderSection.style.display = 'block';
+
+                const btnLic = document.getElementById('btnProfileViewLicencia');
+                const btnSoat = document.getElementById('btnProfileViewSOAT');
+                const btnCv = document.getElementById('btnProfileViewCV');
+                const cashEl = document.getElementById('profileRiderCash');
+                const delivEl = document.getElementById('profileRiderDeliveries');
+
+                if (cashEl) cashEl.innerText = `${Number(metrics.efectivo_en_mano || 0).toFixed(2)} Bs`;
+                if (delivEl) delivEl.innerText = metrics.entregas_completadas || 0;
+
+                if (btnLic) {
+                    btnLic.onclick = () => window.openFileViewer(riderDocs.licencia_url || '', `Licencia - ${cleanUserName}`, 'licencia', fullUser.id);
+                }
+                if (btnSoat) {
+                    btnSoat.onclick = () => window.openFileViewer(riderDocs.seguro_url || '', `SOAT - ${cleanUserName}`, 'soat', fullUser.id);
+                }
+                if (btnCv) {
+                    btnCv.onclick = () => window.openFileViewer(riderDocs.cv_url || '', `Currículum Vitae - ${cleanUserName}`, 'cv', fullUser.id);
+                }
+
+                if (metricsContent) {
+                    metricsContent.innerHTML = `
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Total Entregas</span>
+                            <span class="metric-val" style="color: #10b981;">${metrics.entregas_completadas || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Entregas en Curso</span>
+                            <span class="metric-val" style="color: #3b82f6;">${metrics.entregas_activas || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Efectivo por Rendir</span>
+                            <span class="metric-val" style="color: #f59e0b;">${Number(metrics.efectivo_en_mano || 0).toFixed(2)} Bs</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Efectivo ya Rendido</span>
+                            <span class="metric-val" style="color: #8b5cf6;">${Number(metrics.efectivo_liquidado || 0).toFixed(2)} Bs</span>
+                        </div>
+                    `;
+                }
+
+            } else if (fullUser.role === 'cliente') {
+                if (riderSection) riderSection.style.display = 'none';
+
+                if (metricsContent) {
+                    metricsContent.innerHTML = `
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Total de Pedidos</span>
+                            <span class="metric-val" style="color: #3b82f6;">${metrics.total_pedidos || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Pedidos Entregados</span>
+                            <span class="metric-val" style="color: #10b981;">${metrics.pedidos_entregados || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Pedidos en Camino</span>
+                            <span class="metric-val" style="color: #f59e0b;">${metrics.pedidos_activos || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Total Invertido</span>
+                            <span class="metric-val" style="color: #ec4899;">${Number(metrics.total_gastado || 0).toFixed(2)} Bs</span>
+                        </div>
+                    `;
+                }
+
+            } else if (fullUser.role === 'super_usuario' || fullUser.role === 'admin') {
+                if (riderSection) riderSection.style.display = 'none';
+
+                if (metricsContent) {
+                    metricsContent.innerHTML = `
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Usuarios en Sistema</span>
+                            <span class="metric-val" style="color: #3b82f6;">${metrics.total_usuarios || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Clientes Registrados</span>
+                            <span class="metric-val" style="color: #10b981;">${metrics.total_clientes || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Flota de Riders</span>
+                            <span class="metric-val" style="color: #8b5cf6;">${metrics.total_riders || 0}</span>
+                        </div>
+                        <div class="profile-metric-card">
+                            <span class="metric-lbl">Postulaciones Pendientes</span>
+                            <span class="metric-val" style="color: #f59e0b;">${metrics.riders_pendientes || 0}</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('Fallo al obtener métricas completas de perfil:', err);
+        if (metricsContent) {
+            metricsContent.innerHTML = `<div style="grid-column:span 2; color:var(--text-muted); font-size:0.8rem; text-align:center;">Perfil sincronizado localmente.</div>`;
+        }
+    }
+
+    initLucide();
+};
+
+window.closeUserProfile = function() {
+    const modal = document.getElementById('userProfileModal');
+    if (modal) modal.classList.remove('active');
 };
 
 // -------------------------------------------------------

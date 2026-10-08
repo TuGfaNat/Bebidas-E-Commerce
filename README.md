@@ -13,21 +13,107 @@
 
 ---
 
-## 📑 Tabla de Contenido Rápido
+---
 
-1. [¿Qué es Burger 24/7?](#-1-qué-es-burger-247)
-2. [📦 Instalación de Dependencias y Preparación (`setup.py` / `install.bat`)](#-2-instalación-integral-y-preparación-del-entorno-installbat--setuppy)
-3. [⚡ Puesta en Marcha: ¿Cómo Levantar el Proyecto con XAMPP?](#-3-puesta-en-marcha-cómo-levantar-el-proyecto-con-xampp)
-   - [Requisitos Previos y Pasos de Instalación](#-pasos-de-instalación-y-conexión-paso-a-paso)
-4. [🔑 Cuentas de Acceso Preconfiguradas (Credenciales Demo)](#-4-cuentas-de-acceso-preconfiguradas-credenciales-demo)
-5. [🧭 URLs Principales del Sistema](#-5-urls-principales-del-sistema)
-6. [🔍 Diagnóstico Automatizado del Sistema (`check_deploy`)](#-6-diagnóstico-automatizado-del-sistema-check_deploy)
-7. [📚 Tesina Académica y Documentación Formal](#-7-tesina-académica-y-documentación-formal)
-   - [Capítulos Disponibles](#capítulos-disponibles-en-docs)
-   - [Compilación a Documento Maestro y Exportación a PDF](#compilación-a-documento-maestro-y-exportación-a-pdf)
-8. [🏗️ Arquitectura de Microservicios y Estándar BMAD](#-8-arquitectura-de-microservicios-y-estándar-bmad)
-9. [📂 Estructura del Repositorio](#-9-estructura-del-repositorio)
-10. [❓ Solución de Problemas Frecuentes (FAQ)](#-10-solución-de-problemas-frecuentes-faq)
+## 🎒 GUÍA RÁPIDA: INSTALACIÓN DESDE CERO (Para Escolares y Principiantes) 🚀
+
+> **¿No sabes nada de programación ni de sistemas? ¡No te preocupes!**  
+> Sigue esta pequeña guía paso a paso explicada con manzanas y tendrás tu propia tienda de hamburguesas funcionando en tu computadora en menos de 5 minutos con un par de clics.
+
+---
+
+### 💡 1. ¿Qué programas usa este proyecto y para qué sirve cada uno? (Explicado fácil)
+
+Imagina que este proyecto es un restaurante de hamburguesas de la vida real:
+
+| Programa / Tecnología | ¿Qué es? | ¿Qué papel cumple en el restaurante? | ¿Dónde se descarga? |
+|---|---|---|---|
+| 🟠 **XAMPP** | Es un paquete "todo en uno" gratuito para Windows. Contiene **Apache**, **PHP** y **MySQL**. | Es el **edificio entero del restaurante**. Convierte tu computadora en un servidor web local. | 👉 [Descargar XAMPP](https://www.apachefriends.org/es/index.html) *(Elige la versión para Windows)* |
+| 🌐 **Apache (Servidor Web)** | Es un programa que viene dentro de XAMPP. | Es el **camarero o mesero**. Toma los pedidos del navegador web y te entrega la página de la tienda. | Viene incluido dentro de XAMPP. |
+| 🐘 **PHP (Lenguaje de Backend)** | Es el lenguaje de programación principal del sistema. | Es el **cocinero maestro**. Prepara las hamburguesas, calcula el carrito, crea las cuentas y revisa los pagos. | Viene incluido dentro de XAMPP. |
+| 🐬 **MySQL / MariaDB (Base de Datos)** | Es el sistema donde se guardan los datos estructurados. | Es el **cuaderno de notas o almacén**. Recuerda qué clientes existen, qué pedidos se hicieron y cuánto stock queda. | Viene incluido dentro de XAMPP. |
+| ⚡ **C++ (Lenguaje de Alto Rendimiento)** | Es un lenguaje de programación ultra veloz utilizado para cálculos críticos. | Es la **calculadora de carreras**. Calcula al milisegundo la distancia del delivery y las tarifas de envío. | Viene **precompilado y listo** en `cpp/motor_core.exe` *(no necesitas instalar nada extra)*. |
+| 🐍 **Python (Opcional)** | Es un lenguaje muy amigable para automatizar tareas. | Es el **secretario**. Ayuda a correr pruebas de laboratorio y a generar la tesina en Word o PDF. | 👉 [Descargar Python](https://www.python.org/downloads/) *(Marcar casilla: Add Python to PATH)* |
+| 🌐 **Navegador Web** | Google Chrome, Edge, Firefox, Brave u Opera. | Es la **mesa del cliente**. Donde tú ves la pantalla bonita, los botones, los mapas y las fotos. | Ya lo tienes en tu computadora. |
+
+---
+
+### ⏱️ 2. Instalación en 3 Pasos Rápidos (¡Solo dar clics!)
+
+#### 🔹 Paso 1: Instalar y Encender XAMPP
+1. Descarga el instalador de **XAMPP para Windows** desde su página oficial: [apachefriends.org](https://www.apachefriends.org/es/index.html).
+2. Ábrelo y dale **"Next" / "Siguiente"** a todo hasta que termine la instalación.
+3. Abre la aplicación **XAMPP Control Panel** desde el menú Inicio de Windows.
+4. Presiona el botón **Start** al lado de **Apache** (se pondrá en verde ✅).
+5. Presiona el botón **Start** al lado de **MySQL** (se pondrá en verde ✅).
+
+#### 🔹 Paso 2: Ejecutar el Instalador Automático (1 Clic)
+1. Abre la carpeta del proyecto en tu computadora.
+2. Haz **doble clic** sobre el archivo:  
+   📁 **`instalar_todo.bat`** *(o `install.bat`)*
+3. Se abrirá una ventana que configurará todo automáticamente:
+   - ✅ Detecta tu XAMPP en tu disco duro.
+   - ✅ Crea las carpetas seguras para fotos, carnets y comprobantes QR.
+   - ✅ Conecta la página web con el servidor Apache.
+   - ✅ Crea la base de datos `burger_shop` con el menú de hamburguesas y usuarios listos en español.
+
+#### 🔹 Paso 3: Encender la Tienda y Usarla
+1. Haz **doble clic** sobre el archivo:  
+   🚀 **`iniciar_sistema.bat`** *(o `start_services.bat`)*
+2. ¡Y listo! Tu navegador web se abrirá automáticamente en:  
+   👉 **`http://localhost/Bebidas-E-Commerce/`**
+
+---
+
+### 🎮 3. ¿Cómo jugar y probar el sistema? (Cuentas Demo)
+
+En la pantalla de inicio, en la esquina inferior izquierda, verás un botón morado que dice **`🔑 Cuentas Demo (Abrir ▴)`**. Haz clic en él para entrar con cualquier personaje sin escribir nada:
+
+* 👤 **Entrar como Carlos Pérez (Cliente que pide comida):**
+  - Mira el menú de hamburguesas, combos y bebidas.
+  - Agrega comida a tu carrito.
+  - Haz clic en **Ir a Pagar**, mueve el pin en el mapa GPS para elegir dónde vives en Sopocachi y confirma tu pedido.
+  - ¡El sistema calculará el costo de envío con el motor de C++ y te mostrará tu **Recibo Digital** listo para imprimir!
+
+* 🛵 **Entrar como Pedro Gómez (Repartidor / Rider con moto y GPS):**
+  - Ve a la pestaña de Repartidor.
+  - Verás el pedido que acabas de hacer con Carlos.
+  - Haz clic en **Aceptar Entrega**. Verás la ruta en el mapa en tiempo real.
+  - Cuando llegues, dale a **Entregar y Cobrar**. Verás cómo se actualiza tu caja de dinero.
+
+* 👑 **Entrar como Admin Central (Dueño del Restaurante):**
+  - Ve al panel de Administrador.
+  - Mira el **Monitoreo GPS en Vivo**: verás a Pedro y a los demás repartidores en el mapa en tiempo real.
+  - Administra el menú: cambia precios, agrega hamburguesas o ajusta el stock.
+  - Aprueba o rechaza carnets de identidad (C.I.) y expedientes de choferes.
+
+---
+
+### ❓ 4. Preguntas Frecuentes de Colegio (Solución de Problemas Frecuentes)
+
+* **¿Qué hago si Apache no inicia y se pone en rojo en XAMPP?**  
+  > Casi siempre es porque tienes abierto **Skype**, **VMware** o un programa que usa el puerto 80. Ciérralos y vuelve a presionar *Start* en XAMPP.
+* **¿Qué hago si MySQL no se pone en verde?**  
+  > Si ya tenías otro MySQL instalado antes, abre el Administrador de Tareas (Ctrl + Shift + Esc), busca `mysqld.exe`, haz clic derecho y dale "Finalizar tarea", luego dale *Start* en XAMPP.
+* **¿Cómo puedo ver la base de datos con mis propios ojos?**  
+  > Con XAMPP encendido, entra en tu navegador a: **[http://localhost/phpmyadmin/](http://localhost/phpmyadmin/)**. A la izquierda haz clic en `burger_shop` y podrás ver todas las tablas (`users`, `productos`, `pedidos`).
+* **¿Cómo imprimo mi recibo de compra?**  
+  > Cuando hagas un pedido, presiona el botón **"Recibo Digital"** y luego el botón verde **"Imprimir"**. Podrás imprimirlo en papel o guardarlo como archivo PDF en tu computadora.
+
+---
+
+## 📑 Tabla de Contenido Completo (Documentación Técnica y Tesina)
+
+1. [🎒 Guía Rápida para Escolares y Principiantes](#-guía-rápida-instalación-desde-cero-para-escolares-y-principiantes-)
+2. [¿Qué es Burger 24/7? (Visión General)](#-1-qué-es-burger-247)
+3. [📦 Instalación Integral (`instalar_todo.bat` / `setup.py`)](#-2-instalación-integral-y-preparación-del-entorno-installbat--setuppy)
+4. [⚡ Puesta en Marcha en Servidor XAMPP](#-3-puesta-en-marcha-cómo-levantar-el-proyecto-con-xampp)
+5. [🔑 Cuentas de Acceso Preconfiguradas (Credenciales Demo)](#-4-cuentas-de-acceso-preconfiguradas-credenciales-demo)
+6. [🧭 URLs Principales del Sistema](#-5-urls-principales-del-sistema)
+7. [🔍 Diagnóstico Automatizado del Sistema (`check_deploy`)](#-6-diagnóstico-automatizado-del-sistema-check_deploy)
+8. [📚 Tesina Académica y Documentación Formal](#-7-tesina-académica-y-documentación-formal)
+9. [🏗️ Arquitectura de Microservicios y Estándar BMAD](#-8-arquitectura-de-microservicios-y-estándar-bmad)
+10. [📂 Estructura del Repositorio](#-9-estructura-del-repositorio)
 
 ---
 

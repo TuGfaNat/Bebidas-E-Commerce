@@ -117,6 +117,7 @@ try {
 
     echo formatResponse("success", [
         "mensaje" => "Usuario registrado correctamente y C.I. guardado.",
+        "user_id" => (int)$newUserId,
         "token" => $token
     ], $newUserId);
 

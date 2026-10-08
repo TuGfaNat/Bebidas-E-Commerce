@@ -32,9 +32,15 @@ try {
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
-    $tipo = $_REQUEST['tipo'] ?? ($_SERVER['REQUEST_METHOD'] === 'GET' ? 'pending_list' : null);
-    $targetId = $_REQUEST['target_id'] ?? null;
-    $nuevoEstado = $_REQUEST['estado'] ?? null; // 'aprobado' o 'rechazado'
+    $jsonRaw = file_get_contents('php://input');
+    $jsonData = !empty($jsonRaw) ? json_decode($jsonRaw, true) : [];
+    if (!is_array($jsonData)) {
+        $jsonData = [];
+    }
+
+    $tipo = $_REQUEST['tipo'] ?? ($jsonData['tipo'] ?? ($_SERVER['REQUEST_METHOD'] === 'GET' ? 'pending_list' : null));
+    $targetId = $_REQUEST['target_id'] ?? ($jsonData['target_id'] ?? null);
+    $nuevoEstado = $_REQUEST['estado'] ?? ($jsonData['estado'] ?? null); // 'aprobado' o 'rechazado'
 
     if ($tipo === 'pending_list') {
         $stmtUsers = $db->query("SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at FROM users WHERE role = 'cliente' AND ci_status = 'pending'");

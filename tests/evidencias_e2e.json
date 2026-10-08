@@ -1,0 +1,765 @@
+{
+  "total": 23,
+  "passed": 23,
+  "failed": 0,
+  "evidences": [
+    {
+      "id": "HP-01",
+      "name": "Login de Administrador (Bcrypt + JWT)",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:02.750179+00:00",
+      "details": "Envelope BMAD conforme a SPEC §4",
+      "request": {
+        "correo": "admin@mail.com"
+      },
+      "response": {
+        "status": "success",
+        "data": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJyb2xlIjoic3VwZXJfdXN1YXJpbyIsImVtYWlsIjoiYWRtaW5AbWFpbC5jb20iLCJub21icmUiOiJBZG1pbiBDZW50cmFsIiwiY2lfc3RhdHVzIjoidmVyaWZpZWQiLCJleHAiOjE3OTE1NzMzMDIsImlhdCI6MTc5MTQ4NjkwMn0.r-62wpq2PrYZRqh_jMIx-1egDTOUBe-5RVfdJlKRNG0",
+          "user": {
+            "id": 3,
+            "nombre": "Admin Central",
+            "role": "super_usuario",
+            "email": "admin@mail.com",
+            "ci_status": "verified"
+          }
+        },
+        "audit": {
+          "user_id": 3,
+          "timestamp": "2026-10-08T21:15:02+02:00"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-02",
+      "name": "Registro de Cliente con C.I. (Multipart PDF)",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:02.957755+00:00",
+      "details": "User ID: 12",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Usuario registrado correctamente y C.I. guardado.",
+          "user_id": 12,
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTIiLCJyb2xlIjoiY2xpZW50ZSIsImVtYWlsIjoiY2xpZW50ZV9lMmVfMTc5MTQ4NjkwMkBtYWlsLmNvbSIsImV4cCI6MTc5MTU3MzMwMiwiaWF0IjoxNzkxNDg2OTAyfQ.fKdI25NcLVmHjkmhB1RN_7kQw-mphosMhPrN0quhH_A"
+        },
+        "audit": {
+          "user_id": "12",
+          "timestamp": "2026-10-08T21:15:02+02:00"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-03",
+      "name": "Aprobación de C.I. por Admin (Audit Log)",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:02.981814+00:00",
+      "details": "C.I. verificado exitosamente",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Estado actualizado exitosamente."
+        },
+        "audit": {
+          "user_id": 3,
+          "timestamp": "2026-10-08T21:15:02+02:00"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-04",
+      "name": "Login de Cliente con C.I. ya verificado",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.186627+00:00",
+      "details": "Token renovado con rol cliente",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMiwicm9sZSI6ImNsaWVudGUiLCJlbWFpbCI6ImNsaWVudGVfZTJlXzE3OTE0ODY5MDJAbWFpbC5jb20iLCJub21icmUiOiJDbGllbnRlIEUyRSAxNzkxNDg2OTAyIiwiY2lfc3RhdHVzIjoidmVyaWZpZWQiLCJleHAiOjE3OTE1NzMzMDMsImlhdCI6MTc5MTQ4NjkwM30.YX5pXyfuoBDnxF6-GHQwZoqDOqKZO41-IsgnCR9YEzs",
+          "user": {
+            "id": 12,
+            "nombre": "Cliente E2E 1791486902",
+            "role": "cliente",
+            "email": "cliente_e2e_1791486902@mail.com",
+            "ci_status": "verified"
+          }
+        },
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:03+02:00"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-05",
+      "name": "Consulta de Catálogo de Productos (BMAD)",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.201789+00:00",
+      "details": "12 productos obtenidos",
+      "request": null,
+      "response": {
+        "items_count": 12
+      }
+    },
+    {
+      "id": "HP-06",
+      "name": "Checkout con Módulo Crítico C++ (Flete & Stock)",
+      "status": "PASS",
+      "http_code": 201,
+      "expected_code": 201,
+      "timestamp": "2026-10-08T19:15:03.395123+00:00",
+      "details": "Pedido #10 creado con C++ (133us)",
+      "request": {
+        "action": "create_order",
+        "latitud": -16.51,
+        "longitud": -68.13,
+        "distancia_km": 2.5,
+        "metodo_pago": "contraentrega",
+        "items": [
+          {
+            "producto_id": 8,
+            "cantidad": 1
+          }
+        ]
+      },
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Pedido creado exitosamente con módulo crítico C++ (cálculos de flete y stock validados).",
+          "pedido_id": 10,
+          "subtotal": 16,
+          "costo_envio": 10,
+          "total": 26,
+          "distancia_km": 2.5,
+          "estado_pago": "contraentrega",
+          "estado_pedido": "pendiente",
+          "items": [
+            {
+              "producto_id": 8,
+              "nombre": "Aros de Cebolla Crocantes",
+              "cantidad": 1,
+              "precio_unitario": 16,
+              "subtotal_linea": 16
+            }
+          ],
+          "cpp_audit": {
+            "user_id": 12,
+            "timestamp": "2026-10-08T19:15:03Z",
+            "action": "CPP_MOTOR_CORE_CALCULATION",
+            "motor": "C++ Native Core (SPEC §2)",
+            "tiempo_computo_us": 133
+          }
+        },
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "CREATE_ORDER",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-07",
+      "name": "Cliente Consulta Pedido Activo",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.448448+00:00",
+      "details": "Pedido activo: #10",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "pedido_activo": {
+            "id": 10,
+            "pedido_id": 10,
+            "cliente_id": 12,
+            "rider_id": null,
+            "estado_pago": "contraentrega",
+            "estado_pedido": "pendiente",
+            "total": 26,
+            "latitud": -16.51,
+            "longitud": -68.13,
+            "qr_comprobante_url": null,
+            "created_at": "2026-10-08 15:15:03",
+            "updated_at": "2026-10-08 15:15:03",
+            "detalles": [
+              {
+                "id": 11,
+                "pedido_id": 10,
+                "producto_id": 8,
+                "cantidad": 1,
+                "precio_unitario": "16.00",
+                "nombre": "Aros de Cebolla Crocantes"
+              }
+            ]
+          },
+          "pedidos": [
+            {
+              "id": 10,
+              "pedido_id": 10,
+              "cliente_id": 12,
+              "rider_id": null,
+              "estado_pago": "contraentrega",
+              "estado_pedido": "pendiente",
+              "total": 26,
+              "latitud": -16.51,
+              "longitud": -68.13,
+              "qr_comprobante_url": null,
+              "created_at": "2026-10-08 15:15:03",
+              "updated_at": "2026-10-08 15:15:03",
+              "detalles": [
+                {
+                  "id": 11,
+                  "pedido_id": 10,
+                  "producto_id": 8,
+                  "cantidad": 1,
+                  "precio_unitario": "16.00",
+                  "nombre": "Aros de Cebolla Crocantes"
+                }
+              ]
+            }
+          ],
+          "total": 1
+        },
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "GET_CLIENT_ORDERS",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-08",
+      "name": "Login de Rider Aprobado (JWT)",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.622374+00:00",
+      "details": "Rider ID: 2",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6InBlZHJvQG1haWwuY29tIiwibm9tYnJlIjoiUGVkcm8gR1x1MjUxY1x1MjUwMm1leiIsImNpX3N0YXR1cyI6InZlcmlmaWVkIiwiZXhwIjoxNzkxNTczMzAzLCJpYXQiOjE3OTE0ODY5MDN9.XK-OFMCo_yEURPjNStJaKYfdKUukk1mGSp0Tc1G8Ooo",
+          "user": {
+            "id": 2,
+            "nombre": "Pedro G├│mez",
+            "role": "rider",
+            "email": "pedro@mail.com",
+            "ci_status": "verified"
+          }
+        },
+        "audit": {
+          "user_id": 2,
+          "timestamp": "2026-10-08T21:15:03+02:00"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-09",
+      "name": "Rider Lista Pedidos Pendientes con Flete Haversine",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.673203+00:00",
+      "details": "Pedidos pendientes en cola: 4",
+      "request": null,
+      "response": {
+        "pendientes": 4
+      }
+    },
+    {
+      "id": "HP-10",
+      "name": "Rider Acepta y Asigna Pedido #10",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.705540+00:00",
+      "details": "Transición: pendiente -> asignado",
+      "request": {
+        "pedido_id": 10
+      },
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Pedido #10 aceptado y asignado exitosamente.",
+          "pedido_id": 10,
+          "estado_pedido": "asignado",
+          "rider_id": 2
+        },
+        "audit": {
+          "user_id": 2,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "ACCEPT_ORDER",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-11",
+      "name": "Rider Despacha Pedido #10 (en_camino)",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.744545+00:00",
+      "details": "Transición: asignado -> en_camino",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Pedido #10 en camino.",
+          "pedido_id": 10,
+          "estado_anterior": "asignado",
+          "estado_pedido": "en_camino",
+          "estado_pago": "contraentrega",
+          "rider_id": 2
+        },
+        "audit": {
+          "user_id": 2,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "ADVANCE_DELIVERY",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-12",
+      "name": "Rider Finaliza Entrega #10 (entregado)",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.777769+00:00",
+      "details": "Transición: en_camino -> entregado",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Pedido #10 entregado con éxito.",
+          "pedido_id": 10,
+          "estado_anterior": "en_camino",
+          "estado_pedido": "entregado",
+          "estado_pago": "pagado_efectivo",
+          "rider_id": 2
+        },
+        "audit": {
+          "user_id": 2,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "ADVANCE_DELIVERY",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-13",
+      "name": "Admin Liquida Caja de Cobranza del Rider",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.854817+00:00",
+      "details": "Pedidos contraentrega conciliados y liquidados",
+      "request": {
+        "rider_id": 2
+      },
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Caja del rider liquidada exitosamente.",
+          "rider_id": 2,
+          "nombre_rider": "Pedro G├│mez",
+          "total_liquidado_bs": 58,
+          "pedidos_liquidados": [
+            8,
+            10
+          ],
+          "cantidad_pedidos": 2
+        },
+        "audit": {
+          "user_id": 3,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "SETTLE_CASH",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-14",
+      "name": "Cliente Crea 2do Pedido para Prueba de Cancelación",
+      "status": "PASS",
+      "http_code": 201,
+      "expected_code": 201,
+      "timestamp": "2026-10-08T19:15:03.971826+00:00",
+      "details": "Pedido #11 creado",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Pedido creado exitosamente con módulo crítico C++ (cálculos de flete y stock validados).",
+          "pedido_id": 11,
+          "subtotal": 16,
+          "costo_envio": 7,
+          "total": 23,
+          "distancia_km": 1,
+          "estado_pago": "contraentrega",
+          "estado_pedido": "pendiente",
+          "items": [
+            {
+              "producto_id": 8,
+              "nombre": "Aros de Cebolla Crocantes",
+              "cantidad": 1,
+              "precio_unitario": 16,
+              "subtotal_linea": 16
+            }
+          ],
+          "cpp_audit": {
+            "user_id": 12,
+            "timestamp": "2026-10-08T19:15:03Z",
+            "action": "CPP_MOTOR_CORE_CALCULATION",
+            "motor": "C++ Native Core (SPEC §2)",
+            "tiempo_computo_us": 73
+          }
+        },
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "CREATE_ORDER",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-15",
+      "name": "Cancelación Legal con Reembolso de Stock #11",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:03.985613+00:00",
+      "details": "Stock restaurado y orden cancelada",
+      "request": {
+        "pedido_id": 11
+      },
+      "response": {
+        "status": "success",
+        "data": {
+          "mensaje": "Pedido #11 cancelado exitosamente y stock reembolsado.",
+          "pedido_id": 11,
+          "estado_anterior": "pendiente",
+          "nuevo_estado": "cancelado",
+          "reembolsos": [
+            {
+              "producto_id": 8,
+              "nombre": "Aros de Cebolla Crocantes",
+              "cantidad_reembolsada": 1,
+              "stock_restaurado": 79
+            }
+          ]
+        },
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:03+02:00",
+          "action": "CANCEL_ORDER",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "HP-16",
+      "name": "Admin Consulta Reporte Financiero y Auditoría",
+      "status": "PASS",
+      "http_code": 200,
+      "expected_code": 200,
+      "timestamp": "2026-10-08T19:15:04.013479+00:00",
+      "details": "Totales consolidados y métricas operativas",
+      "request": null,
+      "response": {
+        "status": "success",
+        "data": {
+          "resumen": {
+            "total_ventas_bs": 212,
+            "total_pedidos": 11,
+            "pedidos_entregados": 5,
+            "pedidos_cancelados": 3,
+            "pedidos_en_camino": 0,
+            "pedidos_pendientes": 3
+          },
+          "metodos_pago": [
+            {
+              "estado_pago": "liquidado",
+              "cantidad_pedidos": 4,
+              "monto_total": "154.00"
+            },
+            {
+              "estado_pago": "contraentrega",
+              "cantidad_pedidos": 3,
+              "monto_total": "123.14"
+            },
+            {
+              "estado_pago": "pagado_qr",
+              "cantidad_pedidos": 1,
+              "monto_total": "58.00"
+            }
+          ],
+          "ventas_por_categoria": [
+            {
+              "categoria": "Hamburguesas",
+              "unidades_vendidas": "8",
+              "recaudacion": "186.00"
+            },
+            {
+              "categoria": "Combos",
+              "unidades_vendidas": "1",
+              "recaudacion": "44.00"
+            },
+            {
+              "categoria": "Acompa├▒amientos",
+              "unidades_vendidas": "1",
+              "recaudacion": "16.00"
+            },
+            {
+              "categoria": "Bebidas",
+              "unidades_vendidas": "2",
+              "recaudacion": "12.00"
+            }
+          ],
+          "ranking_riders": [
+            {
+              "rider_id": 2,
+              "nombre": "Pedro G├│mez",
+              "email": "pedro@mail.com",
+              "entregas_exitosas": 5,
+              "recaudacion_total": "212.00"
+            }
+          ],
+          "top_productos": [
+            {
+              "id": 1,
+              "nombre": "Hamburguesa Cl├ísica Simple",
+              "categoria": "Hamburguesas",
+              "marca": "Burger 24/7",
+              "total_unidades": "7",
+              "total_recaudado": "154.00"
+            },
+            {
+              "id": 10,
+              "nombre": "Coca-Cola Original 500ml",
+              "categoria": "Bebidas",
+              "marca": "Coca-Cola",
+              "total_unidades": "2",
+              "total_recaudado": "12.00"
+            },
+            {
+              "id": 2,
+              "nombre": "Doble Queso Smash Burger",
+              "categoria": "Hamburguesas",
+              "marca": "Gourmet",
+              "total_unidades": "1",
+              "total_recaudado": "32.00"
+            },
+            {
+              "id": 6,
+              "nombre": "Combo Doble Smash + Papas Grandes",
+              "categoria": "Combos",
+              "marca": "Combos",
+              "total_unidades": "1",
+              "total_recaudado": "44.00"
+            },
+            {
+              "id": 8,
+              "nombre": "Aros de Cebolla Crocantes",
+              "categoria": "Acompa├▒amientos",
+              "marca": "Sides",
+              "total_unidades": "1",
+              "total_recaudado": "16.00"
+            }
+          ]
+        },
+        "audit": {
+          "user_id": 3,
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "GENERATE_REPORT",
+          "ip_address": "::1"
+        },
+        "error_details": null
+      }
+    },
+    {
+      "id": "CN-01",
+      "name": "Envío Prohibido de Token por URL/Query String",
+      "status": "PASS",
+      "http_code": 401,
+      "expected_code": 401,
+      "timestamp": "2026-10-08T19:15:04.019504+00:00",
+      "details": "Rechazado con 401 y acción AUTH_STRICT",
+      "request": null,
+      "response": {
+        "status": "error",
+        "data": null,
+        "audit": {
+          "user_id": "ANONYMOUS",
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "AUTH_STRICT",
+          "ip_address": "::1"
+        },
+        "error_details": "Acceso denegado. El envío de tokens por URL está prohibido."
+      }
+    },
+    {
+      "id": "CN-02",
+      "name": "Cliente con C.I. Pendiente Intenta Checkout",
+      "status": "PASS",
+      "http_code": 403,
+      "expected_code": 403,
+      "timestamp": "2026-10-08T19:15:04.139522+00:00",
+      "details": "Rechazado con 403 (CI_UNVERIFIED)",
+      "request": null,
+      "response": {
+        "status": "error",
+        "data": null,
+        "audit": {
+          "user_id": 13,
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "CI_UNVERIFIED",
+          "ip_address": "::1"
+        },
+        "error_details": "Debes tener tu C.I. verificado para realizar transacciones de compra."
+      }
+    },
+    {
+      "id": "CN-03",
+      "name": "Sobreventa / Stock Insuficiente Detectado por C++",
+      "status": "PASS",
+      "http_code": 400,
+      "expected_code": 400,
+      "timestamp": "2026-10-08T19:15:04.213269+00:00",
+      "details": "Rechazado con 400 (CPP_VALIDATION_FAILED) y ROLLBACK",
+      "request": null,
+      "response": {
+        "status": "error",
+        "data": {
+          "valido": false,
+          "producto_id": 8,
+          "solicitado": 999999,
+          "stock_actual": 79
+        },
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "CPP_VALIDATION_FAILED",
+          "ip_address": "::1"
+        },
+        "error_details": "Stock insuficiente para 'Aros de Cebolla Crocantes' (ID #8). Solicitado: 999999, Disponible en cocina: 79."
+      }
+    },
+    {
+      "id": "CN-04",
+      "name": "Cancelación Ilegal de Orden Entregada #10",
+      "status": "PASS",
+      "http_code": 400,
+      "expected_code": 400,
+      "timestamp": "2026-10-08T19:15:04.230458+00:00",
+      "details": "Rechazado con 400 (ORDER_NOT_CANCELLABLE)",
+      "request": null,
+      "response": {
+        "status": "error",
+        "data": null,
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "INVALID_ORDER_STATE",
+          "ip_address": "::1"
+        },
+        "error_details": "Cancelación no permitida: el pedido está en estado 'entregado'. Solo se puede cancelar y reembolsar stock en pedidos 'pendiente' o 'asignado'."
+      }
+    },
+    {
+      "id": "CN-05",
+      "name": "Usuario No Autorizado / No Rider Accede a Asignaciones",
+      "status": "PASS",
+      "http_code": 403,
+      "expected_code": 403,
+      "timestamp": "2026-10-08T19:15:04.345769+00:00",
+      "details": "Rechazado con 403 Forbidden (requireAuth)",
+      "request": null,
+      "response": {
+        "status": "error",
+        "data": null,
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "FORBIDDEN",
+          "ip_address": "::1"
+        },
+        "error_details": "Permiso denegado. El rol 'cliente' no cuenta con privilegios suficientes para realizar esta operación."
+      }
+    },
+    {
+      "id": "CN-06",
+      "name": "Checkout con Carrito Vacío (items: [])",
+      "status": "PASS",
+      "http_code": 400,
+      "expected_code": 400,
+      "timestamp": "2026-10-08T19:15:04.359491+00:00",
+      "details": "Rechazado con 400 (EMPTY_CART)",
+      "request": null,
+      "response": {
+        "status": "error",
+        "data": null,
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "EMPTY_CART",
+          "ip_address": "::1"
+        },
+        "error_details": "El carrito de compra no contiene productos (items vacíos)."
+      }
+    },
+    {
+      "id": "CN-07",
+      "name": "Cliente Intenta Liquidar Caja de Rider (Sin Permiso Admin)",
+      "status": "PASS",
+      "http_code": 403,
+      "expected_code": 403,
+      "timestamp": "2026-10-08T19:15:04.386818+00:00",
+      "details": "Rechazado con 403 Forbidden (requireAuth)",
+      "request": null,
+      "response": {
+        "status": "error",
+        "data": null,
+        "audit": {
+          "user_id": 12,
+          "timestamp": "2026-10-08T21:15:04+02:00",
+          "action": "FORBIDDEN",
+          "ip_address": "::1"
+        },
+        "error_details": "Permiso denegado. El rol 'cliente' no cuenta con privilegios suficientes para realizar esta operación."
+      }
+    }
+  ]
+}

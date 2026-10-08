@@ -7,21 +7,16 @@ require_once __DIR__ . '/jwt.php';
  * Aplica políticas estrictas de CORS restringidas a orígenes permitidos.
  */
 function applyCorsMiddleware() {
+    // Asegurar que las variables de entorno de .env estén cargadas
+    if (class_exists('DatabaseConnection')) {
+        DatabaseConnection::loadEnv();
+    }
+
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-    // Cargar orígenes permitidos desde el entorno o valores seguros por defecto
+    // Cargar orígenes permitidos estrictamente desde ALLOWED_ORIGINS (.env)
     $allowedEnv = getenv('ALLOWED_ORIGINS') ?: ($_ENV['ALLOWED_ORIGINS'] ?? '');
     $allowedOrigins = array_filter(array_map('trim', explode(',', $allowedEnv)));
-    if (empty($allowedOrigins)) {
-        $allowedOrigins = [
-            'http://localhost',
-            'http://localhost:8000',
-            'http://localhost:3000',
-            'http://127.0.0.1',
-            'http://127.0.0.1:8000',
-            'http://127.0.0.1:3000'
-        ];
-    }
 
     if ($origin && in_array($origin, $allowedOrigins, true)) {
         header("Access-Control-Allow-Origin: $origin");
@@ -29,12 +24,25 @@ function applyCorsMiddleware() {
         header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
         header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
     } elseif (!$origin) {
-        // Solicitudes no-cross-origin o cliente local
-        header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+        // Solicitudes same-origin directas en Apache o llamadas sin cabecera Origin
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
         header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+    } else {
+        // Origen no autorizado en ALLOWED_ORIGINS de .env
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            http_response_code(403);
+            header("Content-Type: application/json; charset=utf-8");
+            echo json_encode([
+                "status" => "error",
+                "data" => null,
+                "audit" => ["user_id" => "SYSTEM", "timestamp" => date("c")],
+                "error_details" => "Acceso CORS denegado: El origen '$origin' no está autorizado en ALLOWED_ORIGINS (.env)."
+            ]);
+            exit(0);
+        }
     }
 
-    // Respuesta inmediata a peticiones preflight OPTIONS
+    // Respuesta inmediata a peticiones preflight OPTIONS autorizadas
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
         http_response_code(204);
         exit(0);

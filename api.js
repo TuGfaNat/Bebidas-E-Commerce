@@ -10,10 +10,12 @@ function getApiBaseUrl() {
     if (typeof window !== 'undefined' && window.config && window.config.apiUrl) {
         return window.config.apiUrl;
     }
-    const origin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:'))
-        ? `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, '')}/microservices`
-        : 'http://localhost/Bebidas-E-Commerce/microservices';
-    return origin;
+    if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
+        const basePath = window.location.pathname ? window.location.pathname.replace(/\/[^\/]*$/, '') : '';
+        const url = `${window.location.origin}${basePath}/microservices`;
+        return url.replace(/([^:]\/)\/+/g, '$1');
+    }
+    return 'http://localhost/Bebidas-E-Commerce/microservices';
 }
 
 /**

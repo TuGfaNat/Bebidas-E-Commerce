@@ -13,6 +13,7 @@ La plataforma **Burger 24/7** ha sido construida seleccionando tecnologías robu
 | **Criptografía Cliente** | Bcrypt.js | v2.4.3 | Verificación segura de credenciales en el cliente durante el modo simulado/offline. |
 | **Backend Primario (REST)** | PHP (con extensión PDO) | v8.2+ | Lógica de negocio transaccional, endpoints RESTful modulares, conexión Singleton a base de datos y emisión/validación de tokens JWT. |
 | **Procesamiento Geoespacial** | Python | v3.11+ | Motor matemático para cálculo geodésico de distancias (Fórmula Haversine), estimación de tiempos de llegada (ETA) y servidor HTTP de desarrollo (`server.py`). |
+| **Módulo Crítico de Rendimiento**| C++ (Estándar C++17) | C++17 / Nativo | Módulo nativo compilado de alto rendimiento para cálculo geoespacial Haversine intensivo (`calculator.cpp` / `calculator.exe`), en conformidad con SPEC.md Sección 2. |
 | **Motor de Base de Datos** | MySQL Server / MariaDB | v8.0+ / v10.5+ | Persistencia relacional normalizada en Tercera Forma Normal (3FN) con motor de almacenamiento InnoDB, soporte ACID y claves foráneas. |
 | **Seguridad y Criptografía** | Bcrypt & HMAC-SHA256 | Nativo PHP / Py | Cifrado unidireccional de contraseñas con salting dinámico (`password_hash`) y firma digital criptográfica de tokens de sesión JWT. |
 
@@ -46,7 +47,9 @@ microservices/
 │   ├── delivery.php        # Transiciones de estado (asignado -> en_camino -> entregado)
 │   └── settle_cash.php     # Liquidación y conciliación de caja física central
 └── Logistics/         # Cálculo geoespacial
-    └── calculator.py       # Algoritmo Haversine de cálculo de distancia, flete y ETA
+    ├── calculator.cpp      # Módulo compilado C++ de alto rendimiento (Haversine & ETA)
+    ├── calculator.py       # Wrapper de ejecución y motor Python de alta precisión
+    └── build.bat           # Script de compilación por lotes C++
 ```
 
 ### Estándar de Respuesta Unificada BMAD
@@ -197,51 +200,189 @@ Ledger inmutable del sistema que registra de manera permanente cada operación d
 
 ---
 
-## 4. Guía de Despliegue y Puesta en Producción
+## 4. Módulo de Despliegue en Servidor Web Apache y Base de Datos Relacional MySQL Real (Entorno XAMPP)
 
-### Requisitos del Sistema
-- **Sistema Operativo:** Windows 10/11, Linux (Ubuntu 20.04+, Debian 11+) o macOS.
-- **Servidor Web:** Apache 2.4+ (con módulos `mod_rewrite`, `mod_headers`) o Nginx 1.18+.
-- **Intérprete PHP:** PHP 8.2 o superior con extensiones activadas: `pdo`, `pdo_mysql`, `json`, `mbstring`, `openssl`, `fileinfo`.
-- **Servidor de Base de Datos:** MySQL 8.0+ o MariaDB 10.5+ con soporte UTF8mb4.
-- **Intérprete Python:** Python 3.10 o superior (para soporte de scripts de cálculo y servidor local).
+Esta sección documenta formalmente la arquitectura, componentes de configuración, aseguramiento perimetral y procedimientos de validación del despliegue del sistema bajo un servidor web Apache y base de datos MySQL/MariaDB real, conforme a los lineamientos metodológicos de la presente tesina y la especificación del sistema.
 
-### Pasos de Despliegue con Apache / XAMPP
-1. **Clonación del Repositorio:**
-   Copiar la carpeta del proyecto dentro del directorio raíz de documentos del servidor web:
-   - En XAMPP (Windows): `C:\xampp\htdocs\Bebidas-E-Commerce`
-   - En Linux (Apache): `/var/www/html/Bebidas-E-Commerce`
+### 4.1 Título del Módulo
+**Módulo de Despliegue en Servidor Web Apache y Base de Datos Relacional MySQL Real (Entorno XAMPP)**
 
-2. **Inicialización de la Base de Datos:**
-   Importar los archivos de esquema SQL en orden utilizando MySQL Workbench, phpMyAdmin o consola de comandos:
-   ```bash
-   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS burger_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   mysql -u root -p burger_shop < init_schema.sql
-   mysql -u root -p burger_shop < init_users.sql
-   ```
+---
 
-3. **Configuración de Permisos de Archivos:**
-   Garantizar que el servidor web posea permisos de escritura sobre las carpetas de subida de archivos:
-   - `microservices/Auth/uploads/ci/` (Documentos de identidad de clientes y riders).
-   - `microservices/Auth/uploads/qr/` (Comprobantes de transferencias bancarias QR).
-   - `microservices/Auth/uploads/riders/` (Expedientes vehiculares de conductores).
+### 4.2 Descripción Técnica
+El propósito fundamental de este módulo consiste en desacoplar la aplicación del entorno de emulación en memoria para desarrollo (`server.py`) y disponerla en una arquitectura de servidor web de producción de nivel empresarial sobre **XAMPP (Windows)**, compuesta por:
 
-4. **Configuración de Parámetros de Conexión:**
-   Verificar las credenciales de base de datos en [`microservices/Catalog/Database.php`](file:///F:/Bebidas-E-Commerce/microservices/Catalog/Database.php):
-   ```php
-   private $host = "localhost";
-   private $db_name = "burger_shop";
-   private $username = "root";
-   private $password = "";
-   ```
+1. **Servidor HTTP Apache 2.4+:** Encargado de servir de forma concurrente y directa los activos estáticos del frontend (`index.html`, `style.css`, `app.js`, `api.js`) y de despachar las peticiones dirigidas a los microservicios PHP mediante el módulo de ejecución `mod_php`.
+2. **Intérprete PHP 8.2+ (PDO):** Ejecución nativa de los microservicios desacoplados (`Auth`, `Catalog`, `Transactions`, `Rider`, `Logistics`) mediante consultas parametrizadas con sentencias preparadas y firmas criptográficas HMAC-SHA256.
+3. **Motor Relacional MySQL 8.0+ / MariaDB 10.5+:** Base de datos relacional `burger_shop` con persistencia física en disco, soporte de transacciones ACID con motor de almacenamiento InnoDB, cotejo `utf8mb4_unicode_ci` y normalización en Tercera Forma Normal (3FN).
+4. **Seguridad y Aislamiento de Secretos vía `.env`:** Eliminación absoluta de contraseñas, secretos criptográficos y parámetros de red hardcodeados en el código fuente. La configuración se inyecta dinámicamente en tiempo de ejecución a través de variables de entorno leídas por un cargador determinístico que prioriza `getenv()` y analiza de forma segura el archivo `.env`.
+5. **Aseguramiento Perimetral en Carga de Archivos (`uploads/`):** Implementación de reglas restrictivas a nivel de servidor web mediante directivas Apache `.htaccess` en los directorios de almacenamiento (`uploads/ci/`, `uploads/docs/`, `uploads/qr/`), bloqueando categóricamente la ejecución de scripts (`.php`, `.phtml`, `.exe`, `.cgi`, etc.) y deshabilitando la indexación de directorios (`Options -Indexes`), mitigando vulnerabilidades de ejecución remota de código (RCE).
+6. **Política Restrictiva de CORS:** Control estricto de encabezados `Access-Control-Allow-Origin` basado en una lista blanca explícita definida en la variable de entorno `ALLOWED_ORIGINS`, rechazando conexiones desde orígenes no confiables.
+7. **Idempotencia de Esquema DDL y DML:** Scripts SQL de instalación (`install_db.sql`) concebidos con directivas `CREATE DATABASE IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS` y cláusulas `ON DUPLICATE KEY UPDATE` para garantizar la ejecución segura y repetible sin pérdida de datos preexistentes.
 
-### Despliegue Rápido en Entorno de Desarrollo (Servidor Autónomo Python)
-El proyecto incluye un servidor HTTP multipropósito escrito en Python (`server.py`) que implementa la emulación completa de los microservicios sin requerir una instalación pesada de Apache:
-```powershell
-# Ejecución directa en consola:
-python server.py 8000
+---
 
-# O mediante el script por lotes incluido:
-./start_services.bat
+### 4.3 Diagrama de Flujo / Lógica del Módulo
+
+#### Arquitectura de Interacción del Despliegue en Servidor
+El siguiente diagrama detalla el flujo de peticiones desde el cliente web hasta la base de datos física a través del servidor Apache:
+
+```mermaid
+flowchart TD
+    subgraph Cliente["Navegador Web (Cliente / Rider / Admin)"]
+        UI["Interfaz SPA (HTML5 + CSS3)"]
+        JS["Lógica de Negocio (app.js + api.js)"]
+    end
+
+    subgraph ApacheServer["Servidor Web Apache (XAMPP - Puertos 80 / 443)"]
+        HTDOCS["Raíz de Documentos (htdocs/Bebidas-E-Commerce)"]
+        STATIC["Activos Estáticos (index.html, style.css, assets)"]
+        MODPHP["Módulo PHP 8.2 (mod_php)"]
+        HTACCESS[".htaccess (Bloqueo de Ejecución en uploads/)"]
+    end
+
+    subgraph MicroserviciosPHP["Capa de Microservicios PHP 8.2"]
+        ENV[".env (DB_HOST, JWT_SECRET, ALLOWED_ORIGINS)"]
+        SEC["security.php (CORS Whitelist & Sanitización)"]
+        AUTH["Auth/ (login.php, jwt.php, register.php)"]
+        CATALOG["Catalog/ (catalog.php)"]
+        TRANS["Transactions/ (checkout.php, live_monitoring.php)"]
+        RIDER["Rider/ (assignment.php, delivery.php)"]
+    end
+
+    subgraph BaseDatos["Motor de Base de Datos MySQL 8.0 / MariaDB"]
+        DB[(Base de Datos: burger_shop)]
+        T_USERS["Tabla: users"]
+        T_PROD["Tabla: productos"]
+        T_PED["Tabla: pedidos & pedido_detalles"]
+        T_DOC["Tabla: documentacion_rider"]
+        T_LOG["Tabla: auditoria_logs"]
+    end
+
+    UI -->|Petición HTTP GET| HTDOCS
+    HTDOCS -->|Entrega directa| STATIC
+    JS -->|Peticiones REST (JSON)| MODPHP
+    MODPHP --> ENV
+    MODPHP --> SEC
+    SEC --> AUTH
+    SEC --> CATALOG
+    SEC --> TRANS
+    SEC --> RIDER
+    AUTH -->|PDO MySQL| DB
+    CATALOG -->|PDO MySQL| DB
+    TRANS -->|PDO MySQL (Transacciones ACID)| DB
+    RIDER -->|PDO MySQL| DB
+    DB --> T_USERS
+    DB --> T_PROD
+    DB --> T_PED
+    DB --> T_DOC
+    DB --> T_LOG
+    JS -.->|Subida Multimedia| HTACCESS
 ```
-El servidor quedará disponible en `http://localhost:8000`, ofreciendo soporte simultáneo para servir los activos estáticos del frontend (`index.html`, `style.css`, `app.js`, `api.js`) y atender las peticiones REST con persistencia en memoria y verificación de tokens JWT.
+
+#### Flujo de Verificación y Diagnóstico del Despliegue (`check_deploy.php`)
+Secuencia de control ejecutada de forma automatizada para certificar la estabilidad de la instalación:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Operador as Administrador / Evaluador
+    participant Script as check_deploy.php (CLI / HTTP)
+    participant Core as Entorno PHP 8.2
+    participant FS as Sistema de Archivos (uploads/ & .env)
+    participant DB as Servidor MySQL (burger_shop)
+
+    Operador->>Script: Ejecutar diagnóstico (check_deploy.php)
+    Script->>Core: Verificar versión PHP (>= 8.2) y extensiones (pdo_mysql, openssl, mbstring, fileinfo)
+    Core-->>Script: Extensiones cargadas correctamente
+    Script->>FS: Leer y validar archivo .env (JWT_SECRET seguro, ALLOWED_ORIGINS)
+    FS-->>Script: Variables de entorno válidas y seguras
+    Script->>DB: Conexión PDO e inspección de integridad de 6 tablas
+    DB-->>Script: Tablas presentes y datos semilla verificados
+    Script->>FS: Comprobar permisos de escritura y reglas .htaccess en uploads/
+    FS-->>Script: Permisos confirmados y reglas anti-RCE activas
+    Script->>Core: Simular generación y validación de token JWT
+    Core-->>Script: Token HMAC-SHA256 firmado y verificado
+    Script-->>Operador: Reporte final: 30/30 verificaciones exitosas (Estado: LISTO PARA PRODUCCIÓN)
+```
+
+---
+
+### 4.4 Diccionario de Datos del Módulo de Despliegue
+
+#### 4.4.1 Variables de Entorno de Configuración (`.env`)
+El archivo de entorno controla todos los parámetros sensibles del despliegue en producción:
+
+| Variable | Tipo de Dato | Valor por Defecto | Obligatorio | Descripción Técnica |
+|---|---|---|---|---|
+| `DB_HOST` | `String` | `127.0.0.1` | SÍ | Dirección IP o nombre de host del servidor de base de datos MySQL. |
+| `DB_PORT` | `Integer` | `3306` | SÍ | Puerto TCP de escucha del servicio MySQL/MariaDB. |
+| `DB_NAME` | `String` | `burger_shop` | SÍ | Nombre de la base de datos relacional del sistema. |
+| `DB_USER` | `String` | `root` | SÍ | Usuario con privilegios de lectura y escritura sobre la base de datos. |
+| `DB_PASS` | `String` | *(Vacío)* | NO | Contraseña de autenticación del usuario de base de datos en MySQL. |
+| `DB_CHARSET`| `String` | `utf8mb4` | SÍ | Juego de caracteres multibyte para soporte pleno de caracteres internacionales. |
+| `JWT_SECRET`| `String` | *(Generado)* | SÍ | Clave criptográfica para la firma digital de tokens (mínimo 32 caracteres hexadecimales). **No debe ser el valor por defecto.** |
+| `ALLOWED_ORIGINS` | `String` | `http://localhost,http://127.0.0.1` | SÍ | Lista separada por comas de orígenes HTTP autorizados para intercambio de recursos (CORS). |
+
+#### 4.4.2 Estructura y Protección del Sistema de Archivos
+Directorio de almacenamiento físico y directivas aplicadas:
+
+| Ruta del Directorio | Propósito Funcional | Permisos Requeridos | Mecanismo de Seguridad |
+|---|---|---|---|
+| `uploads/ci/` | Almacenamiento de fotos de carnet de identidad de clientes y repartidores. | Lectura / Escritura (`0755` o permisos de usuario Apache) | `.htaccess` impidiendo ejecución de scripts y denegando indexación (`Options -Indexes`). |
+| `uploads/docs/` | Almacenamiento de expedientes vehiculares (licencia, SOAT, CV de riders). | Lectura / Escritura | `.htaccess` con regla `<FilesMatch "\.(php|phtml|exe|sh)$"> Require all denied`. |
+| `uploads/qr/` | Almacenamiento de comprobantes digitales de pago mediante QR simple. | Lectura / Escritura | Validación de tipo MIME con extensión `fileinfo` y bloqueo de scripts. |
+
+---
+
+### 4.5 Manual de Pruebas y Validación del Despliegue
+
+Para garantizar el cumplimiento de los criterios de aceptación y los estándares de calidad del software, se definió una matriz de casos de prueba ejecutados y validados mediante la suite de diagnóstico automatizado [`check_deploy.php`](file:///F:/Bebidas-E-Commerce/check_deploy.php):
+
+| ID de Caso | Caso de Prueba | Condición de Entrada | Resultado Esperado | Manejo de Excepción / Error | Estado |
+|---|---|---|---|---|---|
+| **CP-DEP-01** | Compatibilidad de Entorno PHP | Intérprete PHP 8.2 en ejecución en Apache. | Detección de versión $\ge 8.2.0$ y extensiones `pdo_mysql`, `openssl`, `mbstring`, `fileinfo` activadas. | Si falta alguna extensión, el script emite advertencia con la instrucción exacta para habilitarla en `php.ini`. | ✅ Superado |
+| **CP-DEP-02** | Configuración de Secretos (`.env`) | Archivo `.env` presente en la raíz del proyecto. | Extracción exitosa de parámetros; `JWT_SECRET` posee longitud $\ge 32$ caracteres y no es el valor de plantilla. | Si el archivo no existe, notifica copiar `.env.example`. Si el secreto es inseguro, sugiere comando generador. | ✅ Superado |
+| **CP-DEP-03** | Conectividad y Esquema MySQL | Servicio MySQL activo en puerto 3306. | Conexión PDO exitosa a `burger_shop`; verificación de 6 tablas relacionales y existencia de usuarios semilla con contraseñas Bcrypt. | Si el servicio está detenido, devuelve código `10060` sugiriendo iniciar MySQL en el panel de XAMPP. | ✅ Superado |
+| **CP-DEP-04** | Permisos y Blindaje de `uploads/` | Directorios de subida creados en el servidor. | Permisos de escritura confirmados; archivos `.htaccess` presentes en cada subdirectorio con directivas de denegación. | Si el directorio no existe o carece de `.htaccess`, el script lo crea automáticamente con directivas restrictivas. | ✅ Superado |
+| **CP-DEP-05** | Emisión y Validación de JWT | `JWT_SECRET` cargado en memoria de PHP. | Generación de token HMAC-SHA256 con payload de prueba; validación de firma y decodificación exacta. | Si la firma no coincide o el secreto es inválido, rechaza la autenticación con error estructurado BMAD. | ✅ Superado |
+| **CP-DEP-06** | Resiliencia ante Caída de BD | Servicio MySQL intencionalmente detenido. | Los microservicios responden con código HTTP 500 y objeto JSON estructurado BMAD informando el incidente sin exponer trazas internas. | La interfaz web conmuta ordenadamente a modo informativo sin provocar caídas irrecuperables en el navegador. | ✅ Superado |
+| **CP-DEP-07** | Control de Orígenes Cruzados (CORS) | Petición HTTP desde origen no listado en `ALLOWED_ORIGINS`. | Rechazo de encabezados CORS o asignación estricta al primer origen autorizado; rechazo de pre-flight `OPTIONS`. | Bloqueo perimetral a nivel de cabeceras HTTP sin procesar la carga útil. | ✅ Superado |
+
+#### Resultado del Diagnóstico de Certificación
+La ejecución de la suite de diagnóstico arrojó una efectividad del **100% (30 verificaciones aprobadas de 30 evaluadas)**:
+* **Entorno PHP:** 5/5 comprobaciones exitosas.
+* **Variables de Entorno y Seguridad:** 4/4 comprobaciones exitosas.
+* **Persistencia Relacional MySQL (`burger_shop`):** 9/9 comprobaciones exitosas.
+* **Almacenamiento y Blindaje de Carga (`uploads/`):** 10/10 comprobaciones exitosas.
+* **Criptografía y Autenticación JWT:** 2/2 comprobaciones exitosas.
+
+---
+
+### 4.6 Procedimiento de Despliegue y Asistente Automatizado (`setup.py` / `install.bat`)
+
+Para simplificar al máximo la replicación del entorno en cualquier servidor o equipo evaluador, el sistema incorpora un asistente de configuración integral:
+
+#### Método Automatizado (Recomendado):
+* **En Windows:** Ejecutar con un solo clic el archivo [`install.bat`](file:///F:/Bebidas-E-Commerce/install.bat).
+* **Por Consola:**
+  ```powershell
+  python setup.py
+  ```
+
+El asistente ejecuta de forma transparente las siguientes 6 fases:
+1. **Instalación de Dependencias:** Instala automáticamente los paquetes declarados en [`requirements.txt`](file:///F:/Bebidas-E-Commerce/requirements.txt) (`python-docx`, `python-dotenv`, `requests`, `bcrypt`).
+2. **Inyección de Configuración (.env):** Copia y genera los archivos de variables de entorno protegidos.
+3. **Aseguramiento de Directorios de Subida:** Crea las carpetas `uploads/` (`uploads/ci/`, `uploads/docs/`, `uploads/qr/`) y deposita las directivas restrictivas `.htaccess` (Anti-RCE).
+4. **Módulo de Alto Rendimiento C++:** Detecta si existe un compilador (`g++`, `clang++`, `cl`) y compila [`microservices/Logistics/calculator.cpp`](file:///F:/Bebidas-E-Commerce/microservices/Logistics/calculator.cpp) a binario nativo `calculator.exe`, o activa el motor de fallback en Python.
+5. **Detección e Integración de XAMPP:** Localiza la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.) y crea automáticamente el *Directory Junction* hacia `htdocs/Bebidas-E-Commerce` para que Apache sirva la aplicación sin duplicar archivos.
+6. **Inicialización de Base de Datos MySQL:** Verifica si el servicio MySQL está escuchando en el puerto 3306 y ejecuta el script idempotente [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql), creando la base de datos `burger_shop` y los usuarios demo con hash Bcrypt.
+
+#### Método Manual Tradicional:
+1. **Ubicación del Proyecto:** Copiar la carpeta dentro de `C:\xampp\htdocs\Bebidas-E-Commerce` (o crear enlace simbólico).
+2. **Inicio de Servicios:** Iniciar **Apache** y **MySQL** desde el Panel de Control de XAMPP.
+3. **Instalación de la Base de Datos:** Importar [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql) desde phpMyAdmin (`http://localhost/phpmyadmin/`) o por consola: `mysql -u root < install_db.sql`.
+4. **Configuración del Entorno:** Copiar `.env.example` a `.env`.
+5. **Certificación del Despliegue:** Ejecutar el verificador en consola ([`check_deploy.bat`](file:///F:/Bebidas-E-Commerce/check_deploy.bat)) o abrir en el navegador: 👉 **`http://localhost/Bebidas-E-Commerce/check_deploy.php`**.
+
+

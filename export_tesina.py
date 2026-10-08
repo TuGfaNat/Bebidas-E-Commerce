@@ -24,7 +24,8 @@ DOC_ORDER = [
     ("Capítulo 4.1: Módulo Crítico de Rendimiento en C++ (SPEC §2)", "modulo_critico_cpp.md"),
     ("Capítulo 5: Manual de Integración Frontend-Backend y Catálogo de APIs", "tesina_integration.md"),
     ("Capítulo 6: Interfaz de Usuario y Componentes Frontend", "tesina_frontend.md"),
-    ("Capítulo 7: Manual de Usuario, Pruebas Operativas y Conclusiones", "tesina_manual_conclusion.md")
+    ("Capítulo 7: Manual de Usuario, Pruebas Operativas y Conclusiones", "tesina_manual_conclusion.md"),
+    ("Capítulo 7.1: Manual de Pruebas E2E en Entorno XAMPP (SPEC §5)", "tesina_manual_pruebas_e2e.md")
 ]
 
 def compile_markdown():

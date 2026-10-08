@@ -345,7 +345,11 @@ Burger-E-Commerce/
 │   ├── tesina_transactions.md   # Cap 4: Transacciones ACID y Máquinas de Estados
 │   ├── tesina_integration.md    # Cap 5: Catálogo de APIs REST y BMAD
 │   ├── tesina_frontend.md       # Cap 6: Interfaz de Usuario y Mapas Leaflet.js
-│   └── tesina_manual_conclusion.md # Cap 7: Manual de Usuario y Pruebas
+│   ├── tesina_manual_conclusion.md # Cap 7: Manual de Usuario y Pruebas
+│   └── tesina_manual_pruebas_e2e.md # Cap 7.1: Manual de Pruebas E2E en XAMPP (SPEC §5)
+├── tests/                       # Suite automatizada de pruebas de integración E2E
+│   ├── test_e2e_suite.py        # Arnés de pruebas E2E contra Apache y MySQL real (23/23 PASS)
+│   └── evidencias_e2e.json      # Evidencias estructuradas en formato JSON para la tesina
 ├── cpp/                         # Módulo Crítico de Rendimiento en C++ (SPEC §2)
 │   ├── motor_core.cpp           # Motor de cálculo de tarifas y validación de stock (C++17)
 │   ├── motor_core.exe           # Binario nativo compilado de latencia ultra-baja (<150us)

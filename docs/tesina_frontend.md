@@ -7,7 +7,7 @@ El frontend de **Burger 24/7** está implementado como una **Single Page Applica
 ### Principios de Diseño
 - **Glassmorphism y Tema Oscuro:** Estética visual futurista basada en tarjetas de cristal difuminado (`backdrop-filter: blur(12px)`), bordes sutiles semitransparentes y gradientes de color cálidos (naranja `#f97316`, rojo `#ef4444`, morado `#8b5cf6`).
 - **Reactividad Nativa del DOM:** Gestión de estado centralizada mediante objetos JavaScript (`DB`, `currentSession`, `cart`, `config`) que propagan cambios a la interfaz mediante funciones de renderizado dirigidas (`renderProducts`, `renderAdminMonitoringUI`, `updateUIForCurrentRole`).
-- **Resiliencia y Modo Dual:** Switch maestro `toggleConnectedMode` que permite operar en **Modo Conectado** consumiendo los microservicios REST PHP/MySQL mediante [`api.js`](file:///F:/Bebidas-E-Commerce/api.js) o en **Modo Simulado** con persistencia local en `localStorage` como fallback ante cortes de red o servidores fuera de línea.
+- **Resiliencia y Modo Dual:** Switch maestro `toggleConnectedMode` que permite operar en **Modo Conectado** consumiendo los microservicios REST PHP/MySQL mediante [`api.js`](api.js) o en **Modo Simulado** con persistencia local en `localStorage` como fallback ante cortes de red o servidores fuera de línea.
 
 ---
 

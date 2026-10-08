@@ -56,7 +56,7 @@ function applyCorsMiddleware() {
 function checkLoginRateLimit($maxAttempts = 5, $decaySeconds = 300) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     $sanitizedIp = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $ip);
-    $storageDir = sys_get_temp_dir() . '/bebidas_ratelimit';
+    $storageDir = sys_get_temp_dir() . '/burger_ratelimit';
     if (!is_dir($storageDir)) {
         @mkdir($storageDir, 0777, true);
     }
@@ -102,7 +102,7 @@ function checkLoginRateLimit($maxAttempts = 5, $decaySeconds = 300) {
 function recordLoginFailure($decaySeconds = 300) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     $sanitizedIp = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $ip);
-    $storageDir = sys_get_temp_dir() . '/bebidas_ratelimit';
+    $storageDir = sys_get_temp_dir() . '/burger_ratelimit';
     if (!is_dir($storageDir)) {
         @mkdir($storageDir, 0777, true);
     }
@@ -132,7 +132,7 @@ function recordLoginFailure($decaySeconds = 300) {
 function recordLoginSuccess() {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     $sanitizedIp = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $ip);
-    $file = sys_get_temp_dir() . '/bebidas_ratelimit/limit_' . $sanitizedIp . '.json';
+    $file = sys_get_temp_dir() . '/burger_ratelimit/limit_' . $sanitizedIp . '.json';
     if (file_exists($file)) {
         @unlink($file);
     }

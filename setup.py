@@ -188,7 +188,8 @@ def step_5_xampp_integration():
     
     print(f"  [OK] Instalación de XAMPP detectada en: {xampp_path}")
     htdocs = os.path.join(xampp_path, "htdocs")
-    target_link = os.path.join(htdocs, "Bebidas-E-Commerce")
+    target_link = os.path.join(htdocs, "Burger-E-Commerce")
+    legacy_link = os.path.join(htdocs, "Bebidas-E-Commerce")
     
     # Comprobar si ya estamos en htdocs o si el enlace existe
     norm_root = os.path.normpath(ROOT_DIR).lower()
@@ -196,19 +197,20 @@ def step_5_xampp_integration():
     
     if norm_root == norm_target:
         print("  [OK] El proyecto ya se encuentra ubicado dentro de htdocs de Apache.")
-    elif os.path.exists(target_link):
-        print(f"  [OK] El enlace/carpeta en htdocs ya existe: {target_link}")
     else:
-        print(f"  [+] Creando Directory Junction hacia htdocs para Apache...")
-        try:
-            # En Windows creamos un junction con mklink /J
-            res = subprocess.run(["cmd", "/c", "mklink", "/J", target_link, ROOT_DIR], capture_output=True, text=True)
-            if res.returncode == 0:
-                print(f"  [OK] Proyecto enlazado exitosamente en Apache: {target_link}")
+        for link in [target_link, legacy_link]:
+            if os.path.exists(link):
+                print(f"  [OK] Enlace/carpeta en htdocs verificado: {link}")
             else:
-                print(f"  [!] Aviso: {res.stderr.strip() or res.stdout.strip()}")
-        except Exception as e:
-            print(f"  [!] No se pudo crear enlace simbólico: {e}")
+                print(f"  [+] Creando Directory Junction hacia htdocs para Apache ({os.path.basename(link)})...")
+                try:
+                    res = subprocess.run(["cmd", "/c", "mklink", "/J", link, ROOT_DIR], capture_output=True, text=True)
+                    if res.returncode == 0:
+                        print(f"  [OK] Proyecto enlazado exitosamente en Apache: {link}")
+                    else:
+                        print(f"  [!] Aviso: {res.stderr.strip() or res.stdout.strip()}")
+                except Exception as e:
+                    print(f"  [!] No se pudo crear enlace simbólico: {e}")
             
     return xampp_path
 
@@ -288,8 +290,8 @@ def print_summary():
     print("\n  Opciones de Acceso:")
     print("  --------------------------------------------------------------------")
     print("  [A] Produccion / Tesina (Apache XAMPP + MySQL Real):")
-    print("      - URL Principal:       http://localhost/Bebidas-E-Commerce/")
-    print("      - Panel Diagnostico:   http://localhost/Bebidas-E-Commerce/check_deploy.php")
+    print("      - URL Principal:       http://localhost/Burger-E-Commerce/")
+    print("      - Panel Diagnostico:   http://localhost/Burger-E-Commerce/check_deploy.php")
     print("      - Administrador BD:    http://localhost/phpmyadmin/")
     print("\n  [B] Desarrollo Ultrarrapido (Servidor Autonomo Python):")
     print("      - Ejecutar:            python server.py 8000  (o start_services.bat)")

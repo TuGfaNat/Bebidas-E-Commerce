@@ -164,7 +164,7 @@ stateDiagram-v2
 ## 3. Reglas de Negocio y Garantías ACID
 
 ### 1. Atomicidad en la Creación de Pedidos y Descuento de Stock
-En [`microservices/Transactions/checkout.php`](file:///F:/Bebidas-E-Commerce/microservices/Transactions/checkout.php), el proceso de compra está blindado bajo una transacción SQL:
+En [`microservices/Transactions/checkout.php`](microservices/Transactions/checkout.php), el proceso de compra está blindado bajo una transacción SQL:
 ```php
 $db->beginTransaction();
 try {
@@ -196,7 +196,7 @@ try {
 Para neutralizar ataques de concurrencia y sobreventa (*overselling*), se utiliza `FOR UPDATE`. Si dos clientes intentan comprar la última hamburguesa simultáneamente, la primera consulta bloquea la fila hasta completar la transacción; la segunda consulta esperará y detectará que el stock ha caído a 0, ejecutando un `ROLLBACK` seguro con HTTP 400.
 
 ### 3. Cancelación con Reembolso Atómico de Mercancía
-En [`microservices/Transactions/cancel_order.php`](file:///F:/Bebidas-E-Commerce/microservices/Transactions/cancel_order.php):
+En [`microservices/Transactions/cancel_order.php`](microservices/Transactions/cancel_order.php):
 - Solo se permite la cancelación si el pedido no ha sido despachado a la calle (`estado_pedido IN ('pendiente', 'asignado')`).
 - Al cancelar, se recorren los renglones en `pedido_detalles` y se ejecuta `UPDATE productos SET stock = stock + cantidad` para cada ítem.
 - Se registran los estados anteriores y nuevos en `auditoria_logs`, garantizando que cada unidad devuelta esté plenamente justificada en los balances contables.

@@ -2,7 +2,7 @@
 
 ## 1. Arquitectura de Integración (Frontend $\rightarrow$ Backend)
 
-La comunicación entre la interfaz de usuario ([`app.js`](file:///F:/Bebidas-E-Commerce/app.js)) y los microservicios REST desplegados en PHP y Python se realiza a través de una capa centralizada y desacoplada implementada en [`api.js`](file:///F:/Bebidas-E-Commerce/api.js).
+La comunicación entre la interfaz de usuario ([`app.js`](app.js)) y los microservicios REST desplegados en PHP y Python se realiza a través de una capa centralizada y desacoplada implementada en [`api.js`](api.js).
 
 ```mermaid
 graph LR

@@ -157,7 +157,6 @@ async function checkApiHealth() {
 function initDatabase() {
     // Limpieza preventiva de datos simulados en localStorage
     localStorage.removeItem('burger_247_db');
-    localStorage.removeItem('bebidas_247_db');
     localStorage.removeItem('connected_mode');
 
     // Inicializar estado en memoria vacío
@@ -220,7 +219,7 @@ function updateApiStatusUI(connected) {
 }
 
 function restoreLocalSavedSession() {
-    const savedUser = localStorage.getItem('burger_user_session') || localStorage.getItem('bebidas_user_session');
+    const savedUser = localStorage.getItem('burger_user_session');
     if (savedUser) {
         try {
             const u = JSON.parse(savedUser);
@@ -846,7 +845,6 @@ function handleLogin(email, password) {
             if (res.ok && res.data && res.data.token) {
                 const token = res.data.token;
                 localStorage.setItem('burger_jwt_token', token);
-                localStorage.setItem('bebidas_jwt_token', token);
 
                 // Obtener datos del usuario desde los claims del token JWT verificado
                 const jwtData = parseJwt(token);
@@ -889,7 +887,7 @@ function onLoginSuccess(user, notify = true) {
 
     // In connected mode, obtain/ensure claims come directly from the verified JWT
     if (config.connectedMode) {
-        const token = localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+        const token = localStorage.getItem('burger_jwt_token');
         if (token) {
             const jwtData = parseJwt(token);
             if (jwtData) {
@@ -906,7 +904,6 @@ function onLoginSuccess(user, notify = true) {
 
     currentSession.currentUser = activeUser;
     localStorage.setItem('burger_user_session', JSON.stringify(activeUser));
-    localStorage.setItem('bebidas_user_session', JSON.stringify(activeUser));
 
     // Map role variables for view renderers
     if (activeUser.role === 'cliente') {
@@ -944,9 +941,7 @@ function handleLogout(notify = true) {
     currentSession.admin = null;
 
     localStorage.removeItem('burger_user_session');
-    localStorage.removeItem('bebidas_user_session');
     localStorage.removeItem('burger_jwt_token');
-    localStorage.removeItem('bebidas_jwt_token');
 
     // Hide panels
     document.querySelectorAll('.panel').forEach(panel => {

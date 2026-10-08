@@ -264,7 +264,7 @@ flowchart TD
     end
 
     subgraph ApacheServer["Servidor Web Apache (XAMPP - Puertos 80 / 443)"]
-        HTDOCS["Raíz de Documentos (htdocs/Bebidas-E-Commerce)"]
+        HTDOCS["Raíz de Documentos (htdocs/Burger-E-Commerce)"]
         STATIC["Activos Estáticos (index.html, style.css, assets)"]
         MODPHP["Módulo PHP 8.2 (mod_php)"]
         HTACCESS[".htaccess (Bloqueo de Ejecución en uploads/)"]
@@ -366,7 +366,7 @@ Directorio de almacenamiento físico y directivas aplicadas:
 
 ### 4.5 Manual de Pruebas y Validación del Despliegue
 
-Para garantizar el cumplimiento de los criterios de aceptación y los estándares de calidad del software, se definió una matriz de casos de prueba ejecutados y validados mediante la suite de diagnóstico automatizado [`check_deploy.php`](file:///F:/Bebidas-E-Commerce/check_deploy.php):
+Para garantizar el cumplimiento de los criterios de aceptación y los estándares de calidad del software, se definió una matriz de casos de prueba ejecutados y validados mediante la suite de diagnóstico automatizado [`check_deploy.php`](check_deploy.php):
 
 | ID de Caso | Caso de Prueba | Condición de Entrada | Resultado Esperado | Manejo de Excepción / Error | Estado |
 |---|---|---|---|---|---|
@@ -393,26 +393,26 @@ La ejecución de la suite de diagnóstico arrojó una efectividad del **100% (30
 Para simplificar al máximo la replicación del entorno en cualquier servidor o equipo evaluador, el sistema incorpora un asistente de configuración integral:
 
 #### Método Automatizado (Recomendado):
-* **En Windows:** Ejecutar con un solo clic el archivo [`install.bat`](file:///F:/Bebidas-E-Commerce/install.bat).
+* **En Windows:** Ejecutar con un solo clic el archivo [`install.bat`](install.bat).
 * **Por Consola:**
   ```powershell
   python setup.py
   ```
 
 El asistente ejecuta de forma transparente las siguientes 6 fases:
-1. **Instalación de Dependencias:** Instala automáticamente los paquetes declarados en [`requirements.txt`](file:///F:/Bebidas-E-Commerce/requirements.txt) (`python-docx`, `python-dotenv`, `requests`, `bcrypt`).
+1. **Instalación de Dependencias:** Instala automáticamente los paquetes declarados en [`requirements.txt`](requirements.txt) (`python-docx`, `python-dotenv`, `requests`, `bcrypt`).
 2. **Inyección de Configuración (.env):** Copia y genera los archivos de variables de entorno protegidos.
 3. **Aseguramiento de Directorios de Subida:** Crea las carpetas `uploads/` (`uploads/ci/`, `uploads/docs/`, `uploads/qr/`) y deposita las directivas restrictivas `.htaccess` (Anti-RCE).
-4. **Módulo de Alto Rendimiento C++:** Detecta si existe un compilador (`g++`, `clang++`, `cl`) y compila [`microservices/Logistics/calculator.cpp`](file:///F:/Bebidas-E-Commerce/microservices/Logistics/calculator.cpp) a binario nativo `calculator.exe`, o activa el motor de fallback en Python.
-5. **Detección e Integración de XAMPP:** Localiza la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.) y crea automáticamente el *Directory Junction* hacia `htdocs/Bebidas-E-Commerce` para que Apache sirva la aplicación sin duplicar archivos.
-6. **Inicialización de Base de Datos MySQL:** Verifica si el servicio MySQL está escuchando en el puerto 3306 y ejecuta el script idempotente [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql), creando la base de datos `burger_shop` y los usuarios demo con hash Bcrypt.
+4. **Módulo de Alto Rendimiento C++:** Detecta si existe un compilador (`g++`, `clang++`, `cl`) y compila [`microservices/Logistics/calculator.cpp`](microservices/Logistics/calculator.cpp) a binario nativo `calculator.exe`, o activa el motor de fallback en Python.
+5. **Detección e Integración de XAMPP:** Localiza la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.) y crea automáticamente el *Directory Junction* hacia `htdocs/Burger-E-Commerce` para que Apache sirva la aplicación sin duplicar archivos.
+6. **Inicialización de Base de Datos MySQL:** Verifica si el servicio MySQL está escuchando en el puerto 3306 y ejecuta el script idempotente [`install_db.sql`](install_db.sql), creando la base de datos `burger_shop` y los usuarios demo con hash Bcrypt.
 
 #### Método Manual Tradicional:
-1. **Ubicación del Proyecto:** Copiar la carpeta dentro de `C:\xampp\htdocs\Bebidas-E-Commerce` (o crear enlace simbólico).
+1. **Ubicación del Proyecto:** Copiar la carpeta dentro de `C:\xampp\htdocs\Burger-E-Commerce` (o crear enlace simbólico).
 2. **Inicio de Servicios:** Iniciar **Apache** y **MySQL** desde el Panel de Control de XAMPP.
-3. **Instalación de la Base de Datos:** Importar [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql) desde phpMyAdmin (`http://localhost/phpmyadmin/`) o por consola: `mysql -u root < install_db.sql`.
+3. **Instalación de la Base de Datos:** Importar [`install_db.sql`](install_db.sql) desde phpMyAdmin (`http://localhost/phpmyadmin/`) o por consola: `mysql -u root < install_db.sql`.
 4. **Configuración del Entorno:** Copiar `.env.example` a `.env`.
-5. **Certificación del Despliegue:** Ejecutar el verificador en consola ([`check_deploy.bat`](file:///F:/Bebidas-E-Commerce/check_deploy.bat)) o abrir en el navegador: 👉 **`http://localhost/Bebidas-E-Commerce/check_deploy.php`**.
+5. **Certificación del Despliegue:** Ejecutar el verificador en consola ([`check_deploy.bat`](check_deploy.bat)) o abrir en el navegador: 👉 **`http://localhost/Burger-E-Commerce/check_deploy.php`**.
 
 
 
@@ -802,7 +802,7 @@ sequenceDiagram
 El sistema **Burger 24/7** implementa un esquema de autenticación sin estado (*stateless*) fundamentado en **JSON Web Tokens (JWT)** conforme al estándar **RFC 7519**. Este mecanismo garantiza la integridad de la identidad del usuario y permite la validación descentralizada de permisos entre microservicios sin sobrecargar la base de datos con consultas de sesión repetitivas.
 
 ### A. Estructura Criptográfica del Token
-Cada token emitido por [`microservices/Auth/jwt.php`](file:///F:/Bebidas-E-Commerce/microservices/Auth/jwt.php) consta de tres partes concatenadas por puntos (`.`):
+Cada token emitido por [`microservices/Auth/jwt.php`](microservices/Auth/jwt.php) consta de tres partes concatenadas por puntos (`.`):
 
 1. **Header:** Define el algoritmo de firma y el tipo de token:
    ```json
@@ -903,7 +903,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 ### B. Prevención de Cross-Site Scripting (XSS)
 - **Sanitización de Entradas:** Todas las cadenas recibidas que van a ser persistidas o reflejadas se limpian mediante `htmlspecialchars($data, ENT_QUOTES, 'UTF-8')` y `strip_tags()`.
-- **Renderizado Seguro en el Frontend:** En [`app.js`](file:///F:/Bebidas-E-Commerce/app.js), los datos provenientes de la API se inyectan en el DOM preferentemente mediante propiedades `innerText` o plantillas con escape de caracteres peligrosos (`<`, `>`, `"`, `'`, `&`).
+- **Renderizado Seguro en el Frontend:** En [`app.js`](app.js), los datos provenientes de la API se inyectan en el DOM preferentemente mediante propiedades `innerText` o plantillas con escape de caracteres peligrosos (`<`, `>`, `"`, `'`, `&`).
 
 ### C. Seguridad en la Subida de Archivos (File Upload Security)
 Para evitar la carga de archivos ejecutables maliciosos (ej. webshells en PHP):
@@ -1110,7 +1110,7 @@ stateDiagram-v2
 ## 3. Reglas de Negocio y Garantías ACID
 
 ### 1. Atomicidad en la Creación de Pedidos y Descuento de Stock
-En [`microservices/Transactions/checkout.php`](file:///F:/Bebidas-E-Commerce/microservices/Transactions/checkout.php), el proceso de compra está blindado bajo una transacción SQL:
+En [`microservices/Transactions/checkout.php`](microservices/Transactions/checkout.php), el proceso de compra está blindado bajo una transacción SQL:
 ```php
 $db->beginTransaction();
 try {
@@ -1142,7 +1142,7 @@ try {
 Para neutralizar ataques de concurrencia y sobreventa (*overselling*), se utiliza `FOR UPDATE`. Si dos clientes intentan comprar la última hamburguesa simultáneamente, la primera consulta bloquea la fila hasta completar la transacción; la segunda consulta esperará y detectará que el stock ha caído a 0, ejecutando un `ROLLBACK` seguro con HTTP 400.
 
 ### 3. Cancelación con Reembolso Atómico de Mercancía
-En [`microservices/Transactions/cancel_order.php`](file:///F:/Bebidas-E-Commerce/microservices/Transactions/cancel_order.php):
+En [`microservices/Transactions/cancel_order.php`](microservices/Transactions/cancel_order.php):
 - Solo se permite la cancelación si el pedido no ha sido despachado a la calle (`estado_pedido IN ('pendiente', 'asignado')`).
 - Al cancelar, se recorren los renglones en `pedido_detalles` y se ejecuta `UPDATE productos SET stock = stock + cantidad` para cada ítem.
 - Se registran los estados anteriores y nuevos en `auditoria_logs`, garantizando que cada unidad devuelta esté plenamente justificada en los balances contables.
@@ -1176,7 +1176,7 @@ En [`microservices/Transactions/cancel_order.php`](file:///F:/Bebidas-E-Commerce
 
 ## 1. Arquitectura de Integración (Frontend $\rightarrow$ Backend)
 
-La comunicación entre la interfaz de usuario ([`app.js`](file:///F:/Bebidas-E-Commerce/app.js)) y los microservicios REST desplegados en PHP y Python se realiza a través de una capa centralizada y desacoplada implementada en [`api.js`](file:///F:/Bebidas-E-Commerce/api.js).
+La comunicación entre la interfaz de usuario ([`app.js`](app.js)) y los microservicios REST desplegados en PHP y Python se realiza a través de una capa centralizada y desacoplada implementada en [`api.js`](api.js).
 
 ```mermaid
 graph LR
@@ -1468,7 +1468,7 @@ El frontend de **Burger 24/7** está implementado como una **Single Page Applica
 ### Principios de Diseño
 - **Glassmorphism y Tema Oscuro:** Estética visual futurista basada en tarjetas de cristal difuminado (`backdrop-filter: blur(12px)`), bordes sutiles semitransparentes y gradientes de color cálidos (naranja `#f97316`, rojo `#ef4444`, morado `#8b5cf6`).
 - **Reactividad Nativa del DOM:** Gestión de estado centralizada mediante objetos JavaScript (`DB`, `currentSession`, `cart`, `config`) que propagan cambios a la interfaz mediante funciones de renderizado dirigidas (`renderProducts`, `renderAdminMonitoringUI`, `updateUIForCurrentRole`).
-- **Resiliencia y Modo Dual:** Switch maestro `toggleConnectedMode` que permite operar en **Modo Conectado** consumiendo los microservicios REST PHP/MySQL mediante [`api.js`](file:///F:/Bebidas-E-Commerce/api.js) o en **Modo Simulado** con persistencia local en `localStorage` como fallback ante cortes de red o servidores fuera de línea.
+- **Resiliencia y Modo Dual:** Switch maestro `toggleConnectedMode` que permite operar en **Modo Conectado** consumiendo los microservicios REST PHP/MySQL mediante [`api.js`](api.js) o en **Modo Simulado** con persistencia local en `localStorage` como fallback ante cortes de red o servidores fuera de línea.
 
 ---
 
@@ -1699,7 +1699,7 @@ En un negocio con reparto nocturno continuo, el riesgo de fraude en cajas y pér
 - **Trazabilidad Completa del Inventario:** Cada hamburguesa descontada o devuelta por cancelación queda asociada a un ID de transacción y a un registro diferencial antes/después en formato JSON.
 
 ### 3. Arquitectura Resiliente en Modo Dual
-La combinación de una capa de transporte HTTP inteligente ([`api.js`](file:///F:/Bebidas-E-Commerce/api.js)) con un motor de persistencia local en `localStorage` demostró ser una solución sobresaliente para entornos con conectividad inestable, permitiendo que la interfaz siga operando sin errores fatales incluso ante caídas temporales de la infraestructura central.
+La combinación de una capa de transporte HTTP inteligente ([`api.js`](api.js)) con un motor de persistencia local en `localStorage` demostró ser una solución sobresaliente para entornos con conectividad inestable, permitiendo que la interfaz siga operando sin errores fatales incluso ante caídas temporales de la infraestructura central.
 
 ### 4. Líneas Futuras de Investigación y Expansión
 Para futuras versiones del proyecto, se plantean las siguientes líneas de mejora:

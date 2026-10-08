@@ -108,7 +108,7 @@ def main():
     print(f"  [PASS] Orígenes CORS configurados: {len(ALLOWED_ORIGINS)} orígenes permitidos.")
     print("\n[INFO] Para probar Apache y MySQL real:")
     print("       1. Inicie Apache y MySQL desde el Panel de Control de XAMPP.")
-    print("       2. Abra en su navegador: http://localhost/Bebidas-E-Commerce/check_deploy.php")
+    print("       2. Abra en su navegador: http://localhost/Burger-E-Commerce/check_deploy.php")
     print("=" * 72)
 
 if __name__ == "__main__":

@@ -77,7 +77,7 @@ pip install -r requirements.txt
    * Si no hay compilador C++ instalado, el sistema activa de forma transparente el motor de cálculo en Python ([`calculator.py`](microservices/Logistics/calculator.py)) sin interrumpir el funcionamiento ni requerir configuración manual.
 5. **🏢 Detección e Integración de XAMPP (Apache):**
    * Detecta la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.).
-   * Si el proyecto no está en `htdocs`, crea un *Directory Junction* (`mklink /J`) hacia `<xampp>\htdocs\Bebidas-E-Commerce` para que Apache pueda servir la web inmediatamente sin duplicar archivos.
+   * Si el proyecto no está en `htdocs`, crea un *Directory Junction* (`mklink /J`) hacia `<xampp>\htdocs\Burger-E-Commerce` para que Apache pueda servir la web inmediatamente sin duplicar archivos.
 6. **🗄️ Inicialización Automática de Base de Datos MySQL (`burger_shop`):**
    * Comprueba si el servicio MySQL está activo en el puerto `3306`.
    * Si MySQL está iniciado, ejecuta automáticamente el script idempotente [`install_db.sql`](install_db.sql) creando la base de datos `burger_shop`, sus 6 tablas relacionales y los usuarios demo con contraseñas Bcrypt.
@@ -110,14 +110,14 @@ Para que Apache pueda servir los archivos y microservicios, el proyecto debe est
 * **Opción A (Recomendada - Enlace Simbólico sin duplicar archivos):**  
   Abre una terminal de PowerShell o CMD **como Administrador** y ejecuta:
   ```cmd
-  mklink /J "C:\xampp\htdocs\Bebidas-E-Commerce" "D:\Bebidas-E-Commerce"
+  mklink /J "C:\xampp\htdocs\Burger-E-Commerce" "D:\Burger-E-Commerce"
   ```
   *(Ajusta las rutas según la ubicación de tu disco, por ejemplo si XAMPP está en `C:\xampp` o `D:\xampp`)*.
 
 * **Opción B (Copia Directa):**  
-  Copia toda la carpeta `Bebidas-E-Commerce` directamente dentro de:
+  Copia toda la carpeta `Burger-E-Commerce` directamente dentro de:
   ```text
-  C:\xampp\htdocs\Bebidas-E-Commerce\
+  C:\xampp\htdocs\Burger-E-Commerce\
   ```
 
 ---
@@ -165,7 +165,7 @@ copy .env.example .env
 
 Antes de entrar a la tienda, puedes verificar que todo tu entorno esté 100% listo:
 * **Desde el navegador:**  
-  👉 **[http://localhost/Bebidas-E-Commerce/check_deploy.php](http://localhost/Bebidas-E-Commerce/check_deploy.php)**  
+  👉 **[http://localhost/Burger-E-Commerce/check_deploy.php](http://localhost/Burger-E-Commerce/check_deploy.php)**  
   *(Deberás ver las **30/30 verificaciones en verde** confirmando Apache, MySQL, tablas relacionales, JWT y microservicios)*.
 * **Desde consola:**  
   ```powershell
@@ -177,7 +177,7 @@ Antes de entrar a la tienda, puedes verificar que todo tu entorno esté 100% lis
 #### Paso 6: Abrir y Usar la Plataforma
 
 Abre tu navegador e ingresa a:  
-👉 **[http://localhost/Bebidas-E-Commerce/](http://localhost/Bebidas-E-Commerce/)**
+👉 **[http://localhost/Burger-E-Commerce/](http://localhost/Burger-E-Commerce/)**
 
 ¡Listo! Ya puedes iniciar sesión con las cuentas del sistema, hacer pedidos reales, asignarlos a repartidores en tiempo real y gestionarlos desde el panel de administración.
 
@@ -208,14 +208,14 @@ El sistema incluye **7 cuentas de prueba** para verificar todos los roles y esta
 
 | Módulo / Servicio | URL en Apache (XAMPP) | URL en Servidor Python | Propósito |
 |---|---|---|---|
-| **Frontend Web (SPA)** | `http://localhost/Bebidas-E-Commerce/` | `http://localhost:8000/` | Interfaz interactiva de la tienda y paneles. |
-| **Diagnóstico de Despliegue** | `http://localhost/Bebidas-E-Commerce/check_deploy.php` | `http://localhost:8000/check_deploy.php` | Monitor visual de salud del servidor y base de datos. |
+| **Frontend Web (SPA)** | `http://localhost/Burger-E-Commerce/` | `http://localhost:8000/` | Interfaz interactiva de la tienda y paneles. |
+| **Diagnóstico de Despliegue** | `http://localhost/Burger-E-Commerce/check_deploy.php` | `http://localhost:8000/check_deploy.php` | Monitor visual de salud del servidor y base de datos. |
 | **phpMyAdmin** | `http://localhost/phpmyadmin/` | N/A | Gestor visual de base de datos MySQL. |
-| **API: Heartbeat Conexión** | `http://localhost/Bebidas-E-Commerce/microservices/Auth/connection.php` | `http://localhost:8000/microservices/Auth/connection.php` | Diagnóstico de conexión en tiempo real. |
-| **API: Login REST** | `http://localhost/Bebidas-E-Commerce/microservices/Auth/login.php` | `http://localhost:8000/microservices/Auth/login.php` | Autenticación real y expedición de tokens JWT. |
-| **API: Catálogo de Productos**| `http://localhost/Bebidas-E-Commerce/microservices/Catalog/catalog.php` | `http://localhost:8000/microservices/Catalog/catalog.php` | Listado y administración del menú comercial. |
-| **API: Checkout de Pedidos** | `http://localhost/Bebidas-E-Commerce/microservices/Transactions/checkout.php` | `http://localhost:8000/microservices/Transactions/checkout.php` | Creación atómica de pedidos y descuento de stock. |
-| **API: Asignación de Repartos**| `http://localhost/Bebidas-E-Commerce/microservices/Rider/assignment.php` | `http://localhost:8000/microservices/Rider/assignment.php` | Consulta y aceptación de órdenes para repartidores. |
+| **API: Heartbeat Conexión** | `http://localhost/Burger-E-Commerce/microservices/Auth/connection.php` | `http://localhost:8000/microservices/Auth/connection.php` | Diagnóstico de conexión en tiempo real. |
+| **API: Login REST** | `http://localhost/Burger-E-Commerce/microservices/Auth/login.php` | `http://localhost:8000/microservices/Auth/login.php` | Autenticación real y expedición de tokens JWT. |
+| **API: Catálogo de Productos**| `http://localhost/Burger-E-Commerce/microservices/Catalog/catalog.php` | `http://localhost:8000/microservices/Catalog/catalog.php` | Listado y administración del menú comercial. |
+| **API: Checkout de Pedidos** | `http://localhost/Burger-E-Commerce/microservices/Transactions/checkout.php` | `http://localhost:8000/microservices/Transactions/checkout.php` | Creación atómica de pedidos y descuento de stock. |
+| **API: Asignación de Repartos**| `http://localhost/Burger-E-Commerce/microservices/Rider/assignment.php` | `http://localhost:8000/microservices/Rider/assignment.php` | Consulta y aceptación de órdenes para repartidores. |
 
 ---
 
@@ -238,7 +238,7 @@ php check_deploy.php
 4. **Directorios de Subida (`uploads/`):** Permisos de lectura/escritura en carpetas multimedia y presencia de archivos `.htaccess` protectores que bloquean la ejecución de código malicioso (mitigación anti-RCE).
 5. **Criptografía JWT:** Emisión y validación exitosa de firmas HMAC-SHA256 en tiempo de ejecución.
 
-> 🖥️ También puedes abrir `http://localhost/Bebidas-E-Commerce/check_deploy.php` en tu navegador para ver los resultados con un dashboard visual interactivo.
+> 🖥️ También puedes abrir `http://localhost/Burger-E-Commerce/check_deploy.php` en tu navegador para ver los resultados con un dashboard visual interactivo.
 
 ---
 
@@ -315,7 +315,7 @@ Todos los endpoints devuelven información estructurada bajo el formato estánda
 ## 📂 9. Estructura del Repositorio
 
 ```text
-Bebidas-E-Commerce/
+Burger-E-Commerce/
 ├── requirements.txt             # Dependencias del sistema (python-docx, dotenv, requests, bcrypt)
 ├── setup.py                     # Asistente instalador y configurador multiplataforma
 ├── install.bat                  # Instalador automatizado de 1 clic para Windows
@@ -376,7 +376,7 @@ Luego ingresa a `http://localhost:8080/`.
 
 ### 3. Apache en XAMPP no inicia porque los puertos 80 o 443 están ocupados
 * **Causa:** Aplicaciones como Skype, VMware, IIS o servicios de Windows pueden usar el puerto 80 o 443.
-* **Solución:** En el Panel de XAMPP, haz clic en **Config** al lado de Apache $\rightarrow$ `httpd.conf` y cambia `Listen 80` por `Listen 8080`. Luego en `httpd-ssl.conf` cambia `Listen 443` por `Listen 4433`. Tu acceso en Apache será entonces `http://localhost:8080/Bebidas-E-Commerce/`.
+* **Solución:** En el Panel de XAMPP, haz clic en **Config** al lado de Apache $\rightarrow$ `httpd.conf` y cambia `Listen 80` por `Listen 8080`. Luego en `httpd-ssl.conf` cambia `Listen 443` por `Listen 4433`. Tu acceso en Apache será entonces `http://localhost:8080/Burger-E-Commerce/`.
 
 ### 4. ¿Cómo ver qué datos hay guardados en la base de datos sin abrir phpMyAdmin?
 Ejecuta en tu terminal el visor interactivo:

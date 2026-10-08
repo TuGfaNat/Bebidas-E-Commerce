@@ -45,7 +45,7 @@ flowchart TD
 
     subgraph XAMPPServer["Servidor XAMPP (Windows - Host Local)"]
         subgraph Apache["Servidor Web Apache 2.4 (Puertos 80 / 443)"]
-            HTDOCS["htdocs/Bebidas-E-Commerce/"]
+            HTDOCS["htdocs/Burger-E-Commerce/"]
             ROUTER["Enrutamiento de Activos Estáticos"]
             MODPHP["Intérprete PHP 8.2 (mod_php)"]
             UPLOADS["Directorios uploads/ (.htaccess anti-RCE)"]
@@ -176,7 +176,7 @@ Parámetros declarativos que gobiernan el comportamiento del runtime de producci
 | **CP-DEP-07** | Filtrado de Orígenes Cruzados (CORS) | Solicitud HTTP con cabecera `Origin: http://sitio-malicioso.com`. | Enviar petición a endpoint de microservicio. | Cabecera `Access-Control-Allow-Origin` omitida o restringida al origen oficial; petición bloqueada. | **Error:** Acceso denegado por el navegador conforme a la política CORS. |
 
 ### 5.2 Resultados del Diagnóstico Automatizado
-La ejecución de la suite de pruebas mediante el script [`check_deploy.php`](file:///F:/Bebidas-E-Commerce/check_deploy.php) arroja el siguiente balance certificado:
+La ejecución de la suite de pruebas mediante el script [`check_deploy.php`](check_deploy.php) arroja el siguiente balance certificado:
 
 ```text
 ========================================================================
@@ -233,7 +233,7 @@ El asistente realiza automáticamente las siguientes acciones:
 2. Configura los archivos `.env` protegidos en raíz y microservicios.
 3. Asegura las carpetas `uploads/` (`ci/`, `docs/`, `qr/`) con archivos `.htaccess` anti-RCE.
 4. Detecta compiladores C++ (`g++`, `clang++`, `cl`) y compila el módulo de alto rendimiento [`microservices/Logistics/calculator.cpp`](../microservices/Logistics/calculator.cpp).
-5. Detecta la ruta de instalación de XAMPP y enlaza el proyecto en `htdocs\Bebidas-E-Commerce` vía *Directory Junction*.
+5. Detecta la ruta de instalación de XAMPP y enlaza el proyecto en `htdocs\Burger-E-Commerce` vía *Directory Junction*.
 6. Conecta con el servicio MySQL en `127.0.0.1:3306` y ejecuta [`install_db.sql`](../install_db.sql), creando `burger_shop` con sus 6 tablas y usuarios demo.
 
 ---
@@ -245,9 +245,9 @@ Siga estos pasos si prefiere realizar la configuración de forma manual:
 #### Paso 1: Ubicación del Proyecto en `htdocs`
 Copie o vincule el repositorio dentro del directorio público de Apache:
 ```text
-C:\xampp\htdocs\Bebidas-E-Commerce\
+C:\xampp\htdocs\Burger-E-Commerce\
 ```
-*(Si instaló XAMPP en el disco `F:`, la ruta correspondiente será `F:\xampp\htdocs\Bebidas-E-Commerce\`)*.
+*(Si instaló XAMPP en el disco `F:`, la ruta correspondiente será `F:\xampp\htdocs\Burger-E-Commerce\`)*.
 
 #### Paso 2: Iniciar Servicios en XAMPP Control Panel
 1. Abra **XAMPP Control Panel**.
@@ -260,18 +260,18 @@ El script [`install_db.sql`](../install_db.sql) es completamente idempotente:
 * **Opción A (phpMyAdmin):** Ingrese a `http://localhost/phpmyadmin/`, vaya a la pestaña **Importar**, seleccione `install_db.sql` y ejecútelo.
 * **Opción B (Línea de Comandos):**
   ```powershell
-  C:\xampp\mysql\bin\mysql.exe -u root < C:\xampp\htdocs\Bebidas-E-Commerce\install_db.sql
+  C:\xampp\mysql\bin\mysql.exe -u root < C:\xampp\htdocs\Burger-E-Commerce\install_db.sql
   ```
 * **Opción C (Asistente PHP):**
   ```powershell
-  cd C:\xampp\htdocs\Bebidas-E-Commerce
+  cd C:\xampp\htdocs\Burger-E-Commerce
   php migrate.php
   ```
 
 ### Paso 4: Crear y Configurar el Archivo `.env`
 Cree su archivo de variables de entorno a partir de la plantilla:
 ```powershell
-cd C:\xampp\htdocs\Bebidas-E-Commerce
+cd C:\xampp\htdocs\Burger-E-Commerce
 copy .env.example .env
 ```
 Asegúrese de definir un secreto JWT criptográfico seguro:
@@ -299,7 +299,7 @@ Ejecute la herramienta de diagnóstico para verificar que todos los requisitos s
   php check_deploy.php
   ```
 * **En el Navegador Web (Dashboard Gráfico):**  
-  👉 **`http://localhost/Bebidas-E-Commerce/check_deploy.php`**
+  👉 **`http://localhost/Burger-E-Commerce/check_deploy.php`**
 
 ---
 
@@ -307,13 +307,13 @@ Ejecute la herramienta de diagnóstico para verificar que todos los requisitos s
 
 | Módulo | URL en Apache | Descripción |
 |---|---|---|
-| **Frontend Web (SPA)** | `http://localhost/Bebidas-E-Commerce/` | Aplicación interactiva servida directamente por Apache. |
-| **Monitor de Despliegue** | `http://localhost/Bebidas-E-Commerce/check_deploy.php` | Tablero de control de salud del servidor y base de datos. |
-| **Heartbeat / Conexión** | `http://localhost/Bebidas-E-Commerce/microservices/Auth/connection.php` | Diagnóstico de latencia y estado de la conexión PDO. |
-| **Login REST** | `http://localhost/Bebidas-E-Commerce/microservices/Auth/login.php` | Autenticación real con Bcrypt y emisión de JWT. |
-| **Catálogo de Productos**| `http://localhost/Bebidas-E-Commerce/microservices/Catalog/catalog.php` | CRUD del menú comercial de hamburguesas y combos. |
-| **Checkout Transaccional**| `http://localhost/Bebidas-E-Commerce/microservices/Transactions/checkout.php` | Procesamiento atómico de órdenes con bloqueo de stock. |
-| **Gestión de Entregas** | `http://localhost/Bebidas-E-Commerce/microservices/Rider/assignment.php` | Asignación y despacho de pedidos para repartidores. |
+| **Frontend Web (SPA)** | `http://localhost/Burger-E-Commerce/` | Aplicación interactiva servida directamente por Apache. |
+| **Monitor de Despliegue** | `http://localhost/Burger-E-Commerce/check_deploy.php` | Tablero de control de salud del servidor y base de datos. |
+| **Heartbeat / Conexión** | `http://localhost/Burger-E-Commerce/microservices/Auth/connection.php` | Diagnóstico de latencia y estado de la conexión PDO. |
+| **Login REST** | `http://localhost/Burger-E-Commerce/microservices/Auth/login.php` | Autenticación real con Bcrypt y emisión de JWT. |
+| **Catálogo de Productos**| `http://localhost/Burger-E-Commerce/microservices/Catalog/catalog.php` | CRUD del menú comercial de hamburguesas y combos. |
+| **Checkout Transaccional**| `http://localhost/Burger-E-Commerce/microservices/Transactions/checkout.php` | Procesamiento atómico de órdenes con bloqueo de stock. |
+| **Gestión de Entregas** | `http://localhost/Burger-E-Commerce/microservices/Rider/assignment.php` | Asignación y despacho de pedidos para repartidores. |
 | **phpMyAdmin** | `http://localhost/phpmyadmin/` | Interfaz visual para inspección y administración de MySQL. |
 
 ---
@@ -336,7 +336,7 @@ Las contraseñas de las cuentas de prueba se encuentran cifradas con Bcrypt real
 
 | Criterio de Aceptación | Estado | Evidencia Técnica de Cumplimiento |
 |---|---|---|
-| **Apache sirve `index.html` sin `server.py`** | ✅ Cumplido | El frontend funciona de forma 100% autónoma en Apache en `http://localhost/Bebidas-E-Commerce/`. La capa `api.js` detecta dinámicamente las rutas relativas. |
+| **Apache sirve `index.html` sin `server.py`** | ✅ Cumplido | El frontend funciona de forma 100% autónoma en Apache en `http://localhost/Burger-E-Commerce/`. La capa `api.js` detecta dinámicamente las rutas relativas. |
 | **`login.php` devuelve JWT desde `.env` contra MySQL** | ✅ Cumplido | Verifica el hash Bcrypt en la tabla `users` y firma el JWT con `JWT_SECRET` leído dinámicamente de `.env`. |
 | **Scripts SQL idempotentes (`IF NOT EXISTS`)** | ✅ Cumplido | `install_db.sql` e `init_schema.sql` emplean `CREATE DATABASE IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS` y `ON DUPLICATE KEY UPDATE`. |
 | **`uploads/` con permisos y seguridad** | ✅ Cumplido | Directorios con permisos de escritura y blindados con archivos `.htaccess` que bloquean la ejecución de scripts. |

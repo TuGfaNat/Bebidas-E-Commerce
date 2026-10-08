@@ -24,7 +24,7 @@ function getApiBaseUrl() {
  */
 function getAuthToken() {
     if (typeof localStorage === 'undefined') return null;
-    return localStorage.getItem('burger_jwt_token') || localStorage.getItem('bebidas_jwt_token');
+    return localStorage.getItem('burger_jwt_token');
 }
 
 /**

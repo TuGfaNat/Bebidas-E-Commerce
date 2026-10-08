@@ -1,6 +1,6 @@
-Sistema E-commerce Bebidas 24/7 (Arquitectura Microservicios)
-1. Visión General del Proyecto
-Plataforma de expendio de bebidas 24/7 con verificación de identidad y logística multiactor (Cliente, Rider, Admin).  
+# Sistema E-commerce Burger 24/7 (Arquitectura Microservicios)
+## 1. Visión General del Proyecto
+Plataforma de delivery de comida rápida y hamburguesas 24/7 con verificación de identidad y logística multiactor (Cliente, Rider, Admin).  
 
 2. Stack Tecnológico Obligatorio
 Backend: PHP (Servicios Core) y Python (Lógica de rutas/GPS).  

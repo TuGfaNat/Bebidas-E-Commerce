@@ -12,7 +12,7 @@
  *
  * Ejecutable tanto desde CLI como desde Navegador Web:
  *   CLI:       php check_deploy.php
- *   Navegador: http://localhost/Bebidas-E-Commerce/check_deploy.php
+ *   Navegador: http://localhost/Burger-E-Commerce/check_deploy.php
  * ============================================================================
  */
 

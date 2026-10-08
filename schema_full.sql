@@ -1,5 +1,5 @@
 -- ============================================================================
--- Sistema E-commerce Bebidas 24/7 - DDL Completo de Base de Datos
+-- Sistema E-commerce Burger 24/7 - DDL Completo de Base de Datos
 -- Compatible con importación directa en dbdiagram.io (Import > MySQL)
 -- ============================================================================
 

@@ -235,7 +235,7 @@ flowchart TD
     end
 
     subgraph ApacheServer["Servidor Web Apache (XAMPP - Puertos 80 / 443)"]
-        HTDOCS["Raíz de Documentos (htdocs/Bebidas-E-Commerce)"]
+        HTDOCS["Raíz de Documentos (htdocs/Burger-E-Commerce)"]
         STATIC["Activos Estáticos (index.html, style.css, assets)"]
         MODPHP["Módulo PHP 8.2 (mod_php)"]
         HTACCESS[".htaccess (Bloqueo de Ejecución en uploads/)"]
@@ -337,7 +337,7 @@ Directorio de almacenamiento físico y directivas aplicadas:
 
 ### 4.5 Manual de Pruebas y Validación del Despliegue
 
-Para garantizar el cumplimiento de los criterios de aceptación y los estándares de calidad del software, se definió una matriz de casos de prueba ejecutados y validados mediante la suite de diagnóstico automatizado [`check_deploy.php`](file:///F:/Bebidas-E-Commerce/check_deploy.php):
+Para garantizar el cumplimiento de los criterios de aceptación y los estándares de calidad del software, se definió una matriz de casos de prueba ejecutados y validados mediante la suite de diagnóstico automatizado [`check_deploy.php`](check_deploy.php):
 
 | ID de Caso | Caso de Prueba | Condición de Entrada | Resultado Esperado | Manejo de Excepción / Error | Estado |
 |---|---|---|---|---|---|
@@ -364,25 +364,25 @@ La ejecución de la suite de diagnóstico arrojó una efectividad del **100% (30
 Para simplificar al máximo la replicación del entorno en cualquier servidor o equipo evaluador, el sistema incorpora un asistente de configuración integral:
 
 #### Método Automatizado (Recomendado):
-* **En Windows:** Ejecutar con un solo clic el archivo [`install.bat`](file:///F:/Bebidas-E-Commerce/install.bat).
+* **En Windows:** Ejecutar con un solo clic el archivo [`install.bat`](install.bat).
 * **Por Consola:**
   ```powershell
   python setup.py
   ```
 
 El asistente ejecuta de forma transparente las siguientes 6 fases:
-1. **Instalación de Dependencias:** Instala automáticamente los paquetes declarados en [`requirements.txt`](file:///F:/Bebidas-E-Commerce/requirements.txt) (`python-docx`, `python-dotenv`, `requests`, `bcrypt`).
+1. **Instalación de Dependencias:** Instala automáticamente los paquetes declarados en [`requirements.txt`](requirements.txt) (`python-docx`, `python-dotenv`, `requests`, `bcrypt`).
 2. **Inyección de Configuración (.env):** Copia y genera los archivos de variables de entorno protegidos.
 3. **Aseguramiento de Directorios de Subida:** Crea las carpetas `uploads/` (`uploads/ci/`, `uploads/docs/`, `uploads/qr/`) y deposita las directivas restrictivas `.htaccess` (Anti-RCE).
-4. **Módulo de Alto Rendimiento C++:** Detecta si existe un compilador (`g++`, `clang++`, `cl`) y compila [`microservices/Logistics/calculator.cpp`](file:///F:/Bebidas-E-Commerce/microservices/Logistics/calculator.cpp) a binario nativo `calculator.exe`, o activa el motor de fallback en Python.
-5. **Detección e Integración de XAMPP:** Localiza la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.) y crea automáticamente el *Directory Junction* hacia `htdocs/Bebidas-E-Commerce` para que Apache sirva la aplicación sin duplicar archivos.
-6. **Inicialización de Base de Datos MySQL:** Verifica si el servicio MySQL está escuchando en el puerto 3306 y ejecuta el script idempotente [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql), creando la base de datos `burger_shop` y los usuarios demo con hash Bcrypt.
+4. **Módulo de Alto Rendimiento C++:** Detecta si existe un compilador (`g++`, `clang++`, `cl`) y compila [`microservices/Logistics/calculator.cpp`](microservices/Logistics/calculator.cpp) a binario nativo `calculator.exe`, o activa el motor de fallback en Python.
+5. **Detección e Integración de XAMPP:** Localiza la instalación de XAMPP (`C:\xampp`, `F:\xampp`, etc.) y crea automáticamente el *Directory Junction* hacia `htdocs/Burger-E-Commerce` para que Apache sirva la aplicación sin duplicar archivos.
+6. **Inicialización de Base de Datos MySQL:** Verifica si el servicio MySQL está escuchando en el puerto 3306 y ejecuta el script idempotente [`install_db.sql`](install_db.sql), creando la base de datos `burger_shop` y los usuarios demo con hash Bcrypt.
 
 #### Método Manual Tradicional:
-1. **Ubicación del Proyecto:** Copiar la carpeta dentro de `C:\xampp\htdocs\Bebidas-E-Commerce` (o crear enlace simbólico).
+1. **Ubicación del Proyecto:** Copiar la carpeta dentro de `C:\xampp\htdocs\Burger-E-Commerce` (o crear enlace simbólico).
 2. **Inicio de Servicios:** Iniciar **Apache** y **MySQL** desde el Panel de Control de XAMPP.
-3. **Instalación de la Base de Datos:** Importar [`install_db.sql`](file:///F:/Bebidas-E-Commerce/install_db.sql) desde phpMyAdmin (`http://localhost/phpmyadmin/`) o por consola: `mysql -u root < install_db.sql`.
+3. **Instalación de la Base de Datos:** Importar [`install_db.sql`](install_db.sql) desde phpMyAdmin (`http://localhost/phpmyadmin/`) o por consola: `mysql -u root < install_db.sql`.
 4. **Configuración del Entorno:** Copiar `.env.example` a `.env`.
-5. **Certificación del Despliegue:** Ejecutar el verificador en consola ([`check_deploy.bat`](file:///F:/Bebidas-E-Commerce/check_deploy.bat)) o abrir en el navegador: 👉 **`http://localhost/Bebidas-E-Commerce/check_deploy.php`**.
+5. **Certificación del Despliegue:** Ejecutar el verificador en consola ([`check_deploy.bat`](check_deploy.bat)) o abrir en el navegador: 👉 **`http://localhost/Burger-E-Commerce/check_deploy.php`**.
 
 

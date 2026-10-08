@@ -1,5 +1,5 @@
 // ============================================================================
-// Proyecto: Sistema E-commerce Bebidas 24/7 (Tesina de Grado)
+// Proyecto: Sistema E-commerce Burger 24/7 (Tesina de Grado)
 // Archivo para dbdiagram.io (DBML - Database Markup Language)
 // Generado conforme a SPEC.md e init_schema.sql / init_users.sql
 // ============================================================================
@@ -114,7 +114,7 @@ Table pedidos {
 Table pedido_detalles {
   id int [pk, increment, note: 'Identificador del ítem']
   pedido_id int [not null, note: 'Pedido asociado']
-  producto_id int [not null, note: 'Bebida adquirida']
+  producto_id int [not null, note: 'Producto adquirido']
   cantidad int [not null, note: 'Unidades solicitadas']
   precio_unitario decimal(10,2) [not null, note: 'Precio unitario en el checkout']
   

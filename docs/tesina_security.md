@@ -5,7 +5,7 @@
 El sistema **Burger 24/7** implementa un esquema de autenticación sin estado (*stateless*) fundamentado en **JSON Web Tokens (JWT)** conforme al estándar **RFC 7519**. Este mecanismo garantiza la integridad de la identidad del usuario y permite la validación descentralizada de permisos entre microservicios sin sobrecargar la base de datos con consultas de sesión repetitivas.
 
 ### A. Estructura Criptográfica del Token
-Cada token emitido por [`microservices/Auth/jwt.php`](file:///F:/Bebidas-E-Commerce/microservices/Auth/jwt.php) consta de tres partes concatenadas por puntos (`.`):
+Cada token emitido por [`microservices/Auth/jwt.php`](microservices/Auth/jwt.php) consta de tres partes concatenadas por puntos (`.`):
 
 1. **Header:** Define el algoritmo de firma y el tipo de token:
    ```json
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 ### B. Prevención de Cross-Site Scripting (XSS)
 - **Sanitización de Entradas:** Todas las cadenas recibidas que van a ser persistidas o reflejadas se limpian mediante `htmlspecialchars($data, ENT_QUOTES, 'UTF-8')` y `strip_tags()`.
-- **Renderizado Seguro en el Frontend:** En [`app.js`](file:///F:/Bebidas-E-Commerce/app.js), los datos provenientes de la API se inyectan en el DOM preferentemente mediante propiedades `innerText` o plantillas con escape de caracteres peligrosos (`<`, `>`, `"`, `'`, `&`).
+- **Renderizado Seguro en el Frontend:** En [`app.js`](app.js), los datos provenientes de la API se inyectan en el DOM preferentemente mediante propiedades `innerText` o plantillas con escape de caracteres peligrosos (`<`, `>`, `"`, `'`, `&`).
 
 ### C. Seguridad en la Subida de Archivos (File Upload Security)
 Para evitar la carga de archivos ejecutables maliciosos (ej. webshells en PHP):

@@ -118,7 +118,7 @@ En un negocio con reparto nocturno continuo, el riesgo de fraude en cajas y pér
 - **Trazabilidad Completa del Inventario:** Cada hamburguesa descontada o devuelta por cancelación queda asociada a un ID de transacción y a un registro diferencial antes/después en formato JSON.
 
 ### 3. Arquitectura Resiliente en Modo Dual
-La combinación de una capa de transporte HTTP inteligente ([`api.js`](file:///F:/Bebidas-E-Commerce/api.js)) con un motor de persistencia local en `localStorage` demostró ser una solución sobresaliente para entornos con conectividad inestable, permitiendo que la interfaz siga operando sin errores fatales incluso ante caídas temporales de la infraestructura central.
+La combinación de una capa de transporte HTTP inteligente ([`api.js`](api.js)) con un motor de persistencia local en `localStorage` demostró ser una solución sobresaliente para entornos con conectividad inestable, permitiendo que la interfaz siga operando sin errores fatales incluso ante caídas temporales de la infraestructura central.
 
 ### 4. Líneas Futuras de Investigación y Expansión
 Para futuras versiones del proyecto, se plantean las siguientes líneas de mejora:

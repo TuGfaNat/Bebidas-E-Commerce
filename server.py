@@ -392,7 +392,7 @@ def parse_multipart_body(raw_bytes, content_type):
                 fields[field_name] = body_bytes.decode('utf-8', errors='ignore')
     return fields, files
 
-class BebidasHandler(SimpleHTTPRequestHandler):
+class BurgerHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT_DIR, **kwargs)
 
@@ -474,10 +474,12 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             ), status=401)
             return
 
-        if path.startswith('/Bebidas-E-Commerce'):
+        if path.startswith('/Burger-E-Commerce'):
+            path = path[len('/Burger-E-Commerce'):]
+        elif path.startswith('/Bebidas-E-Commerce'):
             path = path[len('/Bebidas-E-Commerce'):]
-            if not path:
-                path = '/'
+        if not path:
+            path = '/'
 
         # Microservice health / connection test
         if path in ['/microservices/Auth/connection.php', '/microservices/Auth/connection']:
@@ -695,7 +697,9 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             ), status=401)
             return
 
-        if path.startswith('/Bebidas-E-Commerce'):
+        if path.startswith('/Burger-E-Commerce'):
+            path = path[len('/Burger-E-Commerce'):]
+        elif path.startswith('/Bebidas-E-Commerce'):
             path = path[len('/Bebidas-E-Commerce'):]
 
         content_len = int(self.headers.get('Content-Length', 0))
@@ -1236,7 +1240,9 @@ class BebidasHandler(SimpleHTTPRequestHandler):
     def do_PUT(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
-        if path.startswith('/Bebidas-E-Commerce'):
+        if path.startswith('/Burger-E-Commerce'):
+            path = path[len('/Burger-E-Commerce'):]
+        elif path.startswith('/Bebidas-E-Commerce'):
             path = path[len('/Bebidas-E-Commerce'):]
 
         query_params = urllib.parse.parse_qs(parsed.query)
@@ -1351,7 +1357,9 @@ class BebidasHandler(SimpleHTTPRequestHandler):
     def do_DELETE(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
-        if path.startswith('/Bebidas-E-Commerce'):
+        if path.startswith('/Burger-E-Commerce'):
+            path = path[len('/Burger-E-Commerce'):]
+        elif path.startswith('/Bebidas-E-Commerce'):
             path = path[len('/Bebidas-E-Commerce'):]
 
         query_params = urllib.parse.parse_qs(parsed.query)
@@ -2249,7 +2257,7 @@ class BebidasHandler(SimpleHTTPRequestHandler):
             pass
 
 def run():
-    server = ThreadingHTTPServer(('0.0.0.0', PORT), BebidasHandler)
+    server = ThreadingHTTPServer(('0.0.0.0', PORT), BurgerHandler)
     banner = f"""
 ========================================================================
    SISTEMA E-COMMERCE BURGER 24/7 - SERVICIOS INICIADOS CON ÉXITO

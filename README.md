@@ -15,10 +15,9 @@
 ## 📑 Tabla de Contenido Rápido
 
 1. [¿Qué es Burger 24/7?](#-1-qué-es-burger-247)
-2. [📦 Instalación de Dependencias y Preparación (`requirements.txt`)](#-2-instalación-de-dependencias-y-preparación-requirementstxt)
-3. [⚡ Puesta en Marcha: ¿Cómo Levantar el Proyecto?](#-3-puesta-en-marcha-cómo-levantar-el-proyecto)
-   - [Opción 1: Desarrollo Ultrarrápido (Recomendado para pruebas en 10 segundos)](#opción-1-modo-desarrollo-ultrarrápido-con-python-sin-instalar-mysql-ni-apache)
-   - [Opción 2: Modo Producción con XAMPP (Apache + PHP 8.2 + MySQL Real para Tesina)](#opción-2-modo-producción--tesina-con-xampp-apache--php-82--mysql-8-real)
+2. [📦 Instalación de Dependencias y Preparación (`setup.py` / `install.bat`)](#-2-instalación-integral-y-preparación-del-entorno-installbat--setuppy)
+3. [⚡ Puesta en Marcha: ¿Cómo Levantar el Proyecto con XAMPP?](#-3-puesta-en-marcha-cómo-levantar-el-proyecto-con-xampp)
+   - [Requisitos Previos y Pasos de Instalación](#-pasos-de-instalación-y-conexión-paso-a-paso)
 4. [🔑 Cuentas de Acceso Preconfiguradas (Credenciales Demo)](#-4-cuentas-de-acceso-preconfiguradas-credenciales-demo)
 5. [🧭 URLs Principales del Sistema](#-5-urls-principales-del-sistema)
 6. [🔍 Diagnóstico Automatizado del Sistema (`check_deploy`)](#-6-diagnóstico-automatizado-del-sistema-check_deploy)
@@ -86,98 +85,101 @@ pip install -r requirements.txt
 
 ---
 
-## ⚡ 3. Puesta en Marcha: ¿Cómo Levantar el Proyecto?
+## ⚡ 3. Puesta en Marcha: ¿Cómo Levantar el Proyecto con XAMPP?
 
-La plataforma ofrece **dos formas de ejecución**. Elige la que mejor se adapte a tu necesidad:
-
-| Comparativa | Opción 1: Servidor Python Autónomo | Opción 2: Servidor XAMPP (Apache + MySQL Real) |
-|---|---|---|
-| **¿Para qué sirve?** | Pruebas inmediatas, desarrollo y demostración portátil sin configurar nada. | Evaluación formal de tesina, producción, phpMyAdmin y MySQL físico. |
-| **Requisitos previos** | Solo tener instalado **Python 3.10+**. | Tener instalado **XAMPP 8.2+** (Apache + PHP 8.2 + MySQL). |
-| **Tiempo de inicio** | ⏱️ **Menos de 10 segundos**. | ⏱️ **2 minutos** (requiere importar base de datos y configurar `.env`). |
-| **Base de Datos** | Emulada en memoria con datos semilla completos. | Persistente en disco en MySQL real (`burger_shop`). |
-| **Comando de inicio** | Doble clic en `start_services.bat` o `python server.py 8000`. | Iniciar Apache y MySQL desde el panel de XAMPP. |
-| **URL de acceso** | `http://localhost:8000/` | `http://localhost/Bebidas-E-Commerce/` |
+> [!IMPORTANT]
+> **Arquitectura 100% Conectada a la API PHP + MySQL (Fin del Modo Simulado):**  
+> Todos los flujos del sistema (Catálogo, Carrito, Checkout, Descuento atómico de stock, Asignación de Repartidores, Tracking GPS en vivo, Auditoría y Liquidaciones) operan **estrictamente contra los microservicios PHP y la base de datos MySQL `burger_shop` en XAMPP**.  
+> El modo simulado / demo en `localStorage` ha sido **descartado de forma definitiva**. Si Apache o MySQL se encuentran detenidos, la interfaz mostrará alertas de error visibles en pantalla y **nunca datos falsos**.
 
 ---
 
-### Opción 1: Modo Desarrollo Ultrarrápido con Python (Sin instalar MySQL ni Apache)
+### 📋 Requisitos Previos
 
-Si solo deseas ver la aplicación funcionando, hacer pedidos, probar los roles y navegar por el mapa:
-
-1. **Clonar o descargar el proyecto:**
-   ```bash
-   git clone https://github.com/TuGfaNat/Bebidas-E-Commerce.git
-   cd Bebidas-E-Commerce
-   ```
-
-2. **Instalar dependencias:**
-   ```bash
-   python setup.py
-   # o bien:
-   pip install -r requirements.txt
-   ```
-
-3. **Iniciar el servidor:**
-   * En Windows: Haz doble clic sobre el archivo **`start_services.bat`**  
-   * O ejecuta en tu terminal:
-     ```bash
-     python server.py 8000
-     ```
-
-4. **Abrir en el navegador:**  
-   👉 **[http://localhost:8000/](http://localhost:8000/)**
-
-¡Listo! El servidor autónomo levantará la web con todos los usuarios demo, el catálogo de productos y la simulación de APIs lista para usar.
+* **XAMPP 8.1 o superior** (con **Apache**, **PHP 8.2+** y **MySQL** activados).
+* **Navegador web moderno** (Chrome, Firefox, Edge).
 
 ---
 
-### Opción 2: Modo Producción / Tesina con XAMPP (Apache + PHP 8.2 + MySQL 8 Real)
+### 🚀 Pasos de Instalación y Conexión (Paso a Paso)
 
-Si vas a **defender tu proyecto ante un tribunal académico**, deseas ver las tablas en **phpMyAdmin** o desplegar en un servidor real:
+#### Paso 1: Ubicar o Enlazar el Proyecto en `htdocs` de XAMPP
 
-#### Paso 1: Ubicar el proyecto en Apache
-Copia o clona la carpeta del proyecto dentro del directorio de documentos públicos de XAMPP:
-```text
-C:\xampp\htdocs\Bebidas-E-Commerce\
-```
-*(Si instalaste XAMPP en otro disco, como `F:\xampp`, ubícalo en `F:\xampp\htdocs\Bebidas-E-Commerce\`)*.
+Para que Apache pueda servir los archivos y microservicios, el proyecto debe estar disponible dentro del directorio `htdocs` de tu instalación de XAMPP:
 
-#### Paso 2: Iniciar Servicios en XAMPP
-Abre **XAMPP Control Panel** e inicia:
-* ✅ **Apache** (hacer clic en *Start* &mdash; escuchará en puertos `80` y `443`).
-* ✅ **MySQL** (hacer clic en *Start* &mdash; escuchará en puerto `3306`).
+* **Opción A (Recomendada - Enlace Simbólico sin duplicar archivos):**  
+  Abre una terminal de PowerShell o CMD **como Administrador** y ejecuta:
+  ```cmd
+  mklink /J "C:\xampp\htdocs\Bebidas-E-Commerce" "D:\Bebidas-E-Commerce"
+  ```
+  *(Ajusta las rutas según la ubicación de tu disco, por ejemplo si XAMPP está en `C:\xampp` o `D:\xampp`)*.
 
-#### Paso 3: Crear la Base de Datos `burger_shop` (Idempotente)
-El archivo [`install_db.sql`](install_db.sql) crea la base de datos `burger_shop`, sus 6 tablas normalizadas y los usuarios con contraseñas Bcrypt:
+* **Opción B (Copia Directa):**  
+  Copia toda la carpeta `Bebidas-E-Commerce` directamente dentro de:
+  ```text
+  C:\xampp\htdocs\Bebidas-E-Commerce\
+  ```
 
-* **Desde phpMyAdmin (Gráfico):** Abre `http://localhost/phpmyadmin/`, haz clic en **Importar**, selecciona `install_db.sql` y pulsa **Continuar**.
-* **O por terminal:**
+---
+
+#### Paso 2: Iniciar Servicios en XAMPP Control Panel
+
+1. Abre la aplicación **XAMPP Control Panel**.
+2. Haz clic en el botón **Start** junto a **Apache** (debe quedar en verde, escuchando en el puerto `80` / `443`).
+3. Haz clic en el botón **Start** junto a **MySQL** (debe quedar en verde, escuchando en el puerto `3306`).
+
+---
+
+#### Paso 3: Crear e Importar la Base de Datos `burger_shop`
+
+El script [`install_db.sql`](install_db.sql) crea la base de datos `burger_shop`, sus 6 tablas relacionales normalizadas y las cuentas de prueba iniciales con contraseñas Bcrypt:
+
+* **Método 1 (Gráfico vía phpMyAdmin):**
+  1. Entra en tu navegador a: [http://localhost/phpmyadmin/](http://localhost/phpmyadmin/)
+  2. Ve a la pestaña **Importar** (arriba).
+  3. Haz clic en **Seleccionar archivo**, busca [`install_db.sql`](install_db.sql) en la raíz del proyecto y haz clic en **Continuar** (abajo).
+
+* **Método 2 (Por Consola / Terminal):**
   ```powershell
   C:\xampp\mysql\bin\mysql.exe -u root < install_db.sql
   ```
-* **O mediante el asistente PHP:**
+
+* **Método 3 (Vía script de migración PHP):**
   ```powershell
   php migrate.php
   ```
 
+---
+
 #### Paso 4: Configurar Variables de Entorno (`.env`)
-En la carpeta del proyecto, crea tu archivo `.env` a partir de la plantilla (o ejecuta `python setup.py`):
+
+Crea tu archivo `.env` en la raíz a partir de la plantilla:
 ```powershell
 copy .env.example .env
 ```
-*(Las opciones predeterminadas ya vienen listas para conectar con el MySQL de XAMPP en `127.0.0.1:3306`)*.
+*(Los valores por defecto ya vienen preconfigurados para conectar directamente al MySQL de XAMPP en `127.0.0.1:3306` con usuario `root` y sin contraseña)*.
+
+---
 
 #### Paso 5: Certificar el Despliegue con `check_deploy`
-Ejecuta la herramienta de diagnóstico:
-* **Por consola:** Haz doble clic en `check_deploy.bat` o ejecuta `php check_deploy.php`.
-* **En el navegador:** Abre 👉 **[http://localhost/Bebidas-E-Commerce/check_deploy.php](http://localhost/Bebidas-E-Commerce/check_deploy.php)**.
 
-Verás el tablero visual certificando las 30 verificaciones en verde.
+Antes de entrar a la tienda, puedes verificar que todo tu entorno esté 100% listo:
+* **Desde el navegador:**  
+  👉 **[http://localhost/Bebidas-E-Commerce/check_deploy.php](http://localhost/Bebidas-E-Commerce/check_deploy.php)**  
+  *(Deberás ver las **30/30 verificaciones en verde** confirmando Apache, MySQL, tablas relacionales, JWT y microservicios)*.
+* **Desde consola:**  
+  ```powershell
+  php check_deploy.php
+  ```
 
-#### Paso 6: Acceder a la Plataforma
-Abre tu navegador en:  
+---
+
+#### Paso 6: Abrir y Usar la Plataforma
+
+Abre tu navegador e ingresa a:  
 👉 **[http://localhost/Bebidas-E-Commerce/](http://localhost/Bebidas-E-Commerce/)**
+
+¡Listo! Ya puedes iniciar sesión con las cuentas del sistema, hacer pedidos reales, asignarlos a repartidores en tiempo real y gestionarlos desde el panel de administración.
 
 > 📖 **Guía Completa de Despliegue:** Para mayores detalles técnicos y consideraciones de seguridad, consulta la [Guía de Despliegue en XAMPP](docs/GUIA_DESPLIEGUE_XAMPP.md).
 

@@ -139,8 +139,110 @@ try {
             ];
         }
 
+        // 3. Consultar pedido activo actualmente asignado a este rider
+        $pedidoActivo = null;
+        $stmtActive = $db->prepare("
+            SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
+                   p.latitud, p.longitud, p.created_at,
+                   u.nombre AS cliente_nombre, u.email AS cliente_email
+            FROM pedidos p
+            LEFT JOIN users u ON p.cliente_id = u.id
+            WHERE p.rider_id = ? AND p.estado_pedido IN ('asignado', 'en_camino')
+            LIMIT 1
+        ");
+        $stmtActive->execute([$userId]);
+        $activeRow = $stmtActive->fetch();
+
+        if ($activeRow) {
+            $latCli = floatval($activeRow['latitud'] ?? -16.5000);
+            $lonCli = floatval($activeRow['longitud'] ?? -68.1193);
+            $distKm = calculateDistanceKm($latCli, $lonCli, $latTienda, $lonTienda);
+            $etaMin = max(5, round(($distKm / 30.0) * 60.0));
+
+            $stmtDetAct = $db->prepare("
+                SELECT d.producto_id, d.cantidad, d.precio_unitario, pr.nombre AS producto_nombre
+                FROM pedido_detalles d
+                LEFT JOIN productos pr ON pr.id = d.producto_id
+                WHERE d.pedido_id = ?
+            ");
+            $stmtDetAct->execute([$activeRow['id']]);
+            $detAct = $stmtDetAct->fetchAll();
+
+            $pedidoActivo = [
+                'id' => (int)$activeRow['id'],
+                'pedido_id' => (int)$activeRow['id'],
+                'cliente_id' => (int)$activeRow['cliente_id'],
+                'cliente_nombre' => $activeRow['cliente_nombre'] ?? 'Cliente',
+                'cliente_email' => $activeRow['cliente_email'] ?? '',
+                'total' => floatval($activeRow['total']),
+                'estado_pago' => $activeRow['estado_pago'],
+                'estado_pedido' => $activeRow['estado_pedido'],
+                'latitud' => $latCli,
+                'longitud' => $lonCli,
+                'items' => array_map(function($d) {
+                    return [
+                        'producto_id' => (int)$d['producto_id'],
+                        'nombre' => $d['producto_nombre'] ?? 'Producto',
+                        'cantidad' => (int)$d['cantidad'],
+                        'precio_unitario' => floatval($d['precio_unitario'])
+                    ];
+                }, $detAct),
+                'logistica' => [
+                    'distancia_km' => round($distKm, 2),
+                    'tiempo_estimado' => $etaMin . " min"
+                ]
+            ];
+        }
+
+        // 4. Consultar historial de pedidos entregados/atendidos por el rider
+        $stmtHist = $db->prepare("
+            SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
+                   p.created_at, p.updated_at,
+                   u.nombre AS cliente_nombre, u.email AS cliente_email
+            FROM pedidos p
+            LEFT JOIN users u ON p.cliente_id = u.id
+            WHERE p.rider_id = ?
+            ORDER BY p.id DESC
+        ");
+        $stmtHist->execute([$userId]);
+        $histRows = $stmtHist->fetchAll();
+
+        $historial = [];
+        foreach ($histRows as $h) {
+            $stmtDetH = $db->prepare("
+                SELECT d.producto_id, d.cantidad, d.precio_unitario, pr.nombre AS producto_nombre
+                FROM pedido_detalles d
+                LEFT JOIN productos pr ON pr.id = d.producto_id
+                WHERE d.pedido_id = ?
+            ");
+            $stmtDetH->execute([$h['id']]);
+            $detH = $stmtDetH->fetchAll();
+
+            $historial[] = [
+                'pedido_id' => (int)$h['id'],
+                'cliente_nombre' => $h['cliente_nombre'] ?? 'Cliente',
+                'cliente_email' => $h['cliente_email'] ?? '',
+                'total' => floatval($h['total']),
+                'estado_pago' => $h['estado_pago'],
+                'estado_pedido' => $h['estado_pedido'],
+                'fecha_creacion' => $h['created_at'],
+                'fecha_actualizacion' => $h['updated_at'],
+                'items' => array_map(function($d) {
+                    return [
+                        'producto_id' => (int)$d['producto_id'],
+                        'nombre' => $d['producto_nombre'] ?? 'Producto',
+                        'cantidad' => (int)$d['cantidad'],
+                        'precio_unitario' => floatval($d['precio_unitario'])
+                    ];
+                }, $detH),
+                'distancia_km' => 1.5
+            ];
+        }
+
         echo formatResponse("success", [
             "pedidos_disponibles" => $disponibles,
+            "pedido_activo" => $pedidoActivo,
+            "historial_pedidos" => $historial,
             "total" => count($disponibles)
         ], $userId, null, "LIST_PENDING_ORDERS");
         exit;
@@ -220,7 +322,20 @@ try {
         exit;
     }
 
-    else {
+    elseif ($method === 'POST' && ($action === 'release_order' || $action === 'reject_order')) {
+        $pedidoId = isset($input['pedido_id']) ? (int)$input['pedido_id'] : null;
+        if (!$pedidoId) {
+            http_response_code(400);
+            echo formatResponse("error", null, $userId, "Falta 'pedido_id'.", "VALIDATION_ERROR");
+            exit;
+        }
+        $db->beginTransaction();
+        $stmt = $db->prepare("UPDATE pedidos SET rider_id = NULL, estado_pedido = 'pendiente', updated_by = ?, updated_at = NOW() WHERE id = ? AND rider_id = ? AND estado_pedido = 'asignado'");
+        $stmt->execute([$userId, $pedidoId, $userId]);
+        logAudit($db, 'pedidos', $pedidoId, 'UPDATE', ['rider_id' => $userId, 'estado_pedido' => 'asignado'], ['rider_id' => null, 'estado_pedido' => 'pendiente'], $userId);
+        $db->commit();
+        echo formatResponse("success", ["mensaje" => "Pedido liberado exitosamente.", "pedido_id" => $pedidoId], $userId, null, "RELEASE_ORDER");
+    } else {
         http_response_code(405);
         echo formatResponse("error", null, $userId, "Método HTTP no permitido.", "METHOD_NOT_ALLOWED");
         exit;

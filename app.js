@@ -18,14 +18,15 @@ let currentSession = {
     currentUser: null
 };
 
-// Configuration & Connectivity State — connects automatically to Apache (XAMPP) or local dev server
+// Configuration & Connectivity State — connects strictly to PHP Microservices on current origin
 const detectMicroservicesUrl = () => {
     if (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file:')) {
         const basePath = window.location.pathname ? window.location.pathname.replace(/\/[^\/]*$/, '') : '';
         const url = `${window.location.origin}${basePath}/microservices`;
         return url.replace(/([^:]\/)\/+/g, '$1');
     }
-    return 'http://localhost:8000/microservices';
+    const origin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : '';
+    return `${origin}/microservices`.replace(/([^:]\/)\/+/g, '$1');
 };
 
 let config = {
@@ -86,74 +87,101 @@ function initLucide() {
     }
 }
 
+// Helpers de Utilidad y Diagnóstico de API PHP
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function showGlobalApiError(message, retryCallback = null) {
+    const banner = document.getElementById('globalApiErrorBanner');
+    const msgEl = document.getElementById('globalApiErrorMessage');
+    const retryBtn = document.getElementById('btnRetryApiConnection');
+    const apiDot = document.getElementById('apiDot');
+    const apiStatusTxt = document.getElementById('apiStatusText');
+
+    if (apiDot) apiDot.className = 'status-dot inactive';
+    if (apiStatusTxt) apiStatusTxt.innerText = 'Desconectado · Error de API';
+
+    if (banner && msgEl) {
+        msgEl.innerHTML = `<strong>Error de conexión con la API PHP/MySQL:</strong> ${escapeHtml(message || 'No se pudo comunicar con el servidor.')} <span style="font-size:0.8rem; color:#fca5a5;">(Verifique que Apache y MySQL estén activos)</span>`;
+        banner.style.display = 'flex';
+        if (retryBtn) {
+            retryBtn.onclick = () => {
+                banner.style.display = 'none';
+                checkApiHealth().then(() => {
+                    if (typeof retryCallback === 'function') retryCallback();
+                });
+            };
+        }
+    }
+    initLucide();
+}
+
+function hideGlobalApiError() {
+    const banner = document.getElementById('globalApiErrorBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+async function checkApiHealth() {
+    const apiDot = document.getElementById('apiDot');
+    const apiStatusTxt = document.getElementById('apiStatusText');
+    const currentHost = (typeof window !== 'undefined' && window.location && window.location.host) ? window.location.host : 'servidor';
+
+    try {
+        const res = await apiGet('/Auth/connection.php', null, { skipAuth: true });
+        if (res.ok) {
+            if (apiDot) apiDot.className = 'status-dot active';
+            if (apiStatusTxt) apiStatusTxt.innerText = `Conectado · API PHP (${currentHost})`;
+            hideGlobalApiError();
+            return true;
+        } else {
+            const err = res.error || 'Base de datos o servidor no responde';
+            showGlobalApiError(err);
+            return false;
+        }
+    } catch (e) {
+        showGlobalApiError('Servidor o base de datos offline. Inicie Apache y MySQL.');
+        return false;
+    }
+}
+
 // ----------------------------------------------------
 // 1. DATABASE & INITIAL DATA SEEDING
 // ----------------------------------------------------
 function initDatabase() {
-    // Check if localStorage has database, otherwise seed
-    const localDb = localStorage.getItem('burger_247_db') || localStorage.getItem('bebidas_247_db');
-    if (localDb) {
-        DB = JSON.parse(localDb);
-        // Automatic upgrade to Burger Shop if old beverage database is detected
-        if (DB.productos && (DB.productos.some(p => p.categoria === 'Cervezas' || p.categoria === 'Vinos' || p.categoria === 'Licores' || p.nombre === 'Cerveza Huari 620ml') || !DB.productos.some(p => p.categoria === 'Hamburguesas'))) {
-            DB.productos = getBurgerProducts();
-            saveDatabase();
-        }
-        // Upgrade legacy audit logs if they refer to old beer items
-        if (DB.auditoria_logs && DB.auditoria_logs.some(l => l.datos_nuevos && (l.datos_nuevos.includes('Paceña') || l.datos_nuevos.includes('Pilsen')))) {
-            DB.auditoria_logs.forEach(l => {
-                if (l.datos_nuevos && (l.datos_nuevos.includes('Paceña') || l.datos_nuevos.includes('Pilsen'))) {
-                    l.datos_nuevos = JSON.stringify({ nombre: 'Hamburguesa Clásica Simple', stock: 85, precio: 22.00 });
-                }
-            });
-            saveDatabase();
-        }
-        // Upgrade legacy password hashes to real bcrypt hashes
-        if (DB.users && Array.isArray(DB.users)) {
-            const realHashes = {
-                1: '$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', // carlos
-                2: '$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', // pedro
-                3: '$2a$10$yvebu1TvWJgj7wE7L1QCDuroqNwHJaELe4E.R3UNDIzwG06EFIJOq', // admin
-                4: '$2b$12$TYK.4OXjw6rT6CvUeIUH3O6CawYZp4qyouHv1Urv5p9Gws9kkr8Ym', // maria
-                5: '$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6'  // juan
-            };
-            let updated = false;
-            DB.users.forEach(u => {
-                if (realHashes[u.id] && (!u.password_hash || u.password_hash.includes('...'))) {
-                    u.password_hash = realHashes[u.id];
-                    updated = true;
-                }
-            });
-            if (updated) {
-                saveDatabase();
-            }
-        }
-    } else {
-        seedDatabase();
-        saveDatabase();
-    }
+    // Limpieza preventiva de datos simulados en localStorage
+    localStorage.removeItem('burger_247_db');
+    localStorage.removeItem('bebidas_247_db');
+    localStorage.removeItem('connected_mode');
 
-    // Initialize Auth view
+    // Inicializar estado en memoria vacío
+    DB = {
+        users: [],
+        productos: [],
+        pedidos: [],
+        pedido_detalles: [],
+        documentacion_rider: [],
+        auditoria_logs: []
+    };
+
+    // Inicializar vista de Autenticación
     renderAuthCard('login');
 
-    // Always connected mode — verify server is reachable
+    // Forzar modo conectado permanentemente
     config.connectedMode = true;
-    const apiDot = document.getElementById('apiDot');
-    const apiStatusTxt = document.getElementById('apiStatusText');
-    apiGet('/Auth/connection.php', null, { skipAuth: true })
-        .then(res => {
-            if (apiDot) apiDot.className = res.ok ? 'status-dot active' : 'status-dot inactive';
-            const currentHost = (typeof window !== 'undefined' && window.location && window.location.host) ? window.location.host : 'servidor';
-            if (apiStatusTxt) apiStatusTxt.innerText = res.ok ? `Conectado · ${currentHost}` : 'Servidor no disponible';
-        })
-        .catch(() => {
-            if (apiDot) apiDot.className = 'status-dot inactive';
-            if (apiStatusTxt) apiStatusTxt.innerText = 'Servidor no disponible';
-        });
 
-    // Restore session: check for JWT in connected mode first
+    // Verificar salud y conectividad con la API
+    checkApiHealth();
+
+    // Restauración de sesión mediante token JWT contra la API
     const token = getAuthToken();
-    if (config.connectedMode && token) {
+    if (token) {
         apiGet('/Auth/session.php')
             .then(res => {
                 if (res.ok && res.data && res.data.user) {
@@ -165,17 +193,17 @@ function initDatabase() {
                 }
             })
             .catch(err => {
-                console.warn('Error validando sesión remota, restaurando local:', err);
-                restoreLocalSavedSession();
+                console.warn('Error validando sesión remota con la API:', err);
+                showGlobalApiError('No se pudo verificar la sesión remota con la API.');
+                handleLogout(false);
             });
         return;
     }
 
-    if (config.connectedMode) {
-        syncProductsFromBackend();
-    }
-
-    restoreLocalSavedSession();
+    // Si no hay token autenticado, mostrar pantalla de login y sincronizar catálogo desde la API
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('headerUserStatus').style.display = 'none';
+    syncProductsFromBackend();
 }
 
 function updateApiStatusUI(connected) {
@@ -213,278 +241,21 @@ function restoreLocalSavedSession() {
 }
 
 function saveDatabase() {
-    localStorage.setItem('burger_247_db', JSON.stringify(DB));
-    localStorage.setItem('bebidas_247_db', JSON.stringify(DB));
+    // En arquitectura 100% conectada a la API PHP, toda la persistencia se realiza en MySQL mediante endpoints REST.
 }
 
 function seedDatabase() {
-    // 1. Seed Users (with secure bcrypt hashes for demo accounts)
-    DB.users = [
-        {
-            id: 1,
-            role: 'cliente',
-            nombre: 'Carlos Pérez',
-            email: 'carlos@mail.com',
-            password_hash: '$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', // carlos
-            fecha_nacimiento: '1992-05-15',
-            ci_url: '/uploads/ci/ci_carlos.png',
-            ci_status: 'verified',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 1,
-            updated_by: 1
-        },
-        {
-            id: 2,
-            role: 'rider',
-            nombre: 'Pedro Gómez',
-            email: 'pedro@mail.com',
-            password_hash: '$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', // pedro
-            fecha_nacimiento: '1995-10-22',
-            ci_url: '/uploads/ci/ci_pedro.png',
-            ci_status: 'verified',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 2,
-            updated_by: 2
-        },
-        {
-            id: 3,
-            role: 'super_usuario',
-            nombre: 'Admin Central',
-            email: 'admin@mail.com',
-            password_hash: '$2a$10$yvebu1TvWJgj7wE7L1QCDuroqNwHJaELe4E.R3UNDIzwG06EFIJOq', // admin
-            fecha_nacimiento: '1988-01-01',
-            ci_url: null,
-            ci_status: 'verified',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 3,
-            updated_by: 3
-        },
-        {
-            id: 4,
-            role: 'cliente',
-            nombre: 'María López (Pendiente)',
-            email: 'maria@mail.com',
-            password_hash: '$2b$12$TYK.4OXjw6rT6CvUeIUH3O6CawYZp4qyouHv1Urv5p9Gws9kkr8Ym', // maria
-            fecha_nacimiento: '2000-09-12',
-            ci_url: '/uploads/ci/ci_maria.jpg',
-            ci_status: 'pending',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 4,
-            updated_by: 4
-        },
-        {
-            id: 5,
-            role: 'rider',
-            nombre: 'Juan Rodríguez (Pendiente)',
-            email: 'juan@mail.com',
-            password_hash: '$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6', // juan
-            fecha_nacimiento: '1996-03-08',
-            ci_url: '/uploads/ci/ci_juan.jpg',
-            ci_status: 'pending',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 5,
-            updated_by: 5
-        },
-        {
-            id: 6,
-            role: 'cliente',
-            nombre: 'Roberto Flores (Rechazado)',
-            email: 'roberto@mail.com',
-            password_hash: '$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', // roberto (same hash, simulated)
-            fecha_nacimiento: '1998-07-20',
-            ci_url: '/uploads/ci/ci_roberto.jpg',
-            ci_status: 'rejected',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 6,
-            updated_by: 3
-        },
-        {
-            id: 7,
-            role: 'rider',
-            nombre: 'Marcos Vargas (Rechazado)',
-            email: 'marcos@mail.com',
-            password_hash: '$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', // marcos (same hash, simulated)
-            fecha_nacimiento: '1993-11-14',
-            ci_url: '/uploads/ci/ci_marcos.jpg',
-            ci_status: 'rejected',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 7,
-            updated_by: 3
-        }
-    ];
-
-    // 2. Seed Rider Documentation
-    DB.documentacion_rider = [
-        {
-            id: 1,
-            rider_id: 2, 
-            licencia_url: '/uploads/docs/licencia_pedro.jpg',
-            seguro_url: '/uploads/docs/seguro_pedro.jpg',
-            cv_url: '/uploads/docs/cv_pedro.pdf',
-            estado_aprobacion: 'aprobado',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 3,
-            updated_by: 3
-        },
-        {
-            id: 2,
-            rider_id: 5, 
-            licencia_url: '/uploads/docs/licencia_juan.jpg',
-            seguro_url: '/uploads/docs/seguro_juan.jpg',
-            cv_url: '/uploads/docs/cv_juan.pdf',
-            estado_aprobacion: 'pendiente',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 5,
-            updated_by: 5
-        },
-        {
-            id: 3,
-            rider_id: 7,
-            licencia_url: '/uploads/docs/licencia_marcos.jpg',
-            seguro_url: '/uploads/docs/seguro_marcos.jpg',
-            cv_url: '/uploads/docs/cv_marcos.pdf',
-            estado_aprobacion: 'rechazado',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 3,
-            updated_by: 3
-        }
-    ];
-
-    // 3. Seed Products (Burger Shop)
-    DB.productos = getBurgerProducts();
+    // Cero datos demo en produccion. MySQL es la unica fuente de verdad.
+    DB.users = [];
+    DB.documentacion_rider = [];
+    DB.productos = [];
+    DB.pedidos = [];
+    DB.pedido_detalles = [];
+    DB.auditoria_logs = [];
 }
 
 function getBurgerProducts() {
-    return [
-        { id: 1, categoria: 'Hamburguesas', nombre: 'Hamburguesa Clásica Simple', marca: 'Burger 24/7', sabor: 'Carne 150g, lechuga, tomate y salsa especial', precio: 22.00, stock: 85, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 2, categoria: 'Hamburguesas', nombre: 'Doble Queso Smash Burger', marca: 'Gourmet', sabor: 'Doble medallón smash, queso cheddar x2 y cebolla grillada', precio: 32.00, stock: 70, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 3, categoria: 'Hamburguesas', nombre: 'Bacon BBQ Crunch', marca: 'Especial', sabor: 'Tocino ahumado crocante, salsa BBQ dulce y queso americano', precio: 36.00, stock: 65, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 4, categoria: 'Hamburguesas', nombre: 'Monster Triple Burger', marca: 'Extrema', sabor: 'Triple carne, huevo frito, tocino, queso y pepinillos', precio: 45.00, stock: 40, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 5, categoria: 'Combos', nombre: 'Combo Clásico con Papas y Soda', marca: 'Combos', sabor: 'Hamburguesa Clásica + Papas Medianas + Coca-Cola 500ml', precio: 34.00, stock: 50, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 6, categoria: 'Combos', nombre: 'Combo Doble Smash + Papas Grandes', marca: 'Combos', sabor: 'Doble Smash Cheddar + Papas Rústicas + Bebida 500ml', precio: 44.00, stock: 45, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 7, categoria: 'Acompañamientos', nombre: 'Papas Fritas Rústicas', marca: 'Sides', sabor: 'Papas crocantes con sal marina y salsa tártara de la casa', precio: 14.00, stock: 120, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 8, categoria: 'Acompañamientos', nombre: 'Aros de Cebolla Crocantes', marca: 'Sides', sabor: '8 aros crujientes empanizados con dip BBQ', precio: 16.00, stock: 80, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 9, categoria: 'Acompañamientos', nombre: 'Nuggets de Pollo Crispy (6 uds)', marca: 'Sides', sabor: 'Pechuga crocante con salsa de mostaza miel', precio: 18.00, stock: 90, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 10, categoria: 'Bebidas', nombre: 'Coca-Cola Original 500ml', marca: 'Coca-Cola', sabor: 'Original Fría', precio: 6.00, stock: 200, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 11, categoria: 'Bebidas', nombre: 'Sprite Lima-Limón 500ml', marca: 'Sprite', sabor: 'Refrescante Fría', precio: 6.00, stock: 150, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-        { id: 12, categoria: 'Bebidas', nombre: 'Limonada Frozen con Menta', marca: 'Burger 24/7', sabor: 'Refrescante, limón natural y menta fresca', precio: 12.00, stock: 100, created_by: 3, updated_by: 3, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
-    ];
-
-    // 4. Seed Audit Logs
-    DB.auditoria_logs = [
-        {
-            id: 1,
-            tabla_afectada: 'productos',
-            registro_id: 1,
-            accion: 'INSERT',
-            datos_anteriores: null,
-            datos_nuevos: JSON.stringify({ nombre: 'Hamburguesa Clásica Simple', stock: 85, precio: 22.00 }),
-            ip_address: '127.0.0.1',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 3,
-            updated_by: 3
-        },
-        {
-            id: 2,
-            tabla_afectada: 'users',
-            registro_id: 1,
-            accion: 'INSERT',
-            datos_anteriores: null,
-            datos_nuevos: JSON.stringify({ email: 'carlos@mail.com', nombre: 'Carlos Pérez', role: 'cliente' }),
-            ip_address: '127.0.0.1',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: 1,
-            updated_by: 1
-        }
-    ];
-
-    // 5. Seed Pedidos (history: Entregados, Rechazados, Pendientes)
-    DB.pedidos = [
-        {
-            id: 1,
-            cliente_id: 1,
-            rider_id: 2,
-            estado_pago: 'pagado_efectivo',
-            estado_pedido: 'entregado',
-            total: 45.00,
-            latitud: -16.5020,
-            longitud: -68.1310,
-            motivo_cancelacion: null,
-            qr_comprobante_url: null,
-            created_at: new Date(Date.now() - 3600000 * 6).toISOString(), 
-            updated_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-            created_by: 1,
-            updated_by: 3
-        },
-        {
-            id: 2,
-            cliente_id: 4,
-            rider_id: 2,
-            estado_pago: 'contraentrega',
-            estado_pedido: 'rechazado',
-            total: 36.00,
-            latitud: -16.5120,
-            longitud: -68.1250,
-            motivo_cancelacion: 'Rider reportó imposibilidad de despacho (Zona fuera de cobertura / lluvia)',
-            qr_comprobante_url: null,
-            created_at: new Date(Date.now() - 3600000 * 4).toISOString(), 
-            updated_at: new Date(Date.now() - 3600000 * 3).toISOString(),
-            created_by: 4,
-            updated_by: 2
-        },
-        {
-            id: 3,
-            cliente_id: 1,
-            rider_id: 2,
-            estado_pago: 'pagado_qr',
-            estado_pedido: 'entregado',
-            total: 58.00,
-            latitud: -16.5080,
-            longitud: -68.1330,
-            motivo_cancelacion: null,
-            qr_comprobante_url: '/uploads/qr/comprobante_carlos1.jpg',
-            created_at: new Date(Date.now() - 3600000 * 2).toISOString(), 
-            updated_at: new Date(Date.now() - 3600000 * 1).toISOString(),
-            created_by: 1,
-            updated_by: 2
-        },
-        {
-            id: 4,
-            cliente_id: 1,
-            rider_id: null,
-            estado_pago: 'contraentrega',
-            estado_pedido: 'pendiente',
-            total: 44.00,
-            latitud: -16.5090,
-            longitud: -68.1340,
-            motivo_cancelacion: null,
-            qr_comprobante_url: null,
-            created_at: new Date().toISOString(), 
-            updated_at: new Date().toISOString(),
-            created_by: 1,
-            updated_by: 1
-        }
-    ];
-
-    DB.pedido_detalles = [
-        { id: 1, pedido_id: 1, producto_id: 1, cantidad: 1, precio_unitario: 22.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
-        { id: 2, pedido_id: 2, producto_id: 3, cantidad: 1, precio_unitario: 36.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 4, updated_by: 4 },
-        { id: 3, pedido_id: 3, producto_id: 2, cantidad: 1, precio_unitario: 32.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
-        { id: 4, pedido_id: 3, producto_id: 10, cantidad: 2, precio_unitario: 6.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 },
-        { id: 5, pedido_id: 4, producto_id: 6, cantidad: 1, precio_unitario: 44.00, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), created_by: 1, updated_by: 1 }
-    ];
+    return [];
 }
 
 // ----------------------------------------------------
@@ -550,63 +321,6 @@ function setupEventListeners() {
     });
 
     document.getElementById('btnHeaderLogout').addEventListener('click', handleLogout);
-
-    // toggleConnectedMode removed — always connected to Python server
-    const _toggleEl = document.getElementById('toggleConnectedMode');
-    if (_toggleEl) _toggleEl.addEventListener('change', (e) => {
-        config.connectedMode = e.target.checked;
-        localStorage.setItem('connected_mode', config.connectedMode ? 'true' : 'false');
-        const apiDot = document.getElementById('apiDot');
-        const apiText = document.getElementById('apiStatusText');
-
-        if (config.connectedMode) {
-            apiDot.className = 'status-dot inactive';
-            apiText.innerText = 'Intentando conectar a PHP...';
-            
-            apiGet('/Auth/connection.php', null, { skipAuth: true })
-                .then(res => {
-                    if (res.ok) {
-                        apiDot.className = 'status-dot active';
-                        apiText.innerText = 'Modo Conectado (PHP Server)';
-                        showToast('Conectado al backend mediante PHP.', 'success');
-
-                        // If a token exists, verify and sync session with backend
-                        const token = getAuthToken();
-                        if (token) {
-                            apiGet('/Auth/session.php')
-                                .then(sess => {
-                                    if (sess.ok && sess.data && sess.data.user) {
-                                        onLoginSuccess(sess.data.user, false);
-                                    }
-                                    syncProductsFromBackend();
-                                })
-                                .catch(() => {
-                                    syncProductsFromBackend();
-                                });
-                        } else {
-                            syncProductsFromBackend();
-                        }
-                    } else {
-                        throw new Error(res.error || 'Offline');
-                    }
-                })
-                .catch(err => {
-                    apiDot.className = 'status-dot inactive';
-                    apiText.innerText = 'Servidor Offline - Modo Simulado Activo';
-                    e.target.checked = false;
-                    config.connectedMode = false;
-                    localStorage.setItem('connected_mode', 'false');
-                    showToast('No se pudo conectar al servidor PHP local. Reversión a simulación.', 'error');
-                });
-        } else {
-            apiDot.className = 'status-dot active';
-            apiText.innerText = 'Modo Simulado (Local)';
-            showToast('Modo Simulado re-activado.', 'info');
-        }
-        if (currentSession.currentUser) {
-            updateUIForCurrentRole();
-        }
-    });
 
     document.getElementById('txtSearch').addEventListener('input', (e) => {
         renderProducts(getActiveCategory(), e.target.value);
@@ -976,56 +690,30 @@ function setupAuthFormListeners(view) {
             formData.append('fecha_nacimiento', dob);
             formData.append('ci_image', file);
 
-            let registeredUser = null;
             try {
                 const res = await apiPost('/Auth/register.php', formData, { skipAuth: true });
                 if (res.ok && res.data) {
                     if (res.data.token) {
                         localStorage.setItem('burger_jwt_token', res.data.token);
                     }
-                    registeredUser = res.data.user || {
-                        id: (res.envelope && res.envelope.audit && res.envelope.audit.user_id) || (DB.users.length + 1),
+                    const registeredUser = res.data.user || {
+                        id: (res.envelope && res.envelope.audit && res.envelope.audit.user_id) || 1,
                         role: 'cliente',
                         nombre: name,
                         email: email,
                         ci_status: 'pending',
                         ci_url: `/uploads/ci/ci_${file.name}`
                     };
-                    showToast('Cliente registrado con éxito en el backend. Esperando aprobación de C.I.', 'success');
-                } else if (res.error) {
-                    showToast(`Error: ${res.error}`, 'error');
-                    return;
+                    showToast('Cliente registrado con éxito en el backend MySQL. Esperando aprobación de C.I.', 'success');
+                    onLoginSuccess(registeredUser);
+                } else {
+                    showToast(`Error al registrar cliente: ${res.error || 'No se pudo completar el registro en la API.'}`, 'danger');
                 }
             } catch (err) {
-                console.warn('Backend no disponible para registro, usando modo simulado:', err);
+                console.error('Error en registro de cliente:', err);
+                showToast(`Fallo de conexión con la API PHP: ${err.message || 'Error de red'}`, 'danger');
+                showGlobalApiError('Error de conexión al registrar cliente.');
             }
-
-            if (!registeredUser) {
-                const newId = DB.users.length + 1;
-                registeredUser = {
-                    id: newId,
-                    role: 'cliente',
-                    nombre: name,
-                    email: email,
-                    password_hash: hashPassword(pass),
-                    fecha_nacimiento: dob,
-                    ci_url: `/uploads/ci/ci_${newId}_${file.name}`,
-                    ci_status: 'pending',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    created_by: newId,
-                    updated_by: newId
-                };
-                showToast('Cliente registrado en modo local. Esperando aprobación de C.I.', 'success');
-            }
-
-            if (!DB.users.some(u => u.email === email)) {
-                DB.users.push(registeredUser);
-                logAuditoria('users', registeredUser.id, 'INSERT', null, { email, name, role: 'cliente', ci_status: 'pending' }, registeredUser.id);
-                saveDatabase();
-            }
-
-            onLoginSuccess(registeredUser);
         });
     } 
     else if (view === 'register_rider') {
@@ -1069,71 +757,29 @@ function setupAuthFormListeners(view) {
             formData.append('seguro', s);
             formData.append('cv', c);
 
-            let registeredRider = null;
             try {
                 const res = await apiPost('/Auth/register_rider.php', formData, { skipAuth: true });
                 if (res.ok && res.data) {
                     if (res.data.token) {
                         localStorage.setItem('burger_jwt_token', res.data.token);
                     }
-                    registeredRider = res.data.user || {
-                        id: (res.envelope && res.envelope.audit && res.envelope.audit.user_id) || (DB.users.length + 1),
+                    const registeredRider = res.data.user || {
+                        id: (res.envelope && res.envelope.audit && res.envelope.audit.user_id) || 1,
                         role: 'rider',
                         nombre: name,
                         email: email,
                         ci_status: 'pending'
                     };
-                    showToast('Rider registrado y expediente digital subido al backend.', 'success');
-                } else if (res.error) {
-                    showToast(`Error: ${res.error}`, 'error');
-                    return;
+                    showToast('Rider registrado y expediente digital guardado en MySQL con éxito.', 'success');
+                    onLoginSuccess(registeredRider);
+                } else {
+                    showToast(`Error al postular: ${res.error || 'No se pudo procesar la postulación.'}`, 'danger');
                 }
             } catch (err) {
-                console.warn('Backend no disponible para registro de rider, usando modo local:', err);
+                console.error('Error en registro de rider:', err);
+                showToast(`Fallo de conexión al postular rider: ${err.message || 'API no disponible'}`, 'danger');
+                showGlobalApiError('Error de conexión al registrar rider.');
             }
-
-            if (!registeredRider) {
-                const newId = DB.users.length + 1;
-                registeredRider = {
-                    id: newId,
-                    role: 'rider',
-                    nombre: name,
-                    email: email,
-                    password_hash: hashPassword(pass),
-                    fecha_nacimiento: dob,
-                    ci_url: `/uploads/ci/ci_${newId}_rider.jpg`,
-                    ci_status: 'pending',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    created_by: newId,
-                    updated_by: newId
-                };
-                showToast('Postulación guardada localmente. Pendiente de revisión del administrador.', 'success');
-            }
-
-            if (!DB.users.some(u => u.email === email)) {
-                DB.users.push(registeredRider);
-                const docId = DB.documentacion_rider.length + 1;
-                const newDocs = {
-                    id: docId,
-                    rider_id: registeredRider.id,
-                    licencia_url: `/uploads/docs/licencia_${registeredRider.id}_${l.name}`,
-                    seguro_url: `/uploads/docs/soat_${registeredRider.id}_${s.name}`,
-                    cv_url: `/uploads/docs/cv_${registeredRider.id}_${c.name}`,
-                    estado_aprobacion: 'pendiente',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    created_by: registeredRider.id,
-                    updated_by: registeredRider.id
-                };
-                DB.documentacion_rider.push(newDocs);
-
-                logAuditoria('users', registeredRider.id, 'INSERT', null, { email, name, role: 'rider', ci_status: 'pending' }, registeredRider.id);
-                logAuditoria('documentacion_rider', docId, 'INSERT', null, { rider_id: registeredRider.id, estado_aprobacion: 'pendiente' }, registeredRider.id);
-                saveDatabase();
-            }
-
-            onLoginSuccess(registeredRider);
         });
     }
 }
@@ -1194,49 +840,35 @@ function hashPassword(password) {
 }
 
 function handleLogin(email, password) {
-    if (config.connectedMode) {
-        // Connected mode real auth via backend usando helper apiPost
-        apiPost('/Auth/login.php', { correo: email, email: email, password: password }, { skipAuth: true })
-            .then(res => {
-                if (res.ok && res.data && res.data.token) {
-                    const token = res.data.token;
-                    localStorage.setItem('burger_jwt_token', token);
-                    localStorage.setItem('bebidas_jwt_token', token);
+    // Autenticación obligatoria mediante API PHP / MySQL
+    apiPost('/Auth/login.php', { correo: email, email: email, password: password }, { skipAuth: true })
+        .then(res => {
+            if (res.ok && res.data && res.data.token) {
+                const token = res.data.token;
+                localStorage.setItem('burger_jwt_token', token);
+                localStorage.setItem('bebidas_jwt_token', token);
 
-                    // Hydrate user info from JWT claims and response
-                    const jwtData = parseJwt(token);
-                    const userObj = {
-                        id: (jwtData && jwtData.user_id) || res.data.user.id,
-                        nombre: (jwtData && jwtData.nombre) || res.data.user.nombre,
-                        email: (jwtData && jwtData.email) || res.data.user.email,
-                        role: (jwtData && jwtData.role) || res.data.user.role,
-                        ci_status: (jwtData && jwtData.ci_status) || res.data.user.ci_status || 'verified'
-                    };
+                // Obtener datos del usuario desde los claims del token JWT verificado
+                const jwtData = parseJwt(token);
+                const userObj = {
+                    id: (jwtData && jwtData.user_id) || (res.data.user && res.data.user.id) || 1,
+                    nombre: (jwtData && jwtData.nombre) || (res.data.user && res.data.user.nombre) || email,
+                    email: (jwtData && jwtData.email) || (res.data.user && res.data.user.email) || email,
+                    role: (jwtData && jwtData.role) || (res.data.user && res.data.user.role) || 'cliente',
+                    ci_status: (jwtData && jwtData.ci_status) || (res.data.user && res.data.user.ci_status) || 'verified'
+                };
 
-                    onLoginSuccess(userObj, true);
-                } else {
-                    showToast(res.error || 'Credenciales inválidas.', 'error');
-                }
-            })
-            .catch(err => {
-                showToast('Error de red al intentar conectar con el backend.', 'error');
-            });
-    } else {
-        // Simulated local login
-        const found = DB.users.find(usr => usr.email.toLowerCase() === email.toLowerCase());
-        if (!found) {
-            showToast('Usuario no registrado.', 'error');
-            return;
-        }
-
-        // Real password validation in simulated mode
-        if (!verifyPassword(password, found.password_hash)) {
-            showToast('Contraseña incorrecta. Acceso denegado.', 'error');
-            return;
-        }
-
-        onLoginSuccess(found, true);
-    }
+                onLoginSuccess(userObj, true);
+                hideGlobalApiError();
+            } else {
+                showToast(res.error || 'Credenciales inválidas. Acceso denegado.', 'error');
+            }
+        })
+        .catch(err => {
+            console.error('Error al conectar con la API de autenticación:', err);
+            showToast('Error de conexión con la API PHP: ' + (err.message || 'Servidor inaccesible'), 'danger');
+            showGlobalApiError('No se pudo conectar con el servicio de autenticación en MySQL.');
+        });
 }
 
 function parseJwt(token) {
@@ -1425,26 +1057,48 @@ async function renderProducts(category = 'todos', searchQuery = '') {
         initLucide();
     }
 
-    if (config.connectedMode) {
-        try {
-            const res = await apiGet('/Catalog/catalog.php');
-            if (res.ok && res.data && Array.isArray(res.data.productos)) {
-                DB.productos = res.data.productos.map(p => ({
-                    id: parseInt(p.id, 10),
-                    categoria: p.categoria,
-                    nombre: p.nombre,
-                    marca: p.marca,
-                    sabor: p.sabor || '',
-                    precio: parseFloat(p.precio),
-                    stock: parseInt(p.stock, 10),
-                    created_at: p.created_at,
-                    updated_at: p.updated_at
-                }));
-                saveDatabase();
-            }
-        } catch (err) {
-            console.warn('Error consultando catálogo vía API, usando fallback local:', err);
+    let apiError = null;
+    try {
+        const res = await apiGet('/Catalog/catalog.php');
+        if (res.ok && res.data && Array.isArray(res.data.productos)) {
+            DB.productos = res.data.productos.map(p => ({
+                id: parseInt(p.id, 10),
+                categoria: p.categoria,
+                nombre: p.nombre,
+                marca: p.marca,
+                sabor: p.sabor || '',
+                precio: parseFloat(p.precio),
+                stock: parseInt(p.stock, 10),
+                created_at: p.created_at,
+                updated_at: p.updated_at
+            }));
+            hideGlobalApiError();
+        } else {
+            DB.productos = [];
+            apiError = (res && res.error) || 'Fallo de respuesta al consultar el catálogo';
         }
+    } catch (err) {
+        DB.productos = [];
+        apiError = err.message || 'Error de conexión con la API de Catálogo';
+    }
+
+    if (apiError) {
+        grid.innerHTML = `
+            <div class="api-error-card" style="grid-column: 1/-1;">
+                <i data-lucide="alert-triangle" style="width: 44px; height: 44px; color: var(--accent-red); margin-bottom: 0.75rem;"></i>
+                <h3>Error al Cargar Catálogo desde la API PHP</h3>
+                <p>No se pudieron obtener los productos de la base de datos MySQL real. Verifique que Apache y MySQL estén en ejecución.</p>
+                <div class="api-error-detail">${escapeHtml(apiError)}</div>
+                <div>
+                    <button class="btn btn-secondary btn-sm" onclick="renderProducts('${category}', '${searchQuery}')">
+                        <i data-lucide="refresh-cw"></i> Reintentar Carga
+                    </button>
+                </div>
+            </div>
+        `;
+        initLucide();
+        showGlobalApiError(apiError, () => renderProducts(category, searchQuery));
+        return;
     }
 
     let filtered = DB.productos;
@@ -1768,180 +1422,85 @@ async function submitOrderCheckout() {
         qrUrl = `/uploads/qr/qr_${Date.now()}_${file ? file.name : 'comprobante.png'}`;
     }
 
-    // Modo Conectado: Checkout atómico contra backend MySQL
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (!token) {
-            showToast('Error 401: Sesión no autenticada. Inicia sesión para continuar.', 'danger');
-            return;
-        }
-
-        const itemsPayload = cart.map(item => ({
-            producto_id: item.product.id,
-            cantidad: item.quantity
-        }));
-
-        try {
-            const res = await apiPost('/Transactions/checkout.php', {
-                items: itemsPayload,
-                latitud: selectedDeliveryCoords.lat,
-                longitud: selectedDeliveryCoords.lon,
-                metodo_pago: metodoPago,
-                distancia_km: selectedDeliveryCoords.distKm,
-                qr_comprobante_url: qrUrl
-            });
-
-            if (!res.ok) {
-                if (res.status === 400 && res.error && res.error.includes('Stock insuficiente')) {
-                    showToast(`Error: ${res.error}`, 'danger');
-                    return;
-                } else if (res.status === 403) {
-                    showToast(`Error 403: ${res.error || 'Debes tener tu C.I. verificado para realizar compras.'}`, 'danger');
-                    return;
-                }
-                showToast(`Error en checkout: ${res.error || 'No se pudo procesar la transacción.'}`, 'danger');
-                return;
-            }
-
-            const backendData = res.data;
-            const newOrderId = backendData.pedido_id;
-
-            const newOrder = {
-                id: newOrderId,
-                cliente_id: u ? u.id : 1,
-                rider_id: null,
-                estado_pago: backendData.estado_pago,
-                estado_pedido: 'pendiente',
-                total: backendData.total,
-                latitud: selectedDeliveryCoords.lat,
-                longitud: selectedDeliveryCoords.lon,
-                qr_comprobante_url: qrUrl,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                created_by: u ? u.id : 1,
-                updated_by: u ? u.id : 1
-            };
-
-            DB.pedidos.push(newOrder);
-
-            // Descontar inventario localmente para reflejar cambio inmediato en UI
-            cart.forEach(item => {
-                const prod = DB.productos.find(p => p.id === item.product.id);
-                if (prod) {
-                    prod.stock = Math.max(0, prod.stock - item.quantity);
-                }
-                DB.pedido_detalles.push({
-                    id: DB.pedido_detalles.length + 1,
-                    pedido_id: newOrderId,
-                    producto_id: item.product.id,
-                    cantidad: item.quantity,
-                    precio_unitario: item.product.precio,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    created_by: u ? u.id : 1,
-                    updated_by: u ? u.id : 1
-                });
-            });
-
-            saveDatabase();
-            closeCheckoutModal();
-            cart = [];
-            updateCartBadge();
-            showToast('¡Pedido registrado en MySQL exitosamente! Inventario descontado.', 'success');
-            renderClienteActiveOrderTracker();
-            renderProducts();
-            return;
-        } catch (err) {
-            console.error('Error enviando checkout a backend:', err);
-            showToast('Fallo de red al comunicar con microservicio. Procesando en modo local...', 'warning');
-        }
+    // Proceso de Checkout atómico contra backend MySQL
+    const token = getAuthToken();
+    if (!token) {
+        showToast('Error 401: Sesión no autenticada. Inicia sesión para continuar.', 'danger');
+        return;
     }
 
-    // Modo Simulado (Local fallback)
-    const estadoPago = isQr ? 'pagado_qr' : 'contraentrega';
-    const totalPedido = parseFloat(cart.reduce((acc, item) => acc + (item.product.precio * item.quantity), 0)) + parseFloat(selectedDeliveryCoords.costBs);
+    const itemsPayload = cart.map(item => ({
+        producto_id: item.product.id,
+        cantidad: item.quantity
+    }));
 
-    const orderId = DB.pedidos.length + 1;
-    const newOrder = {
-        id: orderId,
-        cliente_id: u ? u.id : 1,
-        rider_id: null, 
-        estado_pago: estadoPago,
-        estado_pedido: 'pendiente',
-        total: totalPedido,
-        latitud: selectedDeliveryCoords.lat,
-        longitud: selectedDeliveryCoords.lon,
-        qr_comprobante_url: qrUrl,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: u ? u.id : 1,
-        updated_by: u ? u.id : 1
-    };
+    try {
+        const res = await apiPost('/Transactions/checkout.php', {
+            items: itemsPayload,
+            latitud: selectedDeliveryCoords.lat,
+            longitud: selectedDeliveryCoords.lon,
+            metodo_pago: metodoPago,
+            distancia_km: selectedDeliveryCoords.distKm,
+            qr_comprobante_url: qrUrl
+        });
 
-    DB.pedidos.push(newOrder);
-
-    logAuditoria('pedidos', orderId, 'INSERT', null, { 
-        cliente_id: u ? u.id : 1, 
-        estado_pago: estadoPago, 
-        estado_pedido: 'pendiente', 
-        total: totalPedido,
-        latitud: newOrder.latitud,
-        longitud: newOrder.longitud,
-        qr_url: qrUrl 
-    }, u ? u.id : 1);
-
-    cart.forEach(item => {
-        const detailId = DB.pedido_detalles.length + 1;
-        const newDetail = {
-            id: detailId,
-            pedido_id: orderId,
-            producto_id: item.product.id,
-            cantidad: item.quantity,
-            precio_unitario: item.product.precio,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: u ? u.id : 1,
-            updated_by: u ? u.id : 1
-        };
-        DB.pedido_detalles.push(newDetail);
-
-        const prod = DB.productos.find(p => p.id === item.product.id);
-        if (prod) {
-            const oldStock = prod.stock;
-            prod.stock -= item.quantity;
-            prod.updated_at = new Date().toISOString();
-            prod.updated_by = u ? u.id : 1;
-            logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, u ? u.id : 1);
+        if (!res.ok) {
+            if (res.status === 400 && res.error && res.error.includes('Stock insuficiente')) {
+                showToast(`Error: ${res.error}`, 'danger');
+                return;
+            } else if (res.status === 403) {
+                showToast(`Error 403: ${res.error || 'Debes tener tu C.I. verificado para realizar compras.'}`, 'danger');
+                return;
+            }
+            showToast(`Error en checkout: ${res.error || 'No se pudo procesar la transacción.'}`, 'danger');
+            showGlobalApiError('Error al procesar el checkout en el servidor: ' + (res.error || 'Operación rechazada.'));
+            return;
         }
-    });
 
-    saveDatabase();
-    closeCheckoutModal();
-    
-    cart = [];
-    updateCartBadge();
-    showToast('¡Pedido enviado con éxito! Un Rider asignará tu orden a la brevedad.', 'success');
-    
-    renderClienteActiveOrderTracker();
+        closeCheckoutModal();
+        cart = [];
+        updateCartBadge();
+        showToast('¡Pedido registrado en MySQL exitosamente! Inventario descontado.', 'success');
+        await renderClienteActiveOrderTracker();
+        await renderProducts();
+    } catch (err) {
+        console.error('Error enviando checkout a backend:', err);
+        showToast('Error de conexión con la API PHP. No se pudo registrar el pedido.', 'danger');
+        showGlobalApiError('No se pudo procesar la compra en el servidor. Por favor verifica la conexión con la API PHP.');
+    }
 }
 
-function renderClienteActiveOrderTracker() {
+async function renderClienteActiveOrderTracker() {
     const box = document.getElementById('clienteActiveOrderBox');
     const u = currentSession.cliente;
 
     if (!u) {
-        box.style.display = 'none';
+        if (box) box.style.display = 'none';
         return;
     }
 
-    const activeOrder = DB.pedidos.slice().reverse().find(p => p.cliente_id === u.id && p.estado_pedido !== 'entregado' && p.estado_pedido !== 'cancelado');
+    let activeOrder = null;
+    const token = getAuthToken();
+    if (token) {
+        try {
+            const res = await apiGet('/Transactions/checkout.php');
+            if (res.ok && res.data) {
+                activeOrder = res.data.pedido_activo || null;
+            } else if (!res.ok) {
+                console.warn('Fallo consultando pedidos del cliente:', res.error);
+            }
+        } catch (err) {
+            console.error('Error de red al consultar pedido del cliente:', err);
+            showGlobalApiError('No se pudo consultar el pedido activo en el servidor.');
+        }
+    }
 
     if (!activeOrder) {
-        box.style.display = 'none';
+        if (box) box.style.display = 'none';
         return;
     }
 
-    box.style.display = 'block';
+    if (box) box.style.display = 'block';
 
     const states = ['pendiente', 'asignado', 'en_camino', 'entregado'];
     const activeIdx = states.indexOf(activeOrder.estado_pedido);
@@ -1955,21 +1514,22 @@ function renderClienteActiveOrderTracker() {
         }
     });
 
-    document.getElementById('clientActiveOrderTitle').innerText = `Pedido #${activeOrder.id} - ${activeOrder.estado_pedido.toUpperCase()}`;
+    const titleEl = document.getElementById('clientActiveOrderTitle');
+    if (titleEl) titleEl.innerText = `Pedido #${activeOrder.id} - ${(activeOrder.estado_pedido || '').toUpperCase()}`;
     
-    const details = DB.pedido_detalles.filter(d => d.pedido_id === activeOrder.id);
-    const detailsText = details.map(d => {
-        const p = DB.productos.find(prod => prod.id === d.producto_id);
-        return `${d.cantidad}x ${p ? p.nombre : 'Producto'}`;
-    }).join(', ');
+    const details = activeOrder.detalles || [];
+    const detailsText = details.map(d => `${d.cantidad}x ${d.nombre || 'Producto'}`).join(', ');
 
     const isContra = activeOrder.estado_pago === 'contraentrega' || activeOrder.estado_pago === 'pagado_efectivo';
     const payBadge = isContra
         ? '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="banknote" style="width:13px;height:13px;vertical-align:middle;"></i> Contraentrega (Pagarás en efectivo al recibir)</span>'
         : '<span class="badge" style="background:rgba(139,92,246,0.15); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR</span>';
 
-    document.getElementById('clientActiveOrderPayment').innerHTML = `<strong>Método de Pago:</strong> ${payBadge}`;
-    document.getElementById('clientActiveOrderTotal').innerHTML = `<strong>Total a pagar:</strong> ${activeOrder.total.toFixed(2)} Bs`;
+    const payEl = document.getElementById('clientActiveOrderPayment');
+    if (payEl) payEl.innerHTML = `<strong>Método de Pago:</strong> ${payBadge}`;
+
+    const totalEl = document.getElementById('clientActiveOrderTotal');
+    if (totalEl) totalEl.innerHTML = `<strong>Total a pagar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs`;
     initLucide();
 
     const latCliente = activeOrder.latitud || -16.5090;
@@ -2193,187 +1753,148 @@ window.uploadMockDoc = function(docType) {
 async function renderRiderOrderQueue() {
     const list = document.getElementById('orderQueueList');
     const r = currentSession.rider;
-    const doc = DB.documentacion_rider.find(d => d.rider_id === r.id);
+    if (!list || !r) return;
 
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            try {
-                const res = await apiGet('/Rider/assignment.php');
-                if (res.status === 403) {
-                    list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tu cuenta no está aprobada para realizar despachos. Por favor carga tus documentos y contacta al Administrador.</div>`;
-                    return;
-                }
-                if (res.ok && res.data && Array.isArray(res.data.pedidos_disponibles)) {
-                    const pendings = res.data.pedidos_disponibles;
-                    if (pendings.length === 0) {
-                        list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay pedidos pendientes disponibles en este momento.</div>`;
-                        return;
-                    }
-                    list.innerHTML = pendings.map(p => {
-                        const logData = p.logistica || { distancia_km: 1.5, tiempo_estimado: '10 min' };
-                        const itemsText = (p.items || []).map(d => `${d.cantidad}x ${d.nombre}`).join(', ');
-                        return `
-                            <div class="order-card">
-                                <div class="order-card-header">
-                                    <span class="order-id">Pedido #${p.pedido_id}</span>
-                                    <span class="badge ${p.estado_pago === 'pagado_qr' ? 'badge-verified' : 'badge-pending'}">${(p.estado_pago || '').replace('_', ' ')}</span>
-                                </div>
-                                <div class="order-card-body">
-                                    <div>
-                                        <div class="order-meta-label">Cliente</div>
-                                        <div class="order-meta-val">${p.cliente_nombre || 'Cliente Anónimo'}</div>
-                                    </div>
-                                    <div>
-                                        <div class="order-meta-label">Monto del Pedido</div>
-                                        <div class="order-meta-val">${Number(p.total).toFixed(2)} Bs</div>
-                                    </div>
-                                    <div class="order-items-summary">
-                                        <div class="order-meta-label">Artículos del Pedido</div>
-                                        <div class="order-meta-val" style="font-weight: 500;">${itemsText || 'Combo / Hamburguesa'}</div>
-                                    </div>
-                                    <div>
-                                        <div class="order-meta-label">Distancia de Ruta</div>
-                                        <div class="order-meta-val">${logData.distancia_km || logData.distanceKm || 1.5} Km</div>
-                                    </div>
-                                    <div>
-                                        <div class="order-meta-label">Tiempo Estimado</div>
-                                        <div class="order-meta-val">${logData.tiempo_estimado || logData.etaMin || '10 min'}</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                                    <button class="btn btn-danger btn-sm" onclick="rejectRiderAvailableOrder(${p.pedido_id})"><i data-lucide="x"></i> Rechazar</button>
-                                    <button class="btn btn-primary btn-sm" onclick="acceptRiderOrder(${p.pedido_id})"><i data-lucide="check"></i> Aceptar Pedido</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                    return;
-                }
-            } catch (err) {
-                console.warn('Fallo consultando assignment.php en modo conectado:', err);
-            }
+    const token = getAuthToken();
+    if (!token) {
+        list.innerHTML = `<div class="api-error-card"><h4><i data-lucide="lock"></i> Inicia sesión</h4><p>Debes iniciar sesión como repartidor.</p></div>`;
+        initLucide();
+        return;
+    }
+
+    try {
+        const res = await apiGet('/Rider/assignment.php');
+        if (res.status === 403) {
+            list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tu cuenta no está aprobada para realizar despachos. Por favor carga tus documentos y contacta al Administrador.</div>`;
+            window._riderActiveOrder = null;
+            renderRiderActiveOrderPanel();
+            return;
         }
-    }
 
-    if (!doc || doc.estado_aprobacion !== 'aprobado') {
-        list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tu cuenta no está aprobada para realizar despachos. Por favor carga tus documentos y contacta al Administrador.</div>`;
-        return;
-    }
-
-    const hasActiveJob = DB.pedidos.some(p => p.rider_id === r.id && p.estado_pedido !== 'entregado' && p.estado_pedido !== 'cancelado');
-    if (hasActiveJob) {
-        list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tienes una entrega activa en progreso. Finalízala antes de aceptar nuevos pedidos.</div>`;
-        return;
-    }
-
-    const pendings = DB.pedidos.filter(p => p.estado_pedido === 'pendiente' && (p.estado_pago === 'pagado_qr' || p.estado_pago === 'contraentrega'));
-
-    if (pendings.length === 0) {
-        list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay pedidos pendientes disponibles en este momento.</div>`;
-        return;
-    }
-
-    list.innerHTML = pendings.map(p => {
-        const latCliente = p.latitud || -16.5090;
-        const lonCliente = p.longitud || -68.1340;
-        const logData = calculateLogistics(latCliente, lonCliente);
-
-        const items = DB.pedido_detalles.filter(d => d.pedido_id === p.id);
-        const itemsText = items.map(d => {
-            const prod = DB.productos.find(pr => pr.id === d.producto_id);
-            return `${d.cantidad}x ${prod ? prod.nombre : 'Producto'}`;
-        }).join(', ');
-
-        const clientUser = DB.users.find(usr => usr.id === p.cliente_id);
-
-        return `
-            <div class="order-card">
-                <div class="order-card-header">
-                    <span class="order-id">Pedido #${p.id}</span>
-                    <span class="badge ${p.estado_pago === 'pagado_qr' ? 'badge-verified' : 'badge-pending'}">${p.estado_pago.replace('_', ' ')}</span>
+        if (!res.ok) {
+            list.innerHTML = `
+                <div class="api-error-card">
+                    <h4><i data-lucide="alert-triangle"></i> Error al consultar pedidos</h4>
+                    <p>${escapeHtml(res.error || 'No se pudo obtener la cola de pedidos desde la API PHP.')}</p>
+                    <button class="btn btn-primary btn-sm" onclick="renderRiderOrderQueue()"><i data-lucide="refresh-cw"></i> Reintentar</button>
                 </div>
-                <div class="order-card-body">
-                    <div>
-                        <div class="order-meta-label">Cliente</div>
-                        <div class="order-meta-val">${clientUser ? clientUser.nombre : 'Cliente Anónimo'}</div>
+            `;
+            showGlobalApiError('Error al consultar pedidos disponibles para repartidores.');
+            initLucide();
+            return;
+        }
+
+        // Cache active order and history from API response
+        window._riderActiveOrder = res.data ? res.data.pedido_activo : null;
+        if (res.data && Array.isArray(res.data.historial_pedidos)) {
+            window._riderOrderHistory = res.data.historial_pedidos;
+        }
+
+        renderRiderActiveOrderPanel();
+
+        const pendings = (res.data && Array.isArray(res.data.pedidos_disponibles)) ? res.data.pedidos_disponibles : [];
+        if (window._riderActiveOrder) {
+            list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">Tienes una entrega activa en progreso. Finalízala antes de aceptar nuevos pedidos.</div>`;
+            return;
+        }
+
+        if (pendings.length === 0) {
+            list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay pedidos pendientes disponibles en este momento.</div>`;
+            return;
+        }
+
+        list.innerHTML = pendings.map(p => {
+            const logData = p.logistica || { distancia_km: 1.5, tiempo_estimado: '10 min' };
+            const itemsText = (p.items || []).map(d => `${d.cantidad}x ${d.nombre}`).join(', ');
+            return `
+                <div class="order-card">
+                    <div class="order-card-header">
+                        <span class="order-id">Pedido #${p.pedido_id}</span>
+                        <span class="badge ${p.estado_pago === 'pagado_qr' ? 'badge-verified' : 'badge-pending'}">${(p.estado_pago || '').replace('_', ' ')}</span>
                     </div>
-                    <div>
-                        <div class="order-meta-label">Monto del Pedido</div>
-                        <div class="order-meta-val">${p.total.toFixed(2)} Bs</div>
+                    <div class="order-card-body">
+                        <div>
+                            <div class="order-meta-label">Cliente</div>
+                            <div class="order-meta-val">${escapeHtml(p.cliente_nombre || 'Cliente Anónimo')}</div>
+                        </div>
+                        <div>
+                            <div class="order-meta-label">Monto del Pedido</div>
+                            <div class="order-meta-val">${Number(p.total).toFixed(2)} Bs</div>
+                        </div>
+                        <div class="order-items-summary">
+                            <div class="order-meta-label">Artículos del Pedido</div>
+                            <div class="order-meta-val" style="font-weight: 500;">${escapeHtml(itemsText || 'Combo / Hamburguesa')}</div>
+                        </div>
+                        <div>
+                            <div class="order-meta-label">Distancia de Ruta</div>
+                            <div class="order-meta-val">${logData.distancia_km || logData.distanceKm || 1.5} Km</div>
+                        </div>
+                        <div>
+                            <div class="order-meta-label">Tiempo Estimado</div>
+                            <div class="order-meta-val">${logData.tiempo_estimado || logData.etaMin || '10 min'}</div>
+                        </div>
                     </div>
-                    <div class="order-items-summary">
-                        <div class="order-meta-label">Artículos del Pedido</div>
-                        <div class="order-meta-val" style="font-weight: 500;">${itemsText}</div>
-                    </div>
-                    <div>
-                        <div class="order-meta-label">Distancia de Ruta</div>
-                        <div class="order-meta-val">${logData.distanceKm} Km</div>
-                    </div>
-                    <div>
-                        <div class="order-meta-label">Tiempo Estimado</div>
-                        <div class="order-meta-val">${logData.etaMin} Minutos</div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                        <button class="btn btn-danger btn-sm" onclick="rejectRiderAvailableOrder(${p.pedido_id})"><i data-lucide="x"></i> Rechazar</button>
+                        <button class="btn btn-primary btn-sm" onclick="acceptRiderOrder(${p.pedido_id})"><i data-lucide="check"></i> Aceptar Pedido</button>
                     </div>
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-                    <button class="btn btn-danger btn-sm" onclick="rejectRiderAvailableOrder(${p.id})"><i data-lucide="x"></i> Rechazar</button>
-                    <button class="btn btn-primary btn-sm" onclick="acceptRiderOrder(${p.id})"><i data-lucide="check"></i> Aceptar Pedido</button>
-                </div>
+            `;
+        }).join('');
+        initLucide();
+    } catch (err) {
+        console.error('Fallo consultando assignment.php:', err);
+        list.innerHTML = `
+            <div class="api-error-card">
+                <h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4>
+                <p>No se pudo conectar con el microservicio de asignación de pedidos. Verifica que el servidor Apache/MySQL esté activo.</p>
+                <button class="btn btn-primary btn-sm" onclick="renderRiderOrderQueue()"><i data-lucide="refresh-cw"></i> Reintentar</button>
             </div>
         `;
-    }).join('');
+        showGlobalApiError('Fallo de conexión al consultar los pedidos para repartidores.');
+        initLucide();
+    }
 }
 
 window.acceptRiderOrder = async function(orderId) {
-    const r = currentSession.rider;
+    const token = getAuthToken();
+    if (!token) {
+        showToast('Error 401: Sesión no autorizada.', 'danger');
+        return;
+    }
 
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            try {
-                const res = await apiPost('/Rider/assignment.php', { pedido_id: orderId });
-                if (res.status === 403) {
-                    showToast('Error 403: Tu cuenta de rider no está aprobada para aceptar pedidos.', 'danger');
-                    return;
-                } else if (res.status === 409) {
-                    showToast(`Conflicto: ${res.error || 'El pedido no está disponible o ya tienes uno activo.'}`, 'warning');
-                    return;
-                } else if (!res.ok) {
-                    showToast(`Error al aceptar: ${res.error || 'Operación rechazada.'}`, 'danger');
-                    return;
-                }
-            } catch (err) {
-                console.warn('Error en assignment.php:', err);
-            }
+    try {
+        const res = await apiPost('/Rider/assignment.php', { pedido_id: orderId });
+        if (res.status === 403) {
+            showToast('Error 403: Tu cuenta de rider no está aprobada para aceptar pedidos.', 'danger');
+            return;
+        } else if (res.status === 409) {
+            showToast(`Conflicto: ${res.error || 'El pedido no está disponible o ya tienes uno activo.'}`, 'warning');
+            return;
+        } else if (!res.ok) {
+            showToast(`Error al aceptar: ${res.error || 'Operación rechazada.'}`, 'danger');
+            return;
         }
+
+        showToast('¡Pedido aceptado exitosamente desde la API PHP!', 'success');
+        await renderRiderOrderQueue();
+    } catch (err) {
+        console.error('Error en assignment.php:', err);
+        showToast('Error de red al conectar con la API PHP.', 'danger');
+        showGlobalApiError('No se pudo comunicar con el servidor para aceptar el pedido.');
     }
-
-    const order = DB.pedidos.find(p => p.id === orderId);
-    if (order) {
-        const oldState = order.estado_pedido;
-        order.estado_pedido = 'asignado';
-        order.rider_id = r.id;
-        order.updated_at = new Date().toISOString();
-        order.updated_by = r.id;
-
-        logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'asignado', rider_id: r.id }, r.id);
-        saveDatabase();
-    }
-
-    showToast('Pedido aceptado correctamente.', 'success');
-    updateUIForCurrentRole();
 };
 
 function renderRiderActiveOrderPanel() {
     const box = document.getElementById('riderActiveOrderBox');
     const r = currentSession.rider;
 
-    if (!r) {
-        box.style.display = 'none';
+    if (!box || !r) {
+        if (box) box.style.display = 'none';
         return;
     }
 
-    const activeOrder = DB.pedidos.find(p => p.rider_id === r.id && p.estado_pedido !== 'entregado' && p.estado_pedido !== 'cancelado');
+    const activeOrder = window._riderActiveOrder;
 
     if (!activeOrder) {
         box.style.display = 'none';
@@ -2394,38 +1915,44 @@ function renderRiderActiveOrderPanel() {
         }
     });
 
-    document.getElementById('riderActiveOrderTitle').innerText = `Entrega Activa #${activeOrder.id}`;
-    const clientUser = DB.users.find(u => u.id === activeOrder.cliente_id);
-    document.getElementById('riderActiveOrderClient').innerHTML = `<strong>Cliente:</strong> ${clientUser ? clientUser.nombre : 'Cliente'}`;
+    const titleEl = document.getElementById('riderActiveOrderTitle');
+    if (titleEl) titleEl.innerText = `Entrega Activa #${activeOrder.id}`;
     
-    const details = DB.pedido_detalles.filter(d => d.pedido_id === activeOrder.id);
-    const detailsText = details.map(d => {
-        const p = DB.productos.find(prod => prod.id === d.producto_id);
-        return `${d.cantidad}x ${p ? p.nombre : 'Producto'}`;
-    }).join(', ');
+    const clientEl = document.getElementById('riderActiveOrderClient');
+    if (clientEl) clientEl.innerHTML = `<strong>Cliente:</strong> ${escapeHtml(activeOrder.cliente_nombre || 'Cliente')}`;
     
-    document.getElementById('riderActiveOrderItems').innerHTML = `<strong>Detalles:</strong> ${detailsText}`;
-    document.getElementById('riderActiveOrderPayment').innerHTML = `<strong>Total a Cobrar:</strong> ${activeOrder.total.toFixed(2)} Bs (${activeOrder.estado_pago.toUpperCase()})`;
+    const details = activeOrder.items || [];
+    const detailsText = details.map(d => `${d.cantidad}x ${d.nombre || 'Producto'}`).join(', ');
+    
+    const itemsEl = document.getElementById('riderActiveOrderItems');
+    if (itemsEl) itemsEl.innerHTML = `<strong>Detalles:</strong> ${escapeHtml(detailsText || 'Sin detalles')}`;
+    
+    const payEl = document.getElementById('riderActiveOrderPayment');
+    if (payEl) payEl.innerHTML = `<strong>Total a Cobrar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs (${(activeOrder.estado_pago || '').toUpperCase()})`;
 
     const latCliente = activeOrder.latitud || -16.5090;
     const lonCliente = activeOrder.longitud || -68.1340;
     const logData = calculateLogistics(latCliente, lonCliente);
 
-    document.getElementById('riderOrderDistance').innerText = `Distancia: ${logData.distanceKm} Km`;
-    document.getElementById('riderOrderEta').innerText = `ETA: ${logData.etaMin} min`;
+    const distEl = document.getElementById('riderOrderDistance');
+    if (distEl) distEl.innerText = `Distancia: ${logData.distanceKm} Km`;
+    
+    const etaEl = document.getElementById('riderOrderEta');
+    if (etaEl) etaEl.innerText = `ETA: ${logData.etaMin} min`;
 
     const activeBtn = document.getElementById('btnRiderAction');
     const cancelBtn = document.getElementById('btnRiderCancel');
 
-    if (activeOrder.estado_pedido === 'asignado') {
-        activeBtn.innerText = 'Iniciar Despacho (En Camino)';
-        activeBtn.className = 'btn btn-primary';
-        cancelBtn.style.display = 'block';
-    } 
-    else if (activeOrder.estado_pedido === 'en_camino') {
-        activeBtn.innerText = 'Finalizar Entrega (Cobrar)';
-        activeBtn.className = 'btn btn-success';
-        cancelBtn.style.display = 'none';
+    if (activeBtn && cancelBtn) {
+        if (activeOrder.estado_pedido === 'asignado') {
+            activeBtn.innerText = 'Iniciar Despacho (En Camino)';
+            activeBtn.className = 'btn btn-primary';
+            cancelBtn.style.display = 'block';
+        } else if (activeOrder.estado_pedido === 'en_camino') {
+            activeBtn.innerText = 'Finalizar Entrega (Cobrar)';
+            activeBtn.className = 'btn btn-success';
+            cancelBtn.style.display = 'none';
+        }
     }
 
     setTimeout(() => {
@@ -2473,7 +2000,7 @@ function renderRiderActiveOrderPanel() {
                 [STORE_COORDS.lat, STORE_COORDS.lon],
                 [latCliente, lonCliente]
             ], {
-                color: '#8b5cf6',
+                color: '#10b981',
                 weight: 3,
                 dashArray: '5, 5'
             }).addTo(riderTrackingMapInstance);
@@ -2485,18 +2012,17 @@ function renderRiderActiveOrderPanel() {
         ]);
         riderTrackingMapInstance.fitBounds(bounds, { padding: [20, 20] });
 
-        let riderLat = STORE_COORDS.lat;
-        let riderLon = STORE_COORDS.lon;
-
-        if (activeOrder.estado_pedido === 'en_camino') {
-            riderLat = (STORE_COORDS.lat + latCliente) / 2;
-            riderLon = (STORE_COORDS.lon + lonCliente) / 2;
-        }
+        const riderPos = (activeOrder.estado_pedido === 'asignado')
+            ? [STORE_COORDS.lat, STORE_COORDS.lon]
+            : [
+                STORE_COORDS.lat + 0.6 * (latCliente - STORE_COORDS.lat),
+                STORE_COORDS.lon + 0.6 * (lonCliente - STORE_COORDS.lon)
+            ];
 
         if (riderTrackingMarkerRider) {
-            riderTrackingMarkerRider.setLatLng([riderLat, riderLon]);
+            riderTrackingMarkerRider.setLatLng(riderPos);
         } else {
-            riderTrackingMarkerRider = L.marker([riderLat, riderLon], {
+            riderTrackingMarkerRider = L.marker(riderPos, {
                 icon: L.divIcon({
                     className: 'node-rider-wrap',
                     html: '<div style="background:#10b981; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #10b981; display:flex; align-items:center; justify-content:center; color:#fff; font-size:8px;"><i data-lucide="bike" style="width:8px;height:8px;fill:currentColor;"></i></div>',
@@ -2510,7 +2036,7 @@ function renderRiderActiveOrderPanel() {
 
 async function processRiderActiveOrderStep() {
     const r = currentSession.rider;
-    const activeOrder = DB.pedidos.find(p => p.rider_id === r.id && p.estado_pedido !== 'entregado' && p.estado_pedido !== 'cancelado');
+    const activeOrder = window._riderActiveOrder;
 
     if (!activeOrder) return;
 
@@ -2518,72 +2044,54 @@ async function processRiderActiveOrderStep() {
     const nextState = oldState === 'asignado' ? 'en_camino' : 'entregado';
     let msg = nextState === 'en_camino' ? 'Viaje iniciado. Conduce con cuidado.' : 'Pedido entregado con éxito.';
 
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            try {
-                const res = await apiPut('/Rider/delivery.php', { pedido_id: activeOrder.id, nuevo_estado: nextState });
-                if (res.status === 403) {
-                    showToast('Error 403: No estás autorizado para gestionar este pedido.', 'danger');
-                    return;
-                } else if (!res.ok) {
-                    showToast(`Error al avanzar pedido: ${res.error || 'Error desconocido'}`, 'danger');
-                    return;
-                }
-            } catch (err) {
-                console.warn('Error en delivery.php:', err);
-            }
-        }
+    const token = getAuthToken();
+    if (!token) {
+        showToast('Error: No se encontró sesión activa de repartidor.', 'danger');
+        return;
     }
 
-    if (oldState === 'asignado') {
-        activeOrder.estado_pedido = nextState;
-        logAuditoria('pedidos', activeOrder.id, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: nextState }, r.id);
-    } 
-    else if (oldState === 'en_camino') {
-        activeOrder.estado_pedido = nextState;
-        activeOrder.updated_at = new Date().toISOString();
-        activeOrder.updated_by = r.id;
-
-        logAuditoria('pedidos', activeOrder.id, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: nextState }, r.id);
-
-        if (activeOrder.estado_pago === 'contraentrega') {
-            const oldPayState = activeOrder.estado_pago;
-            activeOrder.estado_pago = 'pagado_efectivo';
-            logAuditoria('pedidos', activeOrder.id, 'UPDATE', { estado_pago: oldPayState }, { estado_pago: 'pagado_efectivo' }, r.id);
+    try {
+        const res = await apiPut('/Rider/delivery.php', { pedido_id: activeOrder.id, nuevo_estado: nextState });
+        if (res.status === 403) {
+            showToast('Error 403: No estás autorizado para gestionar este pedido.', 'danger');
+            return;
+        } else if (!res.ok) {
+            showToast(`Error al avanzar pedido: ${res.error || 'Operación rechazada por la API PHP'}`, 'danger');
+            return;
         }
-    }
 
-    saveDatabase();
-    showToast(msg, 'success');
-    updateUIForCurrentRole();
+        showToast(msg, 'success');
+        await renderRiderOrderQueue();
+        await renderRiderOrderHistory();
+    } catch (err) {
+        console.error('Error en delivery.php:', err);
+        showToast('Error de conexión con la API PHP al actualizar entrega.', 'danger');
+        showGlobalApiError('No se pudo registrar el avance del pedido en el servidor.');
+    }
 }
 
-function cancelRiderActiveOrder() {
-    const r = currentSession.rider;
-    const activeOrder = DB.pedidos.find(p => p.rider_id === r.id && p.estado_pedido === 'asignado');
-
+async function cancelRiderActiveOrder() {
+    const activeOrder = window._riderActiveOrder;
     if (!activeOrder) return;
 
-    const details = DB.pedido_detalles.filter(d => d.pedido_id === activeOrder.id);
-    details.forEach(d => {
-        const prod = DB.productos.find(p => p.id === d.producto_id);
-        const oldStock = prod.stock;
-        prod.stock += d.cantidad;
-        logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, r.id);
-    });
+    const token = getAuthToken();
+    if (!token) {
+        showToast('Error: No hay sesión de repartidor activa.', 'danger');
+        return;
+    }
 
-    const oldState = activeOrder.estado_pedido;
-    activeOrder.estado_pedido = 'pendiente';
-    activeOrder.rider_id = null;
-    activeOrder.updated_at = new Date().toISOString();
-    activeOrder.updated_by = r.id;
-
-    logAuditoria('pedidos', activeOrder.id, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'pendiente', rider_id: null }, r.id);
-
-    saveDatabase();
-    showToast('Pedido cancelado. El stock ha sido devuelto al inventario.', 'info');
-    updateUIForCurrentRole();
+    try {
+        const res = await apiPost('/Rider/assignment.php', { action: 'release_order', pedido_id: activeOrder.id });
+        if (!res.ok) {
+            showToast(`Error al liberar pedido: ${res.error || 'Operación rechazada'}`, 'danger');
+            return;
+        }
+        showToast('Pedido liberado exitosamente en el servidor.', 'info');
+        await renderRiderOrderQueue();
+    } catch (err) {
+        console.error('Error liberando pedido en backend:', err);
+        showToast('Error de conexión al liberar pedido.', 'danger');
+    }
 }
 
 // ----------------------------------------------------
@@ -2599,50 +2107,38 @@ async function renderRiderOrderHistory(filter = 'all') {
     const r = currentSession.rider;
     if (!r) return;
 
-    let historyOrders = [];
+    let historyOrders = window._riderOrderHistory || [];
 
-    if (config.connectedMode) {
+    if (!historyOrders.length) {
         const token = getAuthToken();
         if (token) {
             try {
                 const res = await apiGet('/Rider/assignment.php');
                 if (res.ok && res.data && Array.isArray(res.data.historial_pedidos)) {
                     historyOrders = res.data.historial_pedidos;
+                    window._riderOrderHistory = historyOrders;
+                } else if (!res.ok) {
+                    listEl.innerHTML = `
+                        <div class="api-error-card">
+                            <h4><i data-lucide="alert-triangle"></i> Error al consultar historial</h4>
+                            <p>${escapeHtml(res.error || 'No se pudo obtener el historial de entregas de la API PHP.')}</p>
+                        </div>
+                    `;
+                    initLucide();
+                    return;
                 }
             } catch (err) {
-                console.warn('Fallo obteniendo historial de rider del backend:', err);
+                console.error('Fallo obteniendo historial de rider:', err);
+                listEl.innerHTML = `
+                    <div class="api-error-card">
+                        <h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4>
+                        <p>No se pudo conectar con el servidor para consultar el historial de entregas.</p>
+                    </div>
+                `;
+                initLucide();
+                return;
             }
         }
-    }
-
-    if (!historyOrders.length) {
-        // Fallback to local DB
-        const rOrders = DB.pedidos.filter(p => p.rider_id === r.id);
-        historyOrders = rOrders.map(p => {
-            const clientUser = DB.users.find(u => u.id === p.cliente_id);
-            const items = DB.pedido_detalles.filter(d => d.pedido_id === p.id);
-            const itemsFmt = items.map(d => {
-                const pr = DB.productos.find(prod => prod.id === d.producto_id);
-                return {
-                    nombre: pr ? pr.nombre : 'Producto',
-                    cantidad: d.cantidad,
-                    precio_unitario: d.precio_unitario
-                };
-            });
-            return {
-                pedido_id: p.id,
-                cliente_nombre: clientUser ? clientUser.nombre : 'Cliente',
-                cliente_email: clientUser ? clientUser.email : '',
-                total: p.total,
-                estado_pago: p.estado_pago,
-                estado_pedido: p.estado_pedido,
-                motivo_cancelacion: p.motivo_cancelacion || '',
-                fecha_creacion: p.created_at,
-                fecha_actualizacion: p.updated_at,
-                items: itemsFmt,
-                distancia_km: 1.5
-            };
-        }).reverse();
     }
 
     window._riderOrderHistory = historyOrders;
@@ -2753,63 +2249,72 @@ window.rejectRiderAvailableOrder = async function(orderId) {
     const motivo = prompt('Ingresa el motivo del rechazo del pedido:', 'Zona fuera de cobertura / Dificultad climática');
     if (!motivo) return;
 
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            try {
-                const res = await apiPost('/Rider/assignment.php', {
-                    pedido_id: orderId,
-                    action: 'reject',
-                    motivo: motivo
-                });
-                if (res.ok) {
-                    showToast('Pedido rechazado y archivado en tu historial.', 'info');
-                }
-            } catch (err) {
-                console.warn('Error enviando rechazo al backend:', err);
-            }
+    try {
+        const res = await apiPost('/Rider/assignment.php', {
+            pedido_id: orderId,
+            action: 'reject',
+            motivo: motivo
+        });
+        if (!res.ok) {
+            showToast(`Error al rechazar pedido: ${res.error || 'Operación denegada'}`, 'danger');
+            showGlobalApiError('No se pudo rechazar el pedido en el backend.');
+            return;
         }
+        showToast('Pedido rechazado y archivado en tu historial.', 'info');
+        updateUIForCurrentRole();
+    } catch (err) {
+        console.error('Error enviando rechazo al backend:', err);
+        showToast('Error de red al rechazar pedido.', 'danger');
+        showGlobalApiError('Error de red al contactar al servidor PHP.');
     }
-
-    const order = DB.pedidos.find(p => p.id === orderId);
-    if (order) {
-        order.estado_pedido = 'rechazado';
-        order.rider_id = r.id;
-        order.motivo_cancelacion = motivo;
-        order.updated_at = new Date().toISOString();
-        order.updated_by = r.id;
-        logAuditoria('pedidos', order.id, 'UPDATE', { estado_pedido: 'pendiente' }, { estado_pedido: 'rechazado', motivo }, r.id);
-        saveDatabase();
-    }
-
-    showToast('Has rechazado el pedido. Se ha registrado en tu historial.', 'info');
-    updateUIForCurrentRole();
 };
 
 async function renderAdminPendingApprovals() {
     const custContainer = document.getElementById('pendingCustomersList');
     const riderContainer = document.getElementById('pendingRidersList');
+    if (!custContainer || !riderContainer) return;
 
     let pendingCustomers = [];
     let pendingRidersDocs = [];
 
     try {
         const res = await apiGet('/Auth/admin_approval.php');
-        if (res.ok && res.data) {
-            if (Array.isArray(res.data.pending_customers) && res.data.pending_customers.length > 0) {
+        if (!res.ok) {
+            const errHtml = `
+                <div class="api-error-card">
+                    <h4><i data-lucide="alert-triangle"></i> Error en la API PHP</h4>
+                    <p>${escapeHtml(res.error || 'No se pudieron consultar las aprobaciones pendientes.')}</p>
+                    <button class="btn btn-primary btn-sm" onclick="renderAdminPendingApprovals()"><i data-lucide="refresh-cw"></i> Reintentar</button>
+                </div>
+            `;
+            custContainer.innerHTML = errHtml;
+            riderContainer.innerHTML = errHtml;
+            showGlobalApiError('Error al consultar aprobaciones pendientes de clientes y repartidores.');
+            initLucide();
+            return;
+        }
+        if (res.data) {
+            if (Array.isArray(res.data.pending_customers)) {
                 pendingCustomers = res.data.pending_customers;
             }
-            if (Array.isArray(res.data.pending_riders) && res.data.pending_riders.length > 0) {
+            if (Array.isArray(res.data.pending_riders)) {
                 pendingRidersDocs = res.data.pending_riders;
             }
         }
     } catch (err) {
-        console.warn('Fallo consulta a /Auth/admin_approval.php, usando DB local:', err);
-    }
-
-    if (pendingCustomers.length === 0 && pendingRidersDocs.length === 0) {
-        pendingCustomers = DB.users.filter(u => u.role === 'cliente' && u.ci_status === 'pending');
-        pendingRidersDocs = DB.documentacion_rider.filter(d => d.estado_aprobacion === 'pendiente');
+        console.error('Fallo consulta a /Auth/admin_approval.php:', err);
+        const errHtml = `
+            <div class="api-error-card">
+                <h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4>
+                <p>No se pudo conectar con el servidor para obtener las aprobaciones pendientes.</p>
+                <button class="btn btn-primary btn-sm" onclick="renderAdminPendingApprovals()"><i data-lucide="refresh-cw"></i> Reintentar</button>
+            </div>
+        `;
+        custContainer.innerHTML = errHtml;
+        riderContainer.innerHTML = errHtml;
+        showGlobalApiError('Error al consultar aprobaciones pendientes de clientes y repartidores.');
+        initLucide();
+        return;
     }
 
     if (pendingCustomers.length === 0) {
@@ -2819,8 +2324,8 @@ async function renderAdminPendingApprovals() {
             <div class="approval-card">
                 <div class="approval-card-header">
                     <div class="approval-user-info">
-                        <strong>${u.nombre}</strong>
-                        <span style="font-size:0.75rem; color:var(--text-secondary);">${u.email}</span>
+                        <strong>${escapeHtml(u.nombre)}</strong>
+                        <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(u.email)}</span>
                     </div>
                     <span class="badge badge-pending">Pendiente</span>
                 </div>
@@ -2829,7 +2334,7 @@ async function renderAdminPendingApprovals() {
                     <span>Edad: ${u.fecha_nacimiento ? calculateAge(u.fecha_nacimiento) : 18} años</span>
                 </div>
                 <div style="display: flex; align-items:center; justify-content:space-between;">
-                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || '/uploads/ci/default.jpg'}', 'C.I. - ${u.nombre}')"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
+                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || '/uploads/ci/default.jpg'}', 'C.I. - ${escapeHtml(u.nombre)}')"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
                     <div class="approval-actions">
                         <button class="btn btn-danger btn-sm" onclick="approveUser(${u.id}, 'rejected')">Rechazar</button>
                         <button class="btn btn-success btn-sm" onclick="approveUser(${u.id}, 'verified')">Aprobar</button>
@@ -2844,23 +2349,22 @@ async function renderAdminPendingApprovals() {
     } else {
         riderContainer.innerHTML = pendingRidersDocs.map(d => {
             const riderId = d.rider_id || d.id;
-            const riderUser = DB.users.find(u => u.id === riderId);
-            const riderName = d.nombre || (riderUser ? riderUser.nombre : 'Rider Desconocido');
-            const riderEmail = d.email || (riderUser ? riderUser.email : '');
+            const riderName = d.nombre || 'Rider';
+            const riderEmail = d.email || '';
 
             return `
                 <div class="approval-card">
                     <div class="approval-card-header">
                         <div class="approval-user-info">
-                            <strong>${riderName}</strong>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">${riderEmail}</span>
+                            <strong>${escapeHtml(riderName)}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(riderEmail)}</span>
                         </div>
                         <span class="badge badge-pending">Expediente</span>
                     </div>
                     <div style="display: flex; flex-direction:column; gap:0.35rem; font-size: 0.85rem; border:1px solid var(--border-color); padding:0.5rem; border-radius:var(--radius-md); background: rgba(0,0,0,0.1);">
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.licencia_url}', 'Licencia - ${riderName}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.seguro_url}', 'Seguro SOAT - ${riderName}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.cv_url}', 'CV - ${riderName}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Currículum Vitae</a>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.licencia_url}', 'Licencia - ${escapeHtml(riderName)}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.seguro_url}', 'Seguro SOAT - ${escapeHtml(riderName)}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.cv_url}', 'CV - ${escapeHtml(riderName)}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Currículum Vitae</a>
                     </div>
                     <div class="approval-actions" style="justify-content: flex-end;">
                         <button class="btn btn-danger btn-sm" onclick="approveRiderDocs(${riderId}, 'rechazado')">Rechazar</button>
@@ -2874,8 +2378,6 @@ async function renderAdminPendingApprovals() {
 }
 
 window.approveUser = async function(userId, status) {
-    const admin = currentSession.admin || { id: 3, nombre: 'Admin Central' };
-    const u = DB.users.find(usr => usr.id === userId);
     const mappedState = (status === 'verified' ? 'aprobado' : 'rechazado');
 
     try {
@@ -2885,29 +2387,20 @@ window.approveUser = async function(userId, status) {
             estado: mappedState
         });
         if (res.ok) {
-            showToast(`Cliente ${status === 'verified' ? 'aprobado' : 'rechazado'} en el backend con éxito.`, 'success');
-        } else if (res.error) {
-            showToast(`Aviso backend: ${res.error}`, 'warning');
+            showToast(`Cliente ${status === 'verified' ? 'aprobado' : 'rechazado'} en MySQL exitosamente.`, 'success');
+            await renderAdminPendingApprovals();
+            await renderAdminAllUsers();
+        } else {
+            showToast(`Error al procesar cliente: ${res.error || 'Operación rechazada.'}`, 'danger');
         }
     } catch (err) {
-        console.warn('Fallo llamada a /Auth/admin_approval.php:', err);
+        console.error('Fallo llamada a /Auth/admin_approval.php:', err);
+        showToast('Error de conexión con la API PHP al actualizar cliente.', 'danger');
     }
-
-    if (u) {
-        const oldState = u.ci_status;
-        u.ci_status = status;
-        u.updated_at = new Date().toISOString();
-        u.updated_by = admin.id;
-        logAuditoria('users', userId, 'UPDATE', { ci_status: oldState }, { ci_status: status }, admin.id);
-        saveDatabase();
-    }
-    
-    renderAdminPendingApprovals();
 };
 
 window.approveRiderDocs = async function(riderOrDocId, status) {
-    const admin = currentSession.admin || { id: 3, nombre: 'Admin Central' };
-    const doc = DB.documentacion_rider.find(d => d.id === riderOrDocId || d.rider_id === riderOrDocId);
+    const doc = (window._adminAllRiders || []).find(d => d.doc_id === riderOrDocId || d.rider_id === riderOrDocId);
     const targetRiderId = doc ? doc.rider_id : riderOrDocId;
 
     try {
@@ -2917,34 +2410,16 @@ window.approveRiderDocs = async function(riderOrDocId, status) {
             estado: status
         });
         if (res.ok) {
-            showToast(`Expediente de Rider ${status} en el backend con éxito.`, 'success');
-        } else if (res.error) {
-            showToast(`Aviso backend: ${res.error}`, 'warning');
+            showToast(`Expediente de Rider ${status} en MySQL exitosamente.`, 'success');
+            await renderAdminPendingApprovals();
+            await renderAdminAllUsers();
+        } else {
+            showToast(`Error al procesar rider: ${res.error || 'Operación rechazada.'}`, 'danger');
         }
     } catch (err) {
-        console.warn('Fallo llamada a /Auth/admin_approval.php para rider:', err);
+        console.error('Fallo llamada a /Auth/admin_approval.php para rider:', err);
+        showToast('Error de conexión con la API PHP al actualizar rider.', 'danger');
     }
-
-    if (doc) {
-        const oldApprove = doc.estado_aprobacion;
-        doc.estado_aprobacion = status;
-        doc.updated_at = new Date().toISOString();
-        doc.updated_by = admin.id;
-        logAuditoria('documentacion_rider', doc.id, 'UPDATE', { estado_aprobacion: oldApprove }, { estado_aprobacion: status }, admin.id);
-    }
-
-    const riderUser = DB.users.find(u => u.id === targetRiderId);
-    if (riderUser) {
-        const oldCiStatus = riderUser.ci_status;
-        const newCi = (status === 'aprobado') ? 'verified' : 'rejected';
-        riderUser.ci_status = newCi;
-        riderUser.updated_at = new Date().toISOString();
-        riderUser.updated_by = admin.id;
-        logAuditoria('users', riderUser.id, 'UPDATE', { ci_status: oldCiStatus }, { ci_status: newCi }, admin.id);
-    }
-
-    saveDatabase();
-    renderAdminPendingApprovals();
 };
 
 window.openFileViewer = function(fileUrl, title) {
@@ -2981,28 +2456,22 @@ async function renderAdminAllUsers() {
     // Fetch from backend
     try {
         const res = await apiGet('/Auth/admin_users.php');
-        if (res.ok && res.data) {
+        if (!res.ok) {
+            compList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en la API PHP</h4><p>${escapeHtml(res.error || 'No se pudieron consultar los compradores.')}</p></div>`;
+            riderListEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en la API PHP</h4><p>${escapeHtml(res.error || 'No se pudieron consultar los riders.')}</p></div>`;
+            initLucide();
+            return;
+        }
+        if (res.data) {
             if (Array.isArray(res.data.compradores)) compradores = res.data.compradores;
             if (Array.isArray(res.data.riders)) riders = res.data.riders;
         }
     } catch (err) {
-        console.warn('Fallo GET /Auth/admin_users, usando DB local:', err);
-    }
-
-    // Fallback to local DB
-    if (!compradores.length && !riders.length) {
-        compradores = DB.users
-            .filter(u => u.role === 'cliente')
-            .map(u => ({ id: u.id, nombre: u.nombre, email: u.email, ci_status: u.ci_status || 'pending', fecha_nacimiento: u.fecha_nacimiento || 'N/A', ci_url: u.ci_url || '' }));
-        riders = DB.documentacion_rider.map(d => {
-            const ru = DB.users.find(u => u.id === d.rider_id) || {};
-            return {
-                rider_id: d.rider_id, doc_id: d.id, nombre: ru.nombre || 'Rider', email: ru.email || '',
-                ci_status: ru.ci_status || 'pending', estado_aprobacion: d.estado_aprobacion,
-                licencia_url: d.licencia_url || '', seguro_url: d.seguro_url || '', cv_url: d.cv_url || '',
-                fecha_nacimiento: ru.fecha_nacimiento || 'N/A'
-            };
-        });
+        console.error('Fallo GET /Auth/admin_users:', err);
+        compList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4><p>No se pudo conectar con el servidor.</p></div>`;
+        riderListEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4><p>No se pudo conectar con el servidor.</p></div>`;
+        initLucide();
+        return;
     }
 
     // ---- CACHED data for filtering ----
@@ -3120,38 +2589,19 @@ function setupUsersFilterButtons() {
 }
 
 window.adminUpdateUser = async function(targetId, tipo, estado) {
-    const admin = currentSession.admin || { id: 3 };
     try {
         const res = await apiRequest('/Auth/admin_users.php', { method: 'PUT', data: { target_id: targetId, tipo, estado } });
         if (res.ok) {
-            showToast('Estado actualizado correctamente.', 'success');
+            showToast('Estado actualizado en MySQL correctamente.', 'success');
+            await renderAdminAllUsers();
+            await renderAdminPendingApprovals();
         } else {
-            showToast(`Aviso: ${res.error || 'No se pudo actualizar.'}`, 'warning');
+            showToast(`Aviso: ${res.error || 'No se pudo actualizar.'}`, 'danger');
         }
     } catch (err) {
-        console.warn('Fallo PUT /Auth/admin_users:', err);
+        console.error('Fallo PUT /Auth/admin_users:', err);
+        showToast('Error de conexión con la API PHP al actualizar usuario.', 'danger');
     }
-    // Update local DB
-    if (tipo === 'cliente') {
-        const u = DB.users.find(u => u.id === targetId);
-        if (u) {
-            const ciMap = { verified: 'verified', aprobado: 'verified', rejected: 'rejected', rechazado: 'rejected', pending: 'pending', pendiente: 'pending' };
-            u.ci_status = ciMap[estado] || estado;
-            saveDatabase();
-        }
-    } else if (tipo === 'rider') {
-        const doc = DB.documentacion_rider.find(d => d.rider_id === targetId);
-        if (doc) {
-            doc.estado_aprobacion = estado;
-            const riderUser = DB.users.find(u => u.id === targetId);
-            if (riderUser) {
-                riderUser.ci_status = estado === 'aprobado' ? 'verified' : (estado === 'rechazado' ? 'rejected' : 'pending');
-            }
-            saveDatabase();
-        }
-    }
-    // Re-fetch and re-render
-    renderAdminAllUsers();
 };
 
 function renderAdminProductsTable() {
@@ -3216,111 +2666,47 @@ async function handleProductFormSubmit(e) {
     const price = parseFloat(document.getElementById('txtProdPrice').value);
     const stock = parseInt(document.getElementById('txtProdStock').value);
 
-    // Modo Conectado: CRUD REST contra microservicio Catalog
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (!token) {
-            showToast('Error 401: No se encontró token JWT. Inicia sesión como administrador.', 'danger');
+    const token = getAuthToken();
+    if (!token) {
+        showToast('Error 401: No se encontró token JWT. Inicia sesión como administrador.', 'danger');
+        return;
+    }
+
+    const isEdit = !!prodId;
+    const payload = {
+        categoria: category,
+        nombre: name,
+        marca: brand,
+        sabor: flavor,
+        precio: price,
+        stock: stock
+    };
+    if (isEdit) payload.id = parseInt(prodId);
+
+    try {
+        const res = isEdit
+            ? await apiPut('/Catalog/catalog.php', payload)
+            : await apiPost('/Catalog/catalog.php', payload);
+
+        if (res.status === 403) {
+            showToast('Error 403: Permiso denegado. Solo administradores pueden modificar el catálogo.', 'danger');
+            return;
+        } else if (res.status === 401) {
+            showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
+            return;
+        } else if (!res.ok) {
+            showToast('Error: ' + (res.error || 'No se pudo guardar el producto.'), 'danger');
             return;
         }
 
-        const isEdit = !!prodId;
-        const payload = {
-            categoria: category,
-            nombre: name,
-            marca: brand,
-            sabor: flavor,
-            precio: price,
-            stock: stock
-        };
-        if (isEdit) payload.id = parseInt(prodId);
-
-        try {
-            const res = isEdit
-                ? await apiPut('/Catalog/catalog.php', payload)
-                : await apiPost('/Catalog/catalog.php', payload);
-
-            if (res.status === 403) {
-                showToast('Error 403: Permiso denegado. Solo administradores pueden modificar el catálogo.', 'danger');
-                return;
-            } else if (res.status === 401) {
-                showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
-                return;
-            } else if (!res.ok) {
-                showToast('Error: ' + (res.error || 'No se pudo guardar el producto.'), 'danger');
-                return;
-            }
-
-            if (isEdit) {
-                const id = parseInt(prodId);
-                const prod = DB.productos.find(p => p.id === id);
-                if (prod && res.data && res.data.producto) {
-                    Object.assign(prod, res.data.producto);
-                }
-                showToast('Producto actualizado en la base de datos MySQL.', 'success');
-            } else {
-                if (res.data && res.data.producto) {
-                    DB.productos.push(res.data.producto);
-                } else {
-                    const newId = res.data && res.data.id ? res.data.id : DB.productos.length + 1;
-                    DB.productos.push({ id: newId, categoria: category, nombre: name, marca: brand, sabor: flavor, precio, stock });
-                }
-                showToast('Producto registrado en la base de datos MySQL.', 'success');
-            }
-
-            saveDatabase();
-            resetProductForm();
-            renderAdminProductsTable();
-            renderProducts();
-            return;
-        } catch (err) {
-            console.error('Error conectando con catalog.php:', err);
-            showToast('Fallo de red al comunicar con microservicio. Guardando en modo local...', 'warning');
-        }
+        showToast(isEdit ? 'Producto actualizado en MySQL exitosamente.' : 'Producto registrado en MySQL exitosamente.', 'success');
+        resetProductForm();
+        await syncProductsFromBackend();
+    } catch (err) {
+        console.error('Error conectando con catalog.php:', err);
+        showToast('Error de conexión con la API PHP al guardar producto.', 'danger');
+        showGlobalApiError('No se pudo guardar el producto en el catálogo.');
     }
-
-    // Modo Simulado (Local fallback)
-    if (prodId) {
-        const id = parseInt(prodId);
-        const prod = DB.productos.find(p => p.id === id);
-        const oldState = { ...prod };
-
-        prod.categoria = category;
-        prod.nombre = name;
-        prod.marca = brand;
-        prod.sabor = flavor;
-        prod.precio = price;
-        prod.stock = stock;
-        prod.updated_at = new Date().toISOString();
-        prod.updated_by = admin ? admin.id : 3;
-
-        logAuditoria('productos', id, 'UPDATE', oldState, prod, admin ? admin.id : 3);
-        showToast('Producto actualizado correctamente.', 'success');
-    } else {
-        const newId = DB.productos.length + 1;
-        const newProd = {
-            id: newId,
-            categoria: category,
-            nombre: name,
-            marca: brand,
-            sabor: flavor,
-            precio: price,
-            stock: stock,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            created_by: admin ? admin.id : 3,
-            updated_by: admin ? admin.id : 3
-        };
-
-        DB.productos.push(newProd);
-        logAuditoria('productos', newId, 'INSERT', null, newProd, admin ? admin.id : 3);
-        showToast('Producto agregado al catálogo.', 'success');
-    }
-
-    saveDatabase();
-    resetProductForm();
-    renderAdminProductsTable();
-    renderProducts();
 }
 
 window.editProduct = function(productId) {
@@ -3340,55 +2726,33 @@ window.editProduct = function(productId) {
 };
 
 window.deleteProduct = async function(productId) {
-    const admin = currentSession.admin;
-
-    // Modo Conectado: DELETE contra microservicio Catalog
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (!token) {
-            showToast('Error 401: Se requiere sesión de administrador para eliminar.', 'danger');
-            return;
-        }
-
-        try {
-            const res = await apiDelete('/Catalog/catalog.php', { id: productId });
-
-            if (res.status === 403) {
-                showToast('Error 403: Permiso denegado. Solo administradores pueden eliminar productos.', 'danger');
-                return;
-            } else if (res.status === 401) {
-                showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
-                return;
-            } else if (!res.ok) {
-                showToast('Error: ' + (res.error || 'No se pudo eliminar el producto.'), 'danger');
-                return;
-            }
-
-            const idx = DB.productos.findIndex(p => p.id === productId);
-            if (idx !== -1) DB.productos.splice(idx, 1);
-            saveDatabase();
-            showToast('Producto eliminado de la base de datos MySQL.', 'warning');
-            renderAdminProductsTable();
-            renderProducts();
-            return;
-        } catch (err) {
-            console.error('Error eliminando en catalog.php:', err);
-            showToast('Fallo de red al comunicar con microservicio. Eliminando localmente...', 'warning');
-        }
+    const token = getAuthToken();
+    if (!token) {
+        showToast('Error 401: Se requiere sesión de administrador para eliminar.', 'danger');
+        return;
     }
 
-    const idx = DB.productos.findIndex(p => p.id === productId);
-    if (idx === -1) return;
+    try {
+        const res = await apiDelete('/Catalog/catalog.php', { id: productId });
 
-    const oldProduct = DB.productos[idx];
-    DB.productos.splice(idx, 1);
-    
-    logAuditoria('productos', productId, 'DELETE', oldProduct, null, admin ? admin.id : 3);
-    saveDatabase();
-    
-    showToast('Producto eliminado del catálogo.', 'warning');
-    renderAdminProductsTable();
-    renderProducts();
+        if (res.status === 403) {
+            showToast('Error 403: Permiso denegado. Solo administradores pueden eliminar productos.', 'danger');
+            return;
+        } else if (res.status === 401) {
+            showToast('Error 401: Sesión no autorizada o expirada.', 'danger');
+            return;
+        } else if (!res.ok) {
+            showToast('Error: ' + (res.error || 'No se pudo eliminar el producto.'), 'danger');
+            return;
+        }
+
+        showToast('Producto eliminado de MySQL correctamente.', 'warning');
+        await syncProductsFromBackend();
+    } catch (err) {
+        console.error('Error eliminando en catalog.php:', err);
+        showToast('Error de conexión con la API PHP al eliminar producto.', 'danger');
+        showGlobalApiError('No se pudo eliminar el producto del catálogo.');
+    }
 };
 
 function resetProductForm() {
@@ -3398,182 +2762,204 @@ function resetProductForm() {
     document.getElementById('btnCancelEdit').style.display = 'none';
 }
 
-function renderAdminAuditLogs() {
+async function renderAdminAuditLogs() {
     const tbody = document.getElementById('auditTableBody');
-    tbody.innerHTML = '';
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">Cargando registros de auditoría desde MySQL...</td></tr>';
 
-    DB.auditoria_logs.forEach(log => {
-        const tr = document.createElement('tr');
-
-        const opUser = DB.users.find(u => u.id === log.created_by);
-        const nameUser = opUser ? `${opUser.nombre} (${opUser.role.replace('_', ' ')})` : 'SYSTEM';
-
-        let preData = '-';
-        if (log.datos_anteriores) {
-            try {
-                preData = JSON.stringify(typeof log.datos_anteriores === 'string' ? JSON.parse(log.datos_anteriores) : log.datos_anteriores, null, 2);
-            } catch (e) {
-                preData = String(log.datos_anteriores);
-            }
+    try {
+        const res = await apiGet('/Auth/audit_logs.php');
+        if (!res.ok || !res.data) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--accent-red);"><i data-lucide="alert-triangle"></i> Error al cargar logs de auditoría desde la API PHP.</td></tr>';
+            initLucide();
+            showGlobalApiError('Error al consultar auditoria_logs desde MySQL.');
+            return;
         }
 
-        let postData = '-';
-        if (log.datos_nuevos) {
-            try {
-                postData = JSON.stringify(typeof log.datos_nuevos === 'string' ? JSON.parse(log.datos_nuevos) : log.datos_nuevos, null, 2);
-            } catch (e) {
-                postData = String(log.datos_nuevos);
-            }
+        const logs = res.data;
+        if (!Array.isArray(logs) || logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">No hay registros de auditoría en la base de datos.</td></tr>';
+            return;
         }
 
-        let badgeClass = 'badge-verified'; 
-        if (log.accion === 'UPDATE') badgeClass = 'badge-pending'; 
-        else if (log.accion === 'DELETE') badgeClass = 'badge-rejected'; 
+        tbody.innerHTML = '';
+        logs.forEach(log => {
+            const tr = document.createElement('tr');
+            const nameUser = log.user_nombre ? `${log.user_nombre} (${log.user_role || 'usuario'})` : (log.created_by ? `User #${log.created_by}` : 'SYSTEM');
 
-        // Col 1: ID
-        const tdId = document.createElement('td');
-        const strongId = document.createElement('strong');
-        strongId.textContent = `#${log.id}`;
-        tdId.appendChild(strongId);
-        tr.appendChild(tdId);
+            let preData = '-';
+            if (log.datos_anteriores) {
+                try {
+                    preData = JSON.stringify(typeof log.datos_anteriores === 'string' ? JSON.parse(log.datos_anteriores) : log.datos_anteriores, null, 2);
+                } catch (e) {
+                    preData = String(log.datos_anteriores);
+                }
+            }
 
-        // Col 2: Fecha e IP
-        const tdDate = document.createElement('td');
-        tdDate.style.fontSize = '0.75rem';
-        tdDate.style.color = 'var(--text-secondary)';
-        tdDate.appendChild(document.createTextNode(new Date(log.created_at).toLocaleString()));
-        tdDate.appendChild(document.createElement('br'));
-        const spanIp = document.createElement('span');
-        spanIp.style.color = 'var(--text-muted)';
-        spanIp.textContent = `IP: ${log.ip_address || '127.0.0.1'}`;
-        tdDate.appendChild(spanIp);
-        tr.appendChild(tdDate);
+            let postData = '-';
+            if (log.datos_nuevos) {
+                try {
+                    postData = JSON.stringify(typeof log.datos_nuevos === 'string' ? JSON.parse(log.datos_nuevos) : log.datos_nuevos, null, 2);
+                } catch (e) {
+                    postData = String(log.datos_nuevos);
+                }
+            }
 
-        // Col 3: Usuario
-        const tdUser = document.createElement('td');
-        tdUser.textContent = nameUser;
-        tr.appendChild(tdUser);
+            let badgeClass = 'badge-verified'; 
+            if (log.accion === 'UPDATE') badgeClass = 'badge-pending'; 
+            else if (log.accion === 'DELETE') badgeClass = 'badge-rejected'; 
 
-        // Col 4: Tabla afectada
-        const tdTable = document.createElement('td');
-        const spanTable = document.createElement('span');
-        spanTable.style.fontFamily = 'monospace';
-        spanTable.style.color = 'var(--accent-purple)';
-        spanTable.textContent = log.tabla_afectada;
-        tdTable.appendChild(spanTable);
-        tr.appendChild(tdTable);
+            // Col 1: ID
+            const tdId = document.createElement('td');
+            const strongId = document.createElement('strong');
+            strongId.textContent = `#${log.id}`;
+            tdId.appendChild(strongId);
+            tr.appendChild(tdId);
 
-        // Col 5: Acción
-        const tdAction = document.createElement('td');
-        const spanAction = document.createElement('span');
-        spanAction.className = `badge ${badgeClass}`;
-        spanAction.textContent = log.accion;
-        tdAction.appendChild(spanAction);
-        tr.appendChild(tdAction);
+            // Col 2: Fecha e IP
+            const tdDate = document.createElement('td');
+            tdDate.style.fontSize = '0.75rem';
+            tdDate.style.color = 'var(--text-secondary)';
+            tdDate.appendChild(document.createTextNode(new Date(log.created_at).toLocaleString()));
+            tdDate.appendChild(document.createElement('br'));
+            const spanIp = document.createElement('span');
+            spanIp.style.color = 'var(--text-muted)';
+            spanIp.textContent = `IP: ${log.ip_address || '127.0.0.1'}`;
+            tdDate.appendChild(spanIp);
+            tr.appendChild(tdDate);
 
-        // Col 6: ID de registro
-        const tdRecId = document.createElement('td');
-        const strongRecId = document.createElement('strong');
-        strongRecId.textContent = `#${log.registro_id}`;
-        tdRecId.appendChild(strongRecId);
-        tr.appendChild(tdRecId);
+            // Col 3: Usuario
+            const tdUser = document.createElement('td');
+            tdUser.textContent = nameUser;
+            tr.appendChild(tdUser);
 
-        // Col 7: Datos anteriores (Seguro contra XSS)
-        const tdPre = document.createElement('td');
-        const preElem = document.createElement('pre');
-        preElem.className = 'json-render';
-        preElem.textContent = preData;
-        tdPre.appendChild(preElem);
-        tr.appendChild(tdPre);
+            // Col 4: Tabla afectada
+            const tdTable = document.createElement('td');
+            const spanTable = document.createElement('span');
+            spanTable.style.fontFamily = 'monospace';
+            spanTable.style.color = 'var(--accent-purple)';
+            spanTable.textContent = log.tabla_afectada;
+            tdTable.appendChild(spanTable);
+            tr.appendChild(tdTable);
 
-        // Col 8: Datos nuevos (Seguro contra XSS)
-        const tdPost = document.createElement('td');
-        const postElem = document.createElement('pre');
-        postElem.className = 'json-render';
-        postElem.textContent = postData;
-        tdPost.appendChild(postElem);
-        tr.appendChild(tdPost);
+            // Col 5: Acción
+            const tdAction = document.createElement('td');
+            const spanAction = document.createElement('span');
+            spanAction.className = `badge ${badgeClass}`;
+            spanAction.textContent = log.accion;
+            tdAction.appendChild(spanAction);
+            tr.appendChild(tdAction);
 
-        tbody.appendChild(tr);
-    });
+            // Col 6: ID de registro
+            const tdRecId = document.createElement('td');
+            const strongRecId = document.createElement('strong');
+            strongRecId.textContent = `#${log.registro_id}`;
+            tdRecId.appendChild(strongRecId);
+            tr.appendChild(tdRecId);
+
+            // Col 7: Datos anteriores (Seguro contra XSS)
+            const tdPre = document.createElement('td');
+            const preElem = document.createElement('pre');
+            preElem.className = 'json-render';
+            preElem.textContent = preData;
+            tdPre.appendChild(preElem);
+            tr.appendChild(tdPre);
+
+            // Col 8: Datos nuevos (Seguro contra XSS)
+            const tdPost = document.createElement('td');
+            const postElem = document.createElement('pre');
+            postElem.className = 'json-render';
+            postElem.textContent = postData;
+            tdPost.appendChild(postElem);
+            tr.appendChild(tdPost);
+
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error('Error cargando audit logs:', err);
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--accent-red);"><i data-lucide="alert-triangle"></i> Error de red conectando con la API de auditoría.</td></tr>';
+        initLucide();
+        showGlobalApiError('Error de red al consultar auditoria_logs.');
+    }
 }
 
-function renderAdminReports() {
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            apiGet('/Transactions/report.php')
-                .then(res => {
-                    if (res.ok && res.data && res.data.resumen) {
-                        const r = res.data.resumen;
-                        const elSales = document.getElementById('reportTotalSales');
-                        const elOrders = document.getElementById('reportTotalOrders');
-                        if (elSales) elSales.innerText = `${parseFloat(r.total_ventas_bs).toFixed(2)} Bs`;
-                        if (elOrders) elOrders.innerText = r.pedidos_entregados;
-                    }
-                })
-                .catch(err => {
-                    console.warn('Error cargando reportes desde API:', err);
-                });
-        }
-    }
-
-    const delivers = DB.pedidos.filter(p => p.estado_pedido === 'entregado');
-    const totalSalesSum = delivers.reduce((acc, p) => acc + p.total, 0);
-
+async function renderAdminReports() {
+    const list = document.getElementById('riderLeaderboard');
     const elSales = document.getElementById('reportTotalSales');
     const elOrders = document.getElementById('reportTotalOrders');
     const elActiveRiders = document.getElementById('reportActiveRiders');
-    if (elSales && !config.connectedMode) elSales.innerText = `${totalSalesSum.toFixed(2)} Bs`;
-    if (elOrders && !config.connectedMode) elOrders.innerText = delivers.length;
-    if (elActiveRiders) elActiveRiders.innerText = DB.users.filter(u => u.role === 'rider').length;
-
-    const qrSum = delivers.filter(p => p.estado_pago === 'pagado_qr').reduce((acc, p) => acc + p.total, 0);
-    const cashSum = delivers.filter(p => p.estado_pago === 'pagado_efectivo' || p.estado_pago === 'contraentrega' || p.estado_pago === 'liquidado').reduce((acc, p) => acc + p.total, 0);
-    
-    const totalPayments = qrSum + cashSum;
-    const qrPct = totalPayments > 0 ? (qrSum / totalPayments) * 100 : 0;
-    const cashPct = totalPayments > 0 ? (cashSum / totalPayments) * 100 : 0;
-
     const elQrVal = document.getElementById('chartQrVal');
     const elQrBar = document.getElementById('chartQrBar');
     const elCashVal = document.getElementById('chartCashVal');
     const elCashBar = document.getElementById('chartCashBar');
 
-    if (elQrVal) elQrVal.innerText = `${qrSum.toFixed(2)} Bs (${Math.round(qrPct)}%)`;
-    if (elQrBar) elQrBar.style.width = `${qrPct}%`;
-    if (elCashVal) elCashVal.innerText = `${cashSum.toFixed(2)} Bs (${Math.round(cashPct)}%)`;
-    if (elCashBar) elCashBar.style.width = `${cashPct}%`;
+    try {
+        const res = await apiGet('/Transactions/report.php');
+        if (!res.ok || !res.data) {
+            if (list) list.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Reportes</h4><p>${res.error || 'No se pudo obtener información del reporte desde la API PHP.'}</p></div>`;
+            if (elSales) elSales.innerText = '---';
+            if (elOrders) elOrders.innerText = '---';
+            initLucide();
+            showGlobalApiError('Error al consultar reportes financieros desde MySQL.');
+            return;
+        }
 
-    const riders = DB.users.filter(u => u.role === 'rider');
-    const rankings = riders.map(r => {
-        const riderDelivers = DB.pedidos.filter(p => p.rider_id === r.id && p.estado_pedido === 'entregado');
-        const totalEarned = riderDelivers.reduce((acc, p) => acc + p.total, 0);
-        return {
-            id: r.id,
-            nombre: r.nombre,
-            ordersCount: riderDelivers.length,
-            earned: totalEarned
-        };
-    }).sort((a, b) => b.ordersCount - a.ordersCount); 
+        const data = res.data;
+        const resumen = data.resumen || {};
+        if (elSales) elSales.innerText = `${parseFloat(resumen.total_ventas_bs || 0).toFixed(2)} Bs`;
+        if (elOrders) elOrders.innerText = resumen.pedidos_entregados || 0;
 
-    const list = document.getElementById('riderLeaderboard');
-    if (!list) return;
-    if (rankings.length === 0) {
-        list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 1rem;">No hay registros de riders activos en entregas.</div>`;
-        return;
+        const ridersRanking = Array.isArray(data.ranking_riders) ? data.ranking_riders : [];
+        if (elActiveRiders) elActiveRiders.innerText = ridersRanking.length;
+
+        // Métodos de pago desde MySQL
+        const metodos = Array.isArray(data.metodos_pago) ? data.metodos_pago : [];
+        let qrSum = 0;
+        let cashSum = 0;
+
+        metodos.forEach(m => {
+            const totalMonto = parseFloat(m.monto_total || 0);
+            if (m.estado_pago === 'pagado_qr') {
+                qrSum += totalMonto;
+            } else if (['pagado_efectivo', 'contraentrega', 'liquidado'].includes(m.estado_pago)) {
+                cashSum += totalMonto;
+            }
+        });
+
+        const totalPayments = qrSum + cashSum;
+        const qrPct = totalPayments > 0 ? (qrSum / totalPayments) * 100 : 0;
+        const cashPct = totalPayments > 0 ? (cashSum / totalPayments) * 100 : 0;
+
+        if (elQrVal) elQrVal.innerText = `${qrSum.toFixed(2)} Bs (${Math.round(qrPct)}%)`;
+        if (elQrBar) elQrBar.style.width = `${qrPct}%`;
+        if (elCashVal) elCashVal.innerText = `${cashSum.toFixed(2)} Bs (${Math.round(cashPct)}%)`;
+        if (elCashBar) elCashBar.style.width = `${cashPct}%`;
+
+        // Ranking de riders desde MySQL
+        if (list) {
+            if (ridersRanking.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); font-size: 0.9rem; padding: 1rem;">No hay registros de riders activos en entregas en MySQL.</div>`;
+            } else {
+                list.innerHTML = ridersRanking.map((rider, idx) => `
+                    <li class="leaderboard-item">
+                        <span class="rider-rank ${idx === 0 ? 'rider-rank-1' : ''}">${idx + 1}</span>
+                        <div class="rider-info-main">
+                            <div class="rider-name-lead">${rider.nombre}</div>
+                            <div class="rider-orders-lead">${rider.entregas_exitosas || 0} entregas completadas</div>
+                        </div>
+                        <span class="rider-earnings-lead">${parseFloat(rider.recaudacion_total || 0).toFixed(2)} Bs Recaudados</span>
+                    </li>
+                `).join('');
+            }
+        }
+    } catch (err) {
+        console.error('Error cargando reportes desde API:', err);
+        if (list) list.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Fallo de Conexión</h4><p>No se pudo conectar con el microservicio report.php.</p></div>`;
+        if (elSales) elSales.innerText = '---';
+        if (elOrders) elOrders.innerText = '---';
+        initLucide();
+        showGlobalApiError('Error de red al consultar reportes financieros.');
     }
-
-    list.innerHTML = rankings.map((rider, idx) => `
-        <li class="leaderboard-item">
-            <span class="rider-rank ${idx === 0 ? 'rider-rank-1' : ''}">${idx + 1}</span>
-            <div class="rider-info-main">
-                <div class="rider-name-lead">${rider.nombre}</div>
-                <div class="rider-orders-lead">${rider.ordersCount} entregas completadas</div>
-            </div>
-            <span class="rider-earnings-lead">${rider.earned.toFixed(2)} Bs Recaudados</span>
-        </li>
-    `).join('');
 }
 
 // ----------------------------------------------------
@@ -3599,41 +2985,29 @@ async function fetchAndUpdateAdminMonitoring() {
     const listSettlements = document.getElementById('adminRiderSettlementsList');
     if (!listActive || !listSettlements) return;
 
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            try {
-                const res = await apiGet('/Transactions/live_monitoring.php');
-                if (res.ok && res.data) {
-                    const activeOrders = res.data.pedidos_activos || [];
-                    const settlements = res.data.liquidaciones_pendientes || [];
-                    adminMonitoringCachedOrders = activeOrders;
-                    renderAdminMonitoringUI(activeOrders, settlements);
-                    return;
-                }
-            } catch (err) {
-                console.warn('Error en live_monitoring.php polling:', err);
-            }
+    try {
+        const res = await apiGet('/Transactions/live_monitoring.php');
+        if (!res.ok || !res.data) {
+            listActive.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Monitoreo</h4><p>${res.error || 'No se pudo obtener el monitoreo en vivo de la API PHP.'}</p></div>`;
+            listSettlements.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Liquidaciones</h4><p>No se pudo conectar con la API de liquidaciones.</p></div>`;
+            initLucide();
+            showGlobalApiError('Error al consultar live_monitoring.php desde MySQL.');
+            initAdminMonitoringMap(null);
+            return;
         }
+
+        const activeOrders = res.data.pedidos_activos || [];
+        const settlements = res.data.liquidaciones_pendientes || [];
+        adminMonitoringCachedOrders = activeOrders;
+        renderAdminMonitoringUI(activeOrders, settlements);
+    } catch (err) {
+        console.error('Error en live_monitoring.php:', err);
+        listActive.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Fallo de Red</h4><p>Error de conexión al consultar el monitoreo de pedidos.</p></div>`;
+        listSettlements.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Fallo de Red</h4><p>Error de conexión con la API PHP.</p></div>`;
+        initLucide();
+        showGlobalApiError('Error de red al consultar monitoreo en vivo.');
+        initAdminMonitoringMap(null);
     }
-
-    // Modo simulado / Fallback local
-    const activeOrders = (DB.pedidos || []).filter(p => p.estado_pedido === 'asignado' || p.estado_pedido === 'en_camino');
-    adminMonitoringCachedOrders = activeOrders;
-
-    const riders = (DB.users || []).filter(u => u.role === 'rider');
-    const settlements = riders.map(r => {
-        const cashOrders = (DB.pedidos || []).filter(p => p.rider_id === r.id && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
-        const pendingCash = cashOrders.reduce((acc, p) => acc + p.total, 0);
-        return {
-            id: r.id,
-            nombre: r.nombre,
-            pedidos_pendientes: cashOrders.length,
-            total_recaudado_bs: pendingCash
-        };
-    }).filter(r => r.total_recaudado_bs > 0);
-
-    renderAdminMonitoringUI(activeOrders, settlements);
 }
 
 function renderAdminMonitoringUI(activeOrders, settlements) {
@@ -3728,101 +3102,41 @@ window.selectAdminOrderToTrack = function(orderId) {
 };
 
 window.cancelAdminOrder = async function(orderId) {
-    const admin = currentSession.admin;
-    let order = (DB.pedidos || []).find(p => p.id === orderId);
-    if (!order && adminMonitoringCachedOrders) {
-        order = adminMonitoringCachedOrders.find(p => p.id === orderId);
-    }
-
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            try {
-                const res = await apiPost('/Transactions/cancel_order.php', { pedido_id: orderId });
-                if (!res.ok) {
-                    showToast(`Error al cancelar: ${res.error || 'Cancelación rechazada.'}`, 'danger');
-                    return;
-                }
-                showToast(`Pedido #${orderId} cancelado en el backend y stock reembolsado.`, 'warning');
-            } catch (err) {
-                console.error('Error cancelando pedido en backend:', err);
-            }
+    try {
+        const res = await apiPost('/Transactions/cancel_order.php', { pedido_id: orderId });
+        if (!res.ok) {
+            showToast(`Error al cancelar: ${res.error || 'Cancelación rechazada.'}`, 'danger');
+            showGlobalApiError('No se pudo cancelar el pedido en el backend.');
+            return;
         }
+        showToast(`Pedido #${orderId} cancelado en el backend y stock reembolsado.`, 'warning');
+        await fetchAndUpdateAdminMonitoring();
+        await syncProductsFromBackend();
+    } catch (err) {
+        console.error('Error cancelando pedido en backend:', err);
+        showToast('Error de red al cancelar el pedido.', 'danger');
+        showGlobalApiError('Error de conexión al cancelar pedido.');
     }
-
-    const localOrder = (DB.pedidos || []).find(p => p.id === orderId);
-    if (localOrder && localOrder.estado_pedido !== 'cancelado' && localOrder.estado_pedido !== 'entregado') {
-        const details = (DB.pedido_detalles || []).filter(d => d.pedido_id === orderId);
-        details.forEach(d => {
-            const prod = (DB.productos || []).find(p => p.id === d.producto_id);
-            if (prod) {
-                const oldStock = prod.stock;
-                prod.stock += d.cantidad;
-                logAuditoria('productos', prod.id, 'UPDATE', { stock: oldStock }, { stock: prod.stock }, admin ? admin.id : 3);
-            }
-        });
-
-        const oldState = localOrder.estado_pedido;
-        localOrder.estado_pedido = 'cancelado';
-        localOrder.estado_pago = 'cancelado';
-        localOrder.updated_at = new Date().toISOString();
-        localOrder.updated_by = admin ? admin.id : 3;
-
-        logAuditoria('pedidos', orderId, 'UPDATE', { estado_pedido: oldState }, { estado_pedido: 'cancelado', estado_pago: 'cancelado' }, admin ? admin.id : 3);
-
-        saveDatabase();
-        if (!config.connectedMode) {
-            showToast(`Pedido #${orderId} cancelado. El stock ha sido reembolsado.`, 'warning');
-        }
-    }
-
-    fetchAndUpdateAdminMonitoring();
-    renderProducts();
 };
 
 window.settleRiderCash = async function(riderId) {
-    const admin = currentSession.admin;
-    let apiSuccess = false;
-
-    if (config.connectedMode) {
-        const token = getAuthToken();
-        if (token) {
-            try {
-                const res = await apiPost('/Rider/settle_cash.php', { rider_id: riderId });
-                if (res.status === 403) {
-                    showToast('Error 403: Permiso denegado. Solo administradores pueden liquidar cajas.', 'danger');
-                    return;
-                } else if (!res.ok) {
-                    showToast(`Error al liquidar caja: ${res.error || 'Error desconocido'}`, 'danger');
-                    return;
-                }
-                apiSuccess = true;
-                showToast(`Liquidación completada en backend. Recaudados ${res.data?.total_liquidado_bs || 0} Bs del rider.`, 'success');
-            } catch (err) {
-                console.warn('Error en settle_cash.php:', err);
-            }
+    try {
+        const res = await apiPost('/Rider/settle_cash.php', { rider_id: riderId });
+        if (res.status === 403) {
+            showToast('Error 403: Permiso denegado. Solo administradores pueden liquidar cajas.', 'danger');
+            return;
+        } else if (!res.ok) {
+            showToast(`Error al liquidar caja: ${res.error || 'Error desconocido'}`, 'danger');
+            showGlobalApiError('No se pudo liquidar la caja del repartidor en MySQL.');
+            return;
         }
+        showToast(`Liquidación completada en backend. Recaudados ${res.data?.total_liquidado_bs || 0} Bs del rider.`, 'success');
+        await fetchAndUpdateAdminMonitoring();
+    } catch (err) {
+        console.error('Error en settle_cash.php:', err);
+        showToast('Error de conexión con la API PHP al liquidar caja.', 'danger');
+        showGlobalApiError('Error de red al liquidar caja del repartidor.');
     }
-
-    const cashOrders = (DB.pedidos || []).filter(p => p.rider_id === riderId && p.estado_pedido === 'entregado' && p.estado_pago === 'pagado_efectivo');
-    if (cashOrders.length > 0) {
-        let totalSettle = 0;
-        cashOrders.forEach(p => {
-            totalSettle += p.total;
-            p.estado_pago = 'liquidado';
-            p.updated_at = new Date().toISOString();
-            p.updated_by = admin ? admin.id : 3;
-
-            logAuditoria('pedidos', p.id, 'UPDATE', { estado_pago: 'pagado_efectivo' }, { estado_pago: 'liquidado', motivo: 'Caja liquidada central' }, admin ? admin.id : 3);
-        });
-
-        saveDatabase();
-        if (!config.connectedMode && !apiSuccess) {
-            showToast(`Liquidación completada. Recaudados ${totalSettle.toFixed(2)} Bs de la caja del rider.`, 'success');
-        }
-    }
-
-    fetchAndUpdateAdminMonitoring();
 };
 
 function initAdminMonitoringMap(orderId, ordersList = null) {

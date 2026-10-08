@@ -96,7 +96,7 @@
             <div class="status-badge-container">
                 <div class="api-status-banner">
                     <span class="status-dot active" id="apiDot"></span>
-                    <span id="apiStatusText">Conectado · localhost:8000</span>
+                    <span id="apiStatusText">Verificando API...</span>
                 </div>
             </div>
         </div>
@@ -104,6 +104,16 @@
 
     <!-- Main Container -->
     <main>
+        <!-- Banner de Error Visible ante Fallos de la API PHP -->
+        <div id="globalApiErrorBanner" class="global-api-error-banner" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: var(--accent-red); flex-shrink: 0;"></i>
+                <span id="globalApiErrorMessage">Error de conexión con la API PHP/MySQL.</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnRetryApiConnection" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                Reintentar
+            </button>
+        </div>
 
         <!-- PANEL CLIENTE -->
         <section class="panel active" id="panelCliente">

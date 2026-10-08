@@ -15,7 +15,8 @@ function getApiBaseUrl() {
         const url = `${window.location.origin}${basePath}/microservices`;
         return url.replace(/([^:]\/)\/+/g, '$1');
     }
-    return 'http://localhost/Bebidas-E-Commerce/microservices';
+    const origin = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null') ? window.location.origin : '';
+    return `${origin}/microservices`.replace(/([^:]\/)\/+/g, '$1');
 }
 
 /**

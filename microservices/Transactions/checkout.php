@@ -56,6 +56,57 @@ function calculateHaversine($lat1, $lon1, $lat2, $lon2) {
     return $R * $c;
 }
 
+/**
+ * Invocación del Módulo Crítico C++ (SPEC §2 y §4)
+ * Ejecuta validación de existencias y liquidación de tarifas con alta precisión.
+ */
+function runCppMotorCore($payload, &$errorDetails = null) {
+    $binPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'cpp' . DIRECTORY_SEPARATOR . 'motor_core.exe';
+
+    // Verificación de existencia del binario (Criterio: Sin binario -> envelope controlado)
+    if (!file_exists($binPath)) {
+        $errorDetails = "Módulo crítico C++ no disponible. El binario ejecutable ($binPath) no fue encontrado. Ejecute cpp/build.bat para compilarlo.";
+        return null;
+    }
+
+    $jsonInput = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+    $descriptorspec = [
+        0 => ["pipe", "r"],  // stdin
+        1 => ["pipe", "w"],  // stdout
+        2 => ["pipe", "w"]   // stderr
+    ];
+
+    $process = @proc_open('"' . $binPath . '"', $descriptorspec, $pipes);
+
+    if (!is_resource($process)) {
+        $errorDetails = "Fallo al inicializar el proceso del módulo crítico C++ ($binPath).";
+        return null;
+    }
+
+    fwrite($pipes[0], $jsonInput);
+    fclose($pipes[0]);
+
+    $stdout = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+
+    $exitCode = proc_close($process);
+
+    $decoded = json_decode($stdout, true);
+    if (!is_array($decoded)) {
+        $errorDetails = "El módulo crítico C++ no emitió una respuesta JSON válida. Código de salida: $exitCode. " . trim($stderr);
+        return null;
+    }
+
+    return [
+        'exit_code' => $exitCode,
+        'response' => $decoded
+    ];
+}
+
 try {
     // 1. Rechazo estricto de tokens por URL o query string
     if (isset($_GET['token']) || isset($_POST['token']) || isset($_REQUEST['token'])) {
@@ -249,7 +300,7 @@ try {
     }
 
     // =========================================================================
-    // ACCIÓN: Crear Pedido con Descuento Atómico de Stock (Checkout Principal)
+    // ACCIÓN: Crear Pedido con Descuento Atómico de Stock (Checkout Principal con Módulo C++)
     // =========================================================================
     elseif ($action === 'create_order' || empty($action)) {
         $items = $input['items'] ?? [];
@@ -268,9 +319,8 @@ try {
         $storeLat = -16.5050;
         $storeLon = -68.1290;
 
-        // Calcular costo de envío: 5.0 + (distancia_km * 2.0)
+        // Distancia geodésica cliente - tienda
         $distanciaKm = isset($input['distancia_km']) ? floatval($input['distancia_km']) : calculateHaversine($storeLat, $storeLon, $latCliente, $lonCliente);
-        $costoEnvio = round(5.0 + ($distanciaKm * 2.0), 2);
 
         // Estado de pago inicial
         $estadoPago = 'contraentrega';
@@ -279,12 +329,11 @@ try {
         }
 
         // ----------------------------------------------------
-        // TRANSACCIÓN ATÓMICA MYSQL (BEGIN -> Validar -> Descontar -> COMMIT/ROLLBACK)
+        // TRANSACCIÓN ATÓMICA MYSQL (BEGIN -> Validar -> C++ -> Descontar -> COMMIT/ROLLBACK)
         // ----------------------------------------------------
         $db->beginTransaction();
 
-        $subtotal = 0.0;
-        $verifiedItems = [];
+        $itemsForCpp = [];
 
         foreach ($items as $item) {
             $prodId = isset($item['producto_id']) ? intval($item['producto_id']) : (isset($item['id']) ? intval($item['id']) : 0);
@@ -309,51 +358,82 @@ try {
                 exit;
             }
 
-            // Validación atómica de stock
-            if ((int)$producto['stock'] < $cantidad) {
-                $db->rollBack();
-                http_response_code(400);
-                echo formatResponse(
-                    "error", 
-                    null, 
-                    $userId, 
-                    "Stock insuficiente para '{$producto['nombre']}'. Disponible: {$producto['stock']}, Solicitado: $cantidad.", 
-                    "INSUFFICIENT_STOCK"
-                );
-                exit;
-            }
+            $itemsForCpp[] = [
+                'producto_id' => (int)$producto['id'],
+                'nombre' => $producto['nombre'],
+                'precio' => (float)$producto['precio'],
+                'cantidad' => $cantidad,
+                'stock_disponible' => (int)$producto['stock']
+            ];
+        }
 
-            $precioUnitario = (float)$producto['precio'];
-            $subtotal += ($precioUnitario * $cantidad);
+        // ----------------------------------------------------
+        // INVOCACIÓN DEL MÓDULO CRÍTICO C++ (SPEC §2)
+        // ----------------------------------------------------
+        $cppPayload = [
+            'user_id' => $userId,
+            'distancia_km' => round($distanciaKm, 2),
+            'items' => $itemsForCpp
+        ];
 
-            $oldStock = (int)$producto['stock'];
-            $newStock = $oldStock - $cantidad;
+        $cppError = null;
+        $cppExec = runCppMotorCore($cppPayload, $cppError);
+
+        // Sin binario o fallo de ejecución -> envelope de error controlado (SPEC §4)
+        if ($cppExec === null) {
+            $db->rollBack();
+            http_response_code(500);
+            echo formatResponse("error", null, $userId, $cppError, "CPP_MODULE_UNAVAILABLE");
+            exit;
+        }
+
+        $cppResponse = $cppExec['response'];
+        if (($cppResponse['status'] ?? '') !== 'success') {
+            $db->rollBack();
+            http_response_code(400);
+            $errMsg = $cppResponse['error_details'] ?? 'Fallo de validación en el motor C++.';
+            echo formatResponse("error", $cppResponse['data'] ?? null, $userId, $errMsg, "CPP_VALIDATION_FAILED");
+            exit;
+        }
+
+        // Liquidación financiera validada por C++
+        $cppData = $cppResponse['data'];
+        $subtotal = (float)$cppData['subtotal'];
+        $costoEnvio = (float)$cppData['costo_envio'];
+        $total = (float)$cppData['total'];
+        $verifiedItems = [];
+
+        // Descontar inventario en MySQL conforme a los resultados del motor C++
+        foreach ($cppData['desglose_lineas'] as $linea) {
+            $pId = (int)$linea['producto_id'];
+            $cant = (int)$linea['cantidad'];
+            $pUnit = (float)$linea['precio_unitario'];
+            $sublinea = (float)$linea['subtotal_linea'];
+            $stockRestante = (int)$linea['stock_restante'];
 
             // Descontar inventario
             $stmtStock = $db->prepare("UPDATE productos SET stock = ?, updated_by = ?, updated_at = NOW() WHERE id = ?");
-            $stmtStock->execute([$newStock, $userId, $prodId]);
+            $stmtStock->execute([$stockRestante, $userId, $pId]);
 
-            // Auditoría individual del descuento de stock
+            // Auditoría individual del descuento
             logAudit(
-                $db, 
-                'productos', 
-                $prodId, 
-                'UPDATE', 
-                ['stock' => $oldStock], 
-                ['stock' => $newStock, 'motivo' => "Descuento por venta (Checkout)"], 
+                $db,
+                'productos',
+                $pId,
+                'UPDATE',
+                ['stock_previo' => $stockRestante + $cant],
+                ['stock' => $stockRestante, 'motivo' => "Descuento por venta (C++ Motor Core)"],
                 $userId
             );
 
             $verifiedItems[] = [
-                'producto_id' => $prodId,
-                'nombre' => $producto['nombre'],
-                'cantidad' => $cantidad,
-                'precio_unitario' => $precioUnitario,
-                'subtotal_linea' => round($precioUnitario * $cantidad, 2)
+                'producto_id' => $pId,
+                'nombre' => $linea['nombre'],
+                'cantidad' => $cant,
+                'precio_unitario' => $pUnit,
+                'subtotal_linea' => $sublinea
             ];
         }
-
-        $total = round($subtotal + $costoEnvio, 2);
 
         // Crear pedido en la base de datos
         $stmtOrder = $db->prepare("
@@ -388,7 +468,8 @@ try {
                 'costo_envio' => $costoEnvio,
                 'estado_pago' => $estadoPago,
                 'estado_pedido' => 'pendiente',
-                'items_count' => count($verifiedItems)
+                'items_count' => count($verifiedItems),
+                'cpp_audit' => $cppResponse['audit'] ?? null
             ], 
             $userId
         );
@@ -398,7 +479,7 @@ try {
 
         http_response_code(201);
         echo formatResponse("success", [
-            "mensaje" => "Pedido creado exitosamente con descuento atómico de inventario.",
+            "mensaje" => "Pedido creado exitosamente con módulo crítico C++ (cálculos de flete y stock validados).",
             "pedido_id" => $orderId,
             "subtotal" => $subtotal,
             "costo_envio" => $costoEnvio,
@@ -406,7 +487,8 @@ try {
             "distancia_km" => round($distanciaKm, 2),
             "estado_pago" => $estadoPago,
             "estado_pedido" => "pendiente",
-            "items" => $verifiedItems
+            "items" => $verifiedItems,
+            "cpp_audit" => $cppResponse['audit'] ?? null
         ], $userId, null, "CREATE_ORDER");
         exit;
     }

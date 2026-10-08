@@ -342,6 +342,59 @@ try {
 }
 
 // ----------------------------------------------------------------------------
+// 6. VERIFICAR MÓDULO CRÍTICO DE RENDIMIENTO EN C++ (SPEC.md Sección 2)
+// ----------------------------------------------------------------------------
+printSectionHeader("6. Módulo Crítico de Rendimiento en C++ (SPEC §2)");
+
+$cppSource = __DIR__ . '/cpp/motor_core.cpp';
+$cppBinary = __DIR__ . '/cpp/motor_core.exe';
+
+if (file_exists($cppSource)) {
+    reportItem("C++", "Código Fuente C++", "OK", "Código fuente 'cpp/motor_core.cpp' presente");
+} else {
+    reportItem("C++", "Código Fuente C++", "FAIL", "No se encontró 'cpp/motor_core.cpp'", "Verifique los archivos del repositorio.");
+}
+
+if (file_exists($cppBinary)) {
+    // Probar ejecución del binario pasando un JSON mínimo
+    $testPayload = json_encode([
+        'user_id' => 999,
+        'distancia_km' => 1.5,
+        'items' => [
+            ['producto_id' => 1, 'nombre' => 'Test', 'precio' => 10.0, 'cantidad' => 1, 'stock_disponible' => 5]
+        ]
+    ]);
+
+    $descriptorspec = [
+        0 => ["pipe", "r"],
+        1 => ["pipe", "w"],
+        2 => ["pipe", "w"]
+    ];
+
+    $process = @proc_open('"' . $cppBinary . '"', $descriptorspec, $pipes);
+    if (is_resource($process)) {
+        fwrite($pipes[0], $testPayload);
+        fclose($pipes[0]);
+        $out = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $code = proc_close($process);
+
+        $json = json_decode($out, true);
+        if ($code === 0 && ($json['status'] ?? '') === 'success') {
+            $us = $json['audit']['tiempo_computo_us'] ?? 0;
+            reportItem("C++", "Binario Compilado y Operativo", "OK", "motor_core.exe funcional y validado (latencia: {$us}us)");
+        } else {
+            reportItem("C++", "Binario Compilado y Operativo", "WARN", "motor_core.exe respondió con error (código $code)", "Recompile con cpp/build.bat.");
+        }
+    } else {
+        reportItem("C++", "Binario Compilado y Operativo", "WARN", "No se pudo instanciar motor_core.exe", "Verifique permisos de ejecución.");
+    }
+} else {
+    reportItem("C++", "Binario Compilado y Operativo", "FAIL", "No se encontró el binario 'cpp/motor_core.exe'", "Ejecute 'cpp/build.bat' para compilarlo.");
+}
+
+// ----------------------------------------------------------------------------
 // RESUMEN Y RESULTADO FINAL
 // ----------------------------------------------------------------------------
 $totalChecks = $results['passed'] + $results['warnings'] + $results['failed'];

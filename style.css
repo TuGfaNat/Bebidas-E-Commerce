@@ -1470,49 +1470,80 @@ footer {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 120;
+    z-index: 150;
+    padding: 1.5rem;
 }
 
 .file-view-modal.active {
     display: flex;
 }
 
-.file-view-body {
-    position: relative;
-    max-width: 80%;
-    max-height: 80%;
-    background: #000;
-    border: 2px solid var(--border-color);
+.file-view-container {
+    width: 100%;
+    max-width: 950px;
+    max-height: 92vh;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: var(--radius-lg);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    animation: modalScaleIn 0.25s ease-out;
 }
 
-.file-view-body img {
-    max-width: 100%;
-    max-height: 70vh;
-    display: block;
+@keyframes modalScaleIn {
+    from { transform: scale(0.96); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
-.file-view-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(0, 0, 0, 0.6);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
+.file-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    background: #0f172a;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.file-view-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.file-view-content {
+    flex: 1;
+    overflow: auto;
+    background: #020617;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    min-height: 450px;
+    max-height: 80vh;
+    padding: 0.75rem;
+    position: relative;
+}
+
+.file-view-content img {
+    max-width: 100%;
+    max-height: 76vh;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.file-view-content iframe {
+    width: 100%;
+    height: 76vh;
+    border: none;
+    border-radius: var(--radius-md);
+    background: #ffffff;
 }
 
 /* Quick age checker badge on registration */

@@ -1516,15 +1516,24 @@ async function renderClienteActiveOrderTracker() {
     const detailsText = details.map(d => `${d.cantidad}x ${d.nombre || 'Producto'}`).join(', ');
 
     const isContra = activeOrder.estado_pago === 'contraentrega' || activeOrder.estado_pago === 'pagado_efectivo';
+    const qrBtn = activeOrder.qr_comprobante_url
+        ? ` <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${activeOrder.qr_comprobante_url}', 'Comprobante QR - Pedido #${activeOrder.id}', 'qr', null)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; margin-left: 0.4rem; vertical-align: middle;"><i data-lucide="receipt" style="width:12px;height:12px;"></i> Ver Comprobante QR</button>`
+        : '';
+
+    const canCancel = ['pendiente', 'asignado'].includes(activeOrder.estado_pedido);
+    const cancelBtn = canCancel
+        ? ` <button class="btn btn-danger btn-sm" onclick="clienteCancelarPedido(${activeOrder.id})" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; margin-left: 0.5rem; vertical-align: middle;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Cancelar</button>`
+        : '';
+
     const payBadge = isContra
         ? '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="banknote" style="width:13px;height:13px;vertical-align:middle;"></i> Contraentrega (Pagarás en efectivo al recibir)</span>'
-        : '<span class="badge" style="background:rgba(139,92,246,0.15); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR</span>';
+        : `<span class="badge" style="background:rgba(139,92,246,0.15); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR</span>${qrBtn}`;
 
     const payEl = document.getElementById('clientActiveOrderPayment');
     if (payEl) payEl.innerHTML = `<strong>Método de Pago:</strong> ${payBadge}`;
 
     const totalEl = document.getElementById('clientActiveOrderTotal');
-    if (totalEl) totalEl.innerHTML = `<strong>Total a pagar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs`;
+    if (totalEl) totalEl.innerHTML = `<strong>Total a pagar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs ${cancelBtn}`;
     initLucide();
 
     const latCliente = activeOrder.latitud || -16.5090;
@@ -1620,6 +1629,27 @@ async function renderClienteActiveOrderTracker() {
         }
     }, 200);
 }
+
+window.clienteCancelarPedido = async function(orderId) {
+    if (!confirm(`¿Estás seguro de que deseas cancelar el Pedido #${orderId}? Tu dinero/stock será reembolsado inmediatamente.`)) {
+        return;
+    }
+    try {
+        const res = await apiPost('/Transactions/cancel_order.php', {
+            pedido_id: orderId,
+            motivo: 'Cancelado por el cliente desde la app'
+        });
+        if (res.ok) {
+            showToast('Pedido cancelado exitosamente y stock reembolsado.', 'success');
+            await renderClienteActiveOrderTracker();
+            await renderProducts();
+        } else {
+            showToast(res.error || 'No se pudo cancelar el pedido.', 'danger');
+        }
+    } catch (err) {
+        showToast('Error de red al cancelar pedido.', 'danger');
+    }
+};
 
 // ----------------------------------------------------
 // 9. RIDER PORTAL LOGIC
@@ -2329,7 +2359,7 @@ async function renderAdminPendingApprovals() {
                     <span>Edad: ${u.fecha_nacimiento ? calculateAge(u.fecha_nacimiento) : 18} años</span>
                 </div>
                 <div style="display: flex; align-items:center; justify-content:space-between;">
-                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || '/uploads/ci/default.jpg'}', 'C.I. - ${escapeHtml(u.nombre)}')"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
+                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
                     <div class="approval-actions">
                         <button class="btn btn-danger btn-sm" onclick="approveUser(${u.id}, 'rejected')">Rechazar</button>
                         <button class="btn btn-success btn-sm" onclick="approveUser(${u.id}, 'verified')">Aprobar</button>
@@ -2357,9 +2387,9 @@ async function renderAdminPendingApprovals() {
                         <span class="badge badge-pending">Expediente</span>
                     </div>
                     <div style="display: flex; flex-direction:column; gap:0.35rem; font-size: 0.85rem; border:1px solid var(--border-color); padding:0.5rem; border-radius:var(--radius-md); background: rgba(0,0,0,0.1);">
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.licencia_url}', 'Licencia - ${escapeHtml(riderName)}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.seguro_url}', 'Seguro SOAT - ${escapeHtml(riderName)}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.cv_url}', 'CV - ${escapeHtml(riderName)}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Currículum Vitae</a>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.licencia_url}', 'Licencia de Conducir - ${escapeHtml(riderName)}', 'licencia', ${riderId})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.seguro_url}', 'Seguro SOAT - ${escapeHtml(riderName)}', 'seguro', ${riderId})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.cv_url}', 'Currículum Vitae - ${escapeHtml(riderName)}', 'cv', ${riderId})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Currículum Vitae</a>
                     </div>
                     <div class="approval-actions" style="justify-content: flex-end;">
                         <button class="btn btn-danger btn-sm" onclick="approveRiderDocs(${riderId}, 'rechazado')">Rechazar</button>
@@ -2417,21 +2447,81 @@ window.approveRiderDocs = async function(riderOrDocId, status) {
     }
 };
 
-window.openFileViewer = function(fileUrl, title) {
-    const modal = document.getElementById('fileViewerModal');
-    const img = document.getElementById('imgFileViewer');
+window.resolveFileUrl = function(rawUrl, type = 'ci', userId = null) {
+    if (!rawUrl && !userId) return '';
     
-    if (title.includes('C.I.')) {
-        img.src = 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=500&auto=format&fit=crop&q=60'; 
-    } else if (title.includes('Licencia')) {
-        img.src = 'https://images.unsplash.com/photo-1598550476439-6847785fce6e?w=500&auto=format&fit=crop&q=60'; 
-    } else if (title.includes('Seguro')) {
-        img.src = 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&auto=format&fit=crop&q=60'; 
-    } else {
-        img.src = 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=500&auto=format&fit=crop&q=60'; 
+    // Si ya es una URL completa
+    if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:'))) {
+        return rawUrl;
     }
-    
+
+    // Ruta base del host
+    const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    const hostBase = window.location.origin + basePath;
+
+    // Usar el endpoint inteligente view_document.php
+    let serviceUrl = `${hostBase}microservices/Auth/view_document.php`;
+    const params = [];
+
+    if (rawUrl) {
+        params.push(`file=${encodeURIComponent(rawUrl)}`);
+    }
+    if (type) {
+        params.push(`type=${encodeURIComponent(type)}`);
+    }
+    if (userId) {
+        params.push(`user_id=${encodeURIComponent(userId)}`);
+    }
+
+    return `${serviceUrl}?${params.join('&')}`;
+};
+
+window.openFileViewer = function(fileUrl, title = 'Documento Oficial', type = 'ci', userId = null) {
+    const modal = document.getElementById('fileViewerModal');
+    const titleEl = document.getElementById('fileViewerTitle');
+    const subtitleEl = document.getElementById('fileViewerSubtitle');
+    const imgEl = document.getElementById('imgFileViewer');
+    const pdfEl = document.getElementById('pdfFileViewer');
+    const externalBtn = document.getElementById('btnFileViewerExternal');
+    const iconEl = document.getElementById('fileViewerIcon');
+
+    if (!modal) return;
+
+    // Resolver URL dinámica
+    const targetUrl = window.resolveFileUrl(fileUrl, type, userId);
+
+    // Ajustar títulos
+    if (titleEl) titleEl.innerText = title;
+    if (subtitleEl) subtitleEl.innerText = `Burger 24/7 · Documento Digital Oficial`;
+    if (externalBtn) externalBtn.href = targetUrl;
+
+    // Determinar si es PDF
+    const isPdf = (fileUrl && fileUrl.toLowerCase().includes('.pdf')) || (type === 'cv');
+
+    if (isPdf) {
+        if (imgEl) {
+            imgEl.style.display = 'none';
+            imgEl.src = '';
+        }
+        if (pdfEl) {
+            pdfEl.style.display = 'block';
+            pdfEl.src = targetUrl;
+        }
+        if (iconEl) iconEl.setAttribute('data-lucide', 'file-text');
+    } else {
+        if (pdfEl) {
+            pdfEl.style.display = 'none';
+            pdfEl.src = '';
+        }
+        if (imgEl) {
+            imgEl.style.display = 'block';
+            imgEl.src = targetUrl;
+        }
+        if (iconEl) iconEl.setAttribute('data-lucide', 'image');
+    }
+
     modal.classList.add('active');
+    initLucide();
 };
 
 // -------------------------------------------------------
@@ -2517,7 +2607,7 @@ function renderCompradoresList(filter) {
                 <span>ID #${u.id}</span>
             </div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem;">
-                <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. - ${u.nombre}')"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
+                <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
                 <div class="approval-actions">
                     ${canReject ? `<button class="btn btn-danger btn-sm" onclick="adminUpdateUser(${u.id},'cliente','rejected')">Rechazar</button>` : ''}
                     ${canEnable ? `<button class="btn btn-success btn-sm" onclick="adminUpdateUser(${u.id},'cliente','verified')">Habilitar</button>` : ''}
@@ -2546,8 +2636,8 @@ function renderRidersList(filter) {
         return `<div class="approval-card">
             <div class="approval-card-header">
                 <div class="approval-user-info">
-                    <strong>${r.nombre}</strong>
-                    <span style="font-size:0.75rem;color:var(--text-secondary);">${r.email}</span>
+                    <strong>${escapeHtml(r.nombre)}</strong>
+                    <span style="font-size:0.75rem;color:var(--text-secondary);">${escapeHtml(r.email)}</span>
                 </div>
                 ${getStatusBadge(r.estado_aprobacion, true)}
             </div>
@@ -2556,9 +2646,9 @@ function renderRidersList(filter) {
                 <span>Rider ID #${r.rider_id}</span>
             </div>
             <div style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; border:1px solid var(--border-color); padding:0.5rem; border-radius:var(--radius-md); background:rgba(0,0,0,0.1); margin-top:0.5rem;">
-                <a class="file-view-trigger" onclick="openFileViewer('${r.licencia_url}','Licencia - ${r.nombre}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
-                <a class="file-view-trigger" onclick="openFileViewer('${r.seguro_url}','Seguro SOAT - ${r.nombre}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
-                <a class="file-view-trigger" onclick="openFileViewer('${r.cv_url}','CV - ${r.nombre}')"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Curriculum Vitae</a>
+                <a class="file-view-trigger" onclick="openFileViewer('${r.licencia_url}','Licencia de Conducir - ${escapeHtml(r.nombre)}','licencia',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
+                <a class="file-view-trigger" onclick="openFileViewer('${r.seguro_url}','Seguro SOAT - ${escapeHtml(r.nombre)}','seguro',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
+                <a class="file-view-trigger" onclick="openFileViewer('${r.cv_url}','Currículum Vitae - ${escapeHtml(r.nombre)}','cv',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Curriculum Vitae</a>
             </div>
             <div class="approval-actions" style="justify-content:flex-end; margin-top:0.5rem;">
                 ${canReject ? `<button class="btn btn-danger btn-sm" onclick="adminUpdateUser(${r.rider_id},'rider','rechazado')">Rechazar</button>` : ''}

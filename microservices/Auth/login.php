@@ -41,7 +41,7 @@ try {
 
     $db = DatabaseConnection::getInstance()->getConnection();
     
-    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, ci_status FROM users WHERE LOWER(email) = LOWER(?)");
+    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, ci_status, ci_url, COALESCE(foto_url, ci_url, '') AS foto_url FROM users WHERE LOWER(email) = LOWER(?)");
     $stmt->execute([$correo]);
     $user = $stmt->fetch();
 
@@ -60,7 +60,9 @@ try {
         'role' => $user['role'],
         'email' => $user['email'],
         'nombre' => $user['nombre'],
-        'ci_status' => $user['ci_status']
+        'ci_status' => $user['ci_status'],
+        'foto_url' => $user['foto_url'] ?? '',
+        'ci_url' => $user['ci_url'] ?? ''
     ], 86400);
 
     echo formatResponse("success", [
@@ -70,7 +72,9 @@ try {
             "nombre" => $user['nombre'],
             "role" => $user['role'],
             "email" => $user['email'],
-            "ci_status" => $user['ci_status']
+            "ci_status" => $user['ci_status'],
+            "foto_url" => $user['foto_url'] ?? '',
+            "ci_url" => $user['ci_url'] ?? ''
         ]
     ], $user['id']);
 

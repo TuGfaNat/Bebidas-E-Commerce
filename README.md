@@ -103,6 +103,30 @@ En la pantalla de inicio, en la esquina inferior izquierda, verás un botón mor
   - Administra el menú: cambia precios, agrega hamburguesas o ajusta el stock.
   - Aprueba o rechaza carnets de identidad (C.I.) y expedientes de choferes.
 
+#### 📋 Tabla Completa de Personajes y Cuentas Semilla (19 Cuentas con Foto y Documentos):
+
+| Rol / Tipo | Nombre del Personaje | Correo Electrónico | Contraseña | Estado Oficial | Documentación / Vehículo |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Cliente Habilitado** | Carlos Pérez | `carlos@mail.com` | `carlos` | ✅ Verificado | C.I. Oficial vigente (La Paz) |
+| **Cliente Habilitado** | Andrea Morales | `andrea@mail.com` | `andrea` | ✅ Verificado | C.I. Oficial vigente (Cochabamba) |
+| **Cliente Habilitado** | Gonzalo Salinas | `gonzalo@mail.com` | `gonzalo` | ✅ Verificado | C.I. Oficial vigente (Santa Cruz) |
+| **Cliente Pendiente** | María López | `maria@mail.com` | `maria` | ⏳ Pendiente | En revisión por el administrador |
+| **Cliente Pendiente** | Diego Quiroga | `diego@mail.com` | `diego` | ⏳ Pendiente | En revisión por el administrador |
+| **Cliente Pendiente** | Camila Navarro | `camila@mail.com` | `camila` | ⏳ Pendiente | En revisión por el administrador |
+| **Cliente Rechazado** | Roberto Flores | `roberto@mail.com` | `roberto` | ❌ Denegado | Motivo: C.I. borroso e ilegible |
+| **Cliente Rechazado** | Lucía Paredes | `lucia@mail.com` | `lucia` | ❌ Denegado | Motivo: Solicitante menor de edad (17 años) |
+| **Cliente Rechazado** | Rodrigo Méndez | `rodrigo@mail.com` | `rodrigo` | ❌ Denegado | Motivo: Cédula de Identidad vencida |
+| **Rider Habilitado** | Pedro Gómez | `pedro@mail.com` | `pedro` | ✅ Aprobado | Honda Wave 110cc (Placa: 4829-ABC) |
+| **Rider Habilitado** | Alejandro Ríos | `alejandro@mail.com` | `alejandro` | ✅ Aprobado | Yamaha FZ 150cc (Placa: 5192-XYZ) |
+| **Rider Habilitado** | Valeria Mamani | `valeria@mail.com` | `valeria` | ✅ Aprobado | Suzuki GN 125cc (Placa: 3948-BKL) |
+| **Rider Pendiente** | Juan Rodríguez | `juan@mail.com` | `juan` | ⏳ Pendiente | Bajaj Pulsar 160 (Placa: 6281-MNP) |
+| **Rider Pendiente** | Fernando Blanco | `fernando@mail.com` | `fernando` | ⏳ Pendiente | Honda CG 150cc (Placa: 4729-DFA) |
+| **Rider Pendiente** | Paola Zeballos | `paola@mail.com` | `paola` | ⏳ Pendiente | Kymco Agility 125 (Placa: 5821-KJT) |
+| **Rider Rechazado** | Marcos Vargas | `marcos@mail.com` | `marcos` | ❌ Denegado | Motivo: Licencia no registrada en SEGIP |
+| **Rider Rechazado** | Gustavo Beltrán | `gustavo@mail.com` | `gustavo` | ❌ Denegado | Motivo: Póliza SOAT vencida |
+| **Rider Rechazado** | Cristian Colque | `cristian@mail.com` | `cristian` | ❌ Denegado | Motivo: Sin antecedentes ni licencia vehicular |
+| **Administrador** | Admin Central | `admin@mail.com` | `admin` | 👑 Habilitado | Acceso total a finanzas, catálogo y flota |
+
 ---
 
 ### ❓ 4. Preguntas Frecuentes de Colegio (Solución de Problemas Frecuentes)

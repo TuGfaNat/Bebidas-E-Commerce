@@ -60,7 +60,27 @@ if (!empty($fileParam)) {
 
 // 2. Si se especifica user_id y tipo
 if (!$filePathToServe && $userIdParam) {
-    if ($typeParam === 'ci') {
+    if ($typeParam === 'foto') {
+        $stmt = $db->prepare("SELECT foto_url, ci_url FROM users WHERE id = ?");
+        $stmt->execute([$userIdParam]);
+        $user = $stmt->fetch();
+        $targetField = (!empty($user['foto_url'])) ? $user['foto_url'] : ($user['ci_url'] ?? '');
+        if (!empty($targetField)) {
+            $clean = ltrim(str_replace(['../', '..\\'], '', $targetField), '/\\');
+            $candidates = [
+                $rootDir . DIRECTORY_SEPARATOR . $clean,
+                __DIR__ . DIRECTORY_SEPARATOR . $clean,
+                $rootDir . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ci' . DIRECTORY_SEPARATOR . basename($clean),
+                __DIR__ . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ci' . DIRECTORY_SEPARATOR . basename($clean)
+            ];
+            foreach ($candidates as $cand) {
+                if (file_exists($cand) && is_file($cand)) {
+                    $filePathToServe = $cand;
+                    break;
+                }
+            }
+        }
+    } elseif ($typeParam === 'ci') {
         $stmt = $db->prepare("SELECT ci_url, nombre, email, ci_status, fecha_nacimiento, role FROM users WHERE id = ?");
         $stmt->execute([$userIdParam]);
         $user = $stmt->fetch();
@@ -142,6 +162,8 @@ if ($filePathToServe && file_exists($filePathToServe)) {
         $mime = 'image/png';
     } elseif ($ext === 'webp') {
         $mime = 'image/webp';
+    } elseif ($ext === 'svg') {
+        $mime = 'image/svg+xml; charset=utf-8';
     }
 
     header("Content-Type: $mime");

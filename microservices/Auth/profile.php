@@ -40,7 +40,7 @@ try {
     if ($method === 'GET') {
         // Consultar datos del usuario
         $stmtUser = $db->prepare("
-            SELECT id, role, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at, updated_at
+            SELECT id, role, nombre, email, fecha_nacimiento, ci_url, COALESCE(foto_url, ci_url, '') AS foto_url, ci_status, created_at, updated_at
             FROM users 
             WHERE id = ?
         ");
@@ -61,6 +61,7 @@ try {
                 "role" => $userData['role'],
                 "fecha_nacimiento" => $userData['fecha_nacimiento'],
                 "ci_url" => $userData['ci_url'],
+                "foto_url" => $userData['foto_url'] ?? '',
                 "ci_status" => $userData['ci_status'] ?? 'pending',
                 "created_at" => $userData['created_at']
             ],

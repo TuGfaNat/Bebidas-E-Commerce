@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">
+    <defs>
+        <linearGradient id="licBg_17" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1e1b4b"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+        </linearGradient>
+    </defs>
+    <rect width="800" height="480" rx="18" fill="url(#licBg_17)" stroke="#3b82f6" stroke-width="2"/>
+    <rect x="25" y="25" width="750" height="70" rx="10" fill="#1e293b"/>
+    <text x="50" y="52" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="14" font-weight="bold" fill="#38bdf8">REPÚBLICA DE BOLIVIA · LICENCIA PARA CONDUCIR VEHÍCULOS</text>
+    <text x="50" y="74" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#94a3b8">SEGIP - DIRECCIÓN NACIONAL DE TRÁNSITO · CATEGORÍA 'A' (MOTOCICLISTA PROFESIONAL)</text>
+    <rect x="540" y="40" width="215" height="38" rx="8" fill="rgba(0,0,0,0.3)" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="647" y="64" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" font-weight="bold" fill="#f59e0b" text-anchor="middle">EN TRÁMITE</text>
+    <rect x="50" y="115" width="190" height="230" rx="12" fill="#020617" stroke="#3b82f6" stroke-width="1.5"/>
+    <g transform="translate(45, 120)">
+        
+    <defs>
+        <linearGradient id="bgGrad_17" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#713f12"/>
+            <stop offset="100%" stop-color="#ca8a04"/>
+        </linearGradient>
+    </defs>
+    <rect width="200" height="200" rx="100" fill="url(#bgGrad_17)"/>
+    <ellipse cx="100" cy="90" rx="36" ry="24" fill="#292524"/>
+    <rect x="91" y="125" width="18" height="25" fill="#e8bc92"/>
+    <ellipse cx="100" cy="112" rx="34" ry="40" fill="#e8bc92"/>
+    <circle cx="87" cy="110" r="3" fill="#1e293b"/>
+    <circle cx="113" cy="110" r="3" fill="#1e293b"/>
+    <path d="M 81 102 Q 87 99 93 102" stroke="#451a03" stroke-width="2" fill="none"/>
+    <path d="M 107 102 Q 113 99 119 102" stroke="#451a03" stroke-width="2" fill="none"/>
+    <path d="M 100 111 L 98 120 L 102 120" stroke="#b45309" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <line x1="92" y1="129" x2="108" y2="129" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="64" cy="118" r="3" fill="#facc15"/><circle cx="136" cy="118" r="3" fill="#facc15"/>
+    <path d="M 40 200 C 40 155 80 148 100 148 C 120 148 160 155 160 200 Z" fill="#eab308"/>
+
+    </g>
+    <text x="270" y="145" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#94a3b8" font-weight="bold">CONDUCTOR TITULAR</text>
+    <text x="270" y="172" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="19" fill="#f8fafc" font-weight="bold">Paola Zeballos Cruz</text>
+    <text x="270" y="210" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#94a3b8" font-weight="bold">C.I. / NÚMERO DE LICENCIA</text>
+    <text x="270" y="235" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="16" fill="#38bdf8" font-weight="bold">8192047 CB</text>
+    <text x="270" y="275" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#94a3b8" font-weight="bold">VEHÍCULO AUTORIZADO</text>
+    <text x="270" y="298" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="15" fill="#f1f5f9">Kymco Agility 125 (Placa: 5821-KJT)</text>
+    <text x="270" y="335" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#94a3b8" font-weight="bold">VIGENCIA OFICIAL</text>
+    <text x="270" y="355" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="13" fill="#cbd5e1">2024 - 2029 (5 Años)</text>
+    <circle cx="680" cy="230" r="50" fill="none" stroke="#38bdf8" stroke-dasharray="4" stroke-width="2"/>
+    <text x="680" y="225" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="10" fill="#38bdf8" font-weight="bold" text-anchor="middle">TRÁNSITO</text>
+    <text x="680" y="240" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="9" fill="#38bdf8" text-anchor="middle">BOLIVIA</text>
+    <rect x="25" y="420" width="750" height="35" rx="6" fill="#0f172a"/>
+    <text x="45" y="442" font-family="Courier, monospace" font-size="11" fill="#64748b">
+        LIC-DOC-RIDER: 17 · CATEGORÍA A · SEGIP AUTORIZADO
+    </text>
+</svg>

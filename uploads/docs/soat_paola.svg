@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">
+    <rect width="800" height="480" rx="16" fill="#064e3b" stroke="#10b981" stroke-width="2"/>
+    <rect x="25" y="25" width="750" height="70" rx="10" fill="#022c22"/>
+    <text x="50" y="52" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="16" font-weight="bold" fill="#34d399">UNIVIDA S.A. · SEGURO OBLIGATORIO DE ACCIDENTES DE TRÁNSITO (SOAT)</text>
+    <text x="50" y="74" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#a7f3d0">COBERTURA NACIONAL TOTAL PARA MOTOCICLETAS Y VEHÍCULOS DE REPARTO</text>
+    <rect x="540" y="40" width="215" height="38" rx="8" fill="rgba(0,0,0,0.4)" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="647" y="64" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="12" font-weight="bold" fill="#f59e0b" text-anchor="middle">VERIFICACIÓN PENDIENTE</text>
+    <rect x="50" y="120" width="700" height="280" rx="12" fill="#022c22" stroke="#047857" stroke-width="1.5"/>
+    <text x="80" y="160" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="12" fill="#6ee7b7" font-weight="bold">TITULAR ASEGURADO</text>
+    <text x="80" y="190" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="20" fill="#f8fafc" font-weight="bold">Paola Zeballos Cruz</text>
+    <text x="80" y="240" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="12" fill="#6ee7b7" font-weight="bold">PLACA REGISTRADA</text>
+    <text x="80" y="268" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="22" fill="#facc15" font-weight="bold">5821-KJT</text>
+    <text x="380" y="240" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="12" fill="#6ee7b7" font-weight="bold">MODELO DEL VEHÍCULO</text>
+    <text x="380" y="268" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="18" fill="#f8fafc">Kymco Agility 125</text>
+    <text x="80" y="320" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="12" fill="#6ee7b7" font-weight="bold">PERIODO DE COBERTURA</text>
+    <text x="80" y="345" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="14" fill="#f1f5f9">01/ENE/2026 HASTA 31/DIC/2026</text>
+    <rect x="610" y="150" width="110" height="110" rx="8" fill="#ffffff"/>
+    <rect x="620" y="160" width="30" height="30" fill="#022c22"/>
+    <rect x="680" y="160" width="30" height="30" fill="#022c22"/>
+    <rect x="620" y="220" width="30" height="30" fill="#022c22"/>
+    <text x="665" y="280" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="9" fill="#a7f3d0" text-anchor="middle">SOAT ELECTRÓNICO</text>
+    <rect x="25" y="425" width="750" height="30" rx="6" fill="#022c22"/>
+    <text x="45" y="445" font-family="Courier, monospace" font-size="11" fill="#6ee7b7">
+        POLIZA-UNIVIDA: SOAT-2026-17 · ASOCIADO A BURGER 24/7 LOGISTICS
+    </text>
+</svg>

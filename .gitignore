@@ -24,26 +24,35 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# User uploads (preserve .gitkeep and .htaccess)
+# User uploads (preserve .gitkeep, .htaccess and seed SVG assets)
 uploads/*
 !uploads/.gitkeep
 !uploads/.htaccess
+!uploads/ci/
 uploads/ci/*
 !uploads/ci/.gitkeep
 !uploads/ci/.htaccess
+!uploads/ci/*.svg
+!uploads/docs/
 uploads/docs/*
 !uploads/docs/.gitkeep
 !uploads/docs/.htaccess
+!uploads/docs/*.svg
+!uploads/qr/
 uploads/qr/*
 !uploads/qr/.gitkeep
 !uploads/qr/.htaccess
+!uploads/qr/*.svg
 
 microservices/Auth/uploads/ci/*
 !microservices/Auth/uploads/ci/.gitkeep
 !microservices/Auth/uploads/ci/.htaccess
+!microservices/Auth/uploads/ci/*.svg
 microservices/Auth/uploads/docs/*
 !microservices/Auth/uploads/docs/.gitkeep
 !microservices/Auth/uploads/docs/.htaccess
+!microservices/Auth/uploads/docs/*.svg
 microservices/Auth/uploads/qr/*
 !microservices/Auth/uploads/qr/.gitkeep
 !microservices/Auth/uploads/qr/.htaccess
+!microservices/Auth/uploads/qr/*.svg

@@ -30,15 +30,16 @@ try {
 
     if ($method === 'GET') {
         $stmtUsers = $db->query("
-            SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at 
+            SELECT id, nombre, email, fecha_nacimiento, ci_url, COALESCE(foto_url, ci_url, '') AS foto_url, ci_status, created_at 
             FROM users 
             WHERE role = 'cliente' 
-            ORDER BY id DESC
+            ORDER BY id ASC
         ");
         $compradores = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
 
         $stmtRiders = $db->query("
             SELECT u.id as rider_id, d.id as doc_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status,
+                   u.ci_url, COALESCE(u.foto_url, u.ci_url, '') AS foto_url,
                    COALESCE(d.estado_aprobacion, 'pendiente') as estado_aprobacion,
                    COALESCE(d.licencia_url, '') as licencia_url,
                    COALESCE(d.seguro_url, '') as seguro_url,
@@ -47,7 +48,7 @@ try {
             FROM users u
             LEFT JOIN documentacion_rider d ON u.id = d.rider_id
             WHERE u.role = 'rider'
-            ORDER BY u.id DESC
+            ORDER BY u.id ASC
         ");
         $riders = $stmtRiders->fetchAll(PDO::FETCH_ASSOC);
 

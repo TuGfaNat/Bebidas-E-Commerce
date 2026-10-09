@@ -120,10 +120,10 @@ function showGlobalApiError(message, retryCallback = null) {
     const apiStatusTxt = document.getElementById('apiStatusText');
 
     if (apiDot) apiDot.className = 'status-dot inactive';
-    if (apiStatusTxt) apiStatusTxt.innerText = 'Desconectado · Error de API';
+    if (apiStatusTxt) apiStatusTxt.innerText = 'Desconectado';
 
     if (banner && msgEl) {
-        msgEl.innerHTML = `<strong>Error de conexión con la API PHP/MySQL:</strong> ${escapeHtml(message || 'No se pudo comunicar con el servidor.')} <span style="font-size:0.8rem; color:#fca5a5;">(Verifique que Apache y MySQL estén activos)</span>`;
+        msgEl.innerHTML = `<strong>Error de conexión:</strong> ${escapeHtml(message || 'No se pudo comunicar con el servidor.')} <span style="font-size:0.8rem; color:#fca5a5;">(Verifique que los servicios estén activos)</span>`;
         banner.style.display = 'flex';
         if (retryBtn) {
             retryBtn.onclick = () => {
@@ -151,16 +151,16 @@ async function checkApiHealth() {
         const res = await apiGet('/Auth/connection.php', null, { skipAuth: true });
         if (res.ok) {
             if (apiDot) apiDot.className = 'status-dot active';
-            if (apiStatusTxt) apiStatusTxt.innerText = `Conectado · API PHP (${currentHost})`;
+            if (apiStatusTxt) apiStatusTxt.innerText = 'Servicio Activo';
             hideGlobalApiError();
             return true;
         } else {
-            const err = res.error || 'Base de datos o servidor no responde';
+            const err = res.error || 'El servidor no responde';
             showGlobalApiError(err);
             return false;
         }
     } catch (e) {
-        showGlobalApiError('Servidor o base de datos offline. Inicie Apache y MySQL.');
+        showGlobalApiError('Servidor o base de datos offline. Inicie los servicios en XAMPP.');
         return false;
     }
 }
@@ -225,10 +225,10 @@ function updateApiStatusUI(connected) {
     if (!apiDot || !apiText) return;
     if (connected) {
         apiDot.className = 'status-dot active';
-        apiText.innerText = 'Modo Conectado (PHP Server)';
+        apiText.innerText = 'Servicio Activo';
     } else {
         apiDot.className = 'status-dot active';
-        apiText.innerText = 'Modo Simulado (Local)';
+        apiText.innerText = 'Servicio Local';
     }
 }
 
@@ -787,7 +787,7 @@ function setupAuthFormListeners(view) {
                 }
             } catch (err) {
                 console.error('Error en registro de cliente:', err);
-                showToast(`Fallo de conexión con la API PHP: ${err.message || 'Error de red'}`, 'danger');
+                showToast(`Fallo de conexión con el servidor: ${err.message || 'Error de red'}`, 'danger');
                 showGlobalApiError('Error de conexión al registrar cliente.');
             }
         });
@@ -941,7 +941,7 @@ function handleLogin(email, password) {
         })
         .catch(err => {
             console.error('Error al conectar con la API de autenticación:', err);
-            showToast('Error de conexión con la API PHP: ' + (err.message || 'Servidor inaccesible'), 'danger');
+            showToast('Error de conexión: ' + (err.message || 'Servidor inaccesible'), 'danger');
             showGlobalApiError('No se pudo conectar con el servicio de autenticación en MySQL.');
         });
 }
@@ -1002,6 +1002,18 @@ function onLoginSuccess(user, notify = true) {
     document.getElementById('headerUserStatus').style.display = 'flex';
     document.getElementById('lblHeaderUserName').innerText = `${cleanText(activeUser.nombre)} (${activeUser.role.toUpperCase().replace('_', ' ')})`;
 
+    const headerAvatar = document.getElementById('headerUserAvatarImg');
+    const headerIcon = document.getElementById('headerUserDefaultIcon');
+    const photoUrl = activeUser.foto_url || activeUser.ci_url;
+    if (headerAvatar && photoUrl) {
+        headerAvatar.src = resolveFileUrl(photoUrl, 'foto', activeUser.id);
+        headerAvatar.style.display = 'inline-block';
+        if (headerIcon) headerIcon.style.display = 'none';
+    } else {
+        if (headerAvatar) headerAvatar.style.display = 'none';
+        if (headerIcon) headerIcon.style.display = 'inline-block';
+    }
+
     // Display appropriate panel
     const roleKey = activeUser.role === 'super_usuario' ? 'admin' : activeUser.role;
     switchRole(roleKey);
@@ -1016,6 +1028,11 @@ function handleLogout(notify = true) {
     currentSession.cliente = null;
     currentSession.rider = null;
     currentSession.admin = null;
+
+    const headerAvatar = document.getElementById('headerUserAvatarImg');
+    const headerIcon = document.getElementById('headerUserDefaultIcon');
+    if (headerAvatar) headerAvatar.style.display = 'none';
+    if (headerIcon) headerIcon.style.display = 'inline-block';
 
     localStorage.removeItem('burger_user_session');
     localStorage.removeItem('burger_jwt_token');
@@ -1163,7 +1180,7 @@ async function renderProducts(category = 'todos', searchQuery = '') {
         grid.innerHTML = `
             <div class="api-error-card" style="grid-column: 1/-1;">
                 <i data-lucide="alert-triangle" style="width: 44px; height: 44px; color: var(--accent-red); margin-bottom: 0.75rem;"></i>
-                <h3>Error al Cargar Catálogo desde la API PHP</h3>
+                <h3>Error al Cargar Catálogo</h3>
                 <p>No se pudieron obtener los productos de la base de datos MySQL real. Verifique que Apache y MySQL estén en ejecución.</p>
                 <div class="api-error-detail">${escapeHtml(apiError)}</div>
                 <div>
@@ -1545,8 +1562,8 @@ async function submitOrderCheckout() {
         }
     } catch (err) {
         console.error('Error enviando checkout a backend:', err);
-        showToast('Error de conexión con la API PHP. No se pudo registrar el pedido.', 'danger');
-        showGlobalApiError('No se pudo procesar la compra en el servidor. Por favor verifica la conexión con la API PHP.');
+        showToast('Error de conexión. No se pudo registrar el pedido.', 'danger');
+        showGlobalApiError('No se pudo procesar la compra en el servidor. Por favor verifica la conexión.');
     }
 }
 
@@ -1898,7 +1915,7 @@ async function renderRiderOrderQueue() {
             list.innerHTML = `
                 <div class="api-error-card">
                     <h4><i data-lucide="alert-triangle"></i> Error al consultar pedidos</h4>
-                    <p>${escapeHtml(res.error || 'No se pudo obtener la cola de pedidos desde la API PHP.')}</p>
+                    <p>${escapeHtml(res.error || 'No se pudo obtener la cola de pedidos del servidor.')}</p>
                     <button class="btn btn-primary btn-sm" onclick="renderRiderOrderQueue()"><i data-lucide="refresh-cw"></i> Reintentar</button>
                 </div>
             `;
@@ -1969,7 +1986,7 @@ async function renderRiderOrderQueue() {
         console.error('Fallo consultando assignment.php:', err);
         list.innerHTML = `
             <div class="api-error-card">
-                <h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4>
+                <h4><i data-lucide="alert-triangle"></i> Error de conexión con el servidor</h4>
                 <p>No se pudo conectar con el microservicio de asignación de pedidos. Verifica que el servidor Apache/MySQL esté activo.</p>
                 <button class="btn btn-primary btn-sm" onclick="renderRiderOrderQueue()"><i data-lucide="refresh-cw"></i> Reintentar</button>
             </div>
@@ -1999,11 +2016,11 @@ window.acceptRiderOrder = async function(orderId) {
             return;
         }
 
-        showToast('¡Pedido aceptado exitosamente desde la API PHP!', 'success');
+        showToast('¡Pedido aceptado exitosamente!', 'success');
         await renderRiderOrderQueue();
     } catch (err) {
         console.error('Error en assignment.php:', err);
-        showToast('Error de red al conectar con la API PHP.', 'danger');
+        showToast('Error de red al conectar con el servidor.', 'danger');
         showGlobalApiError('No se pudo comunicar con el servidor para aceptar el pedido.');
     }
 };
@@ -2179,7 +2196,7 @@ async function processRiderActiveOrderStep() {
             showToast('Error 403: No estás autorizado para gestionar este pedido.', 'danger');
             return;
         } else if (!res.ok) {
-            showToast(`Error al avanzar pedido: ${res.error || 'Operación rechazada por la API PHP'}`, 'danger');
+            showToast(`Error al avanzar pedido: ${res.error || 'Operación rechazada por el servidor'}`, 'danger');
             return;
         }
 
@@ -2188,7 +2205,7 @@ async function processRiderActiveOrderStep() {
         await renderRiderOrderHistory();
     } catch (err) {
         console.error('Error en delivery.php:', err);
-        showToast('Error de conexión con la API PHP al actualizar entrega.', 'danger');
+        showToast('Error de conexión al actualizar entrega.', 'danger');
         showGlobalApiError('No se pudo registrar el avance del pedido en el servidor.');
     }
 }
@@ -2244,7 +2261,7 @@ async function renderRiderOrderHistory(filter = 'all') {
                     listEl.innerHTML = `
                         <div class="api-error-card">
                             <h4><i data-lucide="alert-triangle"></i> Error al consultar historial</h4>
-                            <p>${escapeHtml(res.error || 'No se pudo obtener el historial de entregas de la API PHP.')}</p>
+                            <p>${escapeHtml(res.error || 'No se pudo obtener el historial de entregas del servidor.')}</p>
                         </div>
                     `;
                     initLucide();
@@ -2254,7 +2271,7 @@ async function renderRiderOrderHistory(filter = 'all') {
                 console.error('Fallo obteniendo historial de rider:', err);
                 listEl.innerHTML = `
                     <div class="api-error-card">
-                        <h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4>
+                        <h4><i data-lucide="alert-triangle"></i> Error de conexión con el servidor</h4>
                         <p>No se pudo conectar con el servidor para consultar el historial de entregas.</p>
                     </div>
                 `;
@@ -2405,7 +2422,7 @@ async function renderAdminPendingApprovals() {
         if (!res.ok) {
             const errHtml = `
                 <div class="api-error-card">
-                    <h4><i data-lucide="alert-triangle"></i> Error en la API PHP</h4>
+                    <h4><i data-lucide="alert-triangle"></i> Error en el servidor</h4>
                     <p>${escapeHtml(res.error || 'No se pudieron consultar las aprobaciones pendientes.')}</p>
                     <button class="btn btn-primary btn-sm" onclick="renderAdminPendingApprovals()"><i data-lucide="refresh-cw"></i> Reintentar</button>
                 </div>
@@ -2428,7 +2445,7 @@ async function renderAdminPendingApprovals() {
         console.error('Fallo consulta a /Auth/admin_approval.php:', err);
         const errHtml = `
             <div class="api-error-card">
-                <h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4>
+                <h4><i data-lucide="alert-triangle"></i> Error de conexión con el servidor</h4>
                 <p>No se pudo conectar con el servidor para obtener las aprobaciones pendientes.</p>
                 <button class="btn btn-primary btn-sm" onclick="renderAdminPendingApprovals()"><i data-lucide="refresh-cw"></i> Reintentar</button>
             </div>
@@ -2446,9 +2463,12 @@ async function renderAdminPendingApprovals() {
         custContainer.innerHTML = pendingCustomers.map(u => `
             <div class="approval-card">
                 <div class="approval-card-header">
-                    <div class="approval-user-info">
-                        <strong>${escapeHtml(u.nombre)}</strong>
-                        <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(u.email)}</span>
+                    <div style="display:flex; align-items:center; gap:0.65rem;">
+                        <img src="${resolveFileUrl(u.foto_url || u.ci_url, 'foto', u.id)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;" />
+                        <div class="approval-user-info">
+                            <strong>${escapeHtml(u.nombre)}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(u.email)}</span>
+                        </div>
                     </div>
                     <span class="badge badge-pending">Pendiente</span>
                 </div>
@@ -2478,9 +2498,12 @@ async function renderAdminPendingApprovals() {
             return `
                 <div class="approval-card">
                     <div class="approval-card-header">
-                        <div class="approval-user-info">
-                            <strong>${escapeHtml(riderName)}</strong>
-                            <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(riderEmail)}</span>
+                        <div style="display:flex; align-items:center; gap:0.65rem;">
+                            <img src="${resolveFileUrl(d.foto_url || d.ci_url, 'foto', riderId)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;" />
+                            <div class="approval-user-info">
+                                <strong>${escapeHtml(riderName)}</strong>
+                                <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(riderEmail)}</span>
+                            </div>
                         </div>
                         <span class="badge badge-pending">Expediente</span>
                     </div>
@@ -2518,7 +2541,7 @@ window.approveUser = async function(userId, status) {
         }
     } catch (err) {
         console.error('Fallo llamada a /Auth/admin_approval.php:', err);
-        showToast('Error de conexión con la API PHP al actualizar cliente.', 'danger');
+        showToast('Error de conexión al actualizar cliente.', 'danger');
     }
 };
 
@@ -2541,7 +2564,7 @@ window.approveRiderDocs = async function(riderOrDocId, status) {
         }
     } catch (err) {
         console.error('Fallo llamada a /Auth/admin_approval.php para rider:', err);
-        showToast('Error de conexión con la API PHP al actualizar rider.', 'danger');
+        showToast('Error de conexión al actualizar rider.', 'danger');
     }
 };
 
@@ -2650,7 +2673,21 @@ window.openUserProfile = async function() {
     const cleanUserName = cleanText(u.nombre || 'Usuario');
     if (nameEl) nameEl.innerText = cleanUserName;
     if (emailEl) emailEl.innerText = u.email || '';
-    if (avatarEl) avatarEl.innerText = (cleanUserName.charAt(0) || 'U').toUpperCase();
+
+    const avatarImg = document.getElementById('profileUserAvatarImg');
+    const avatarLetter = document.getElementById('profileUserAvatarLetter');
+    const photoSrc = u.foto_url || u.ci_url;
+    if (avatarImg && photoSrc) {
+        avatarImg.src = resolveFileUrl(photoSrc, 'foto', u.id);
+        avatarImg.style.display = 'block';
+        if (avatarLetter) avatarLetter.style.display = 'none';
+    } else {
+        if (avatarImg) avatarImg.style.display = 'none';
+        if (avatarLetter) {
+            avatarLetter.style.display = 'inline-block';
+            avatarLetter.innerText = (cleanUserName.charAt(0) || 'U').toUpperCase();
+        }
+    }
     if (userIdEl) userIdEl.innerText = `#${u.id}`;
 
     // Role badge
@@ -2917,8 +2954,8 @@ async function renderAdminAllUsers() {
     try {
         const res = await apiGet('/Auth/admin_users.php');
         if (!res.ok) {
-            compList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en la API PHP</h4><p>${escapeHtml(res.error || 'No se pudieron consultar los compradores.')}</p></div>`;
-            riderListEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en la API PHP</h4><p>${escapeHtml(res.error || 'No se pudieron consultar los riders.')}</p></div>`;
+            compList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en el servidor</h4><p>${escapeHtml(res.error || 'No se pudieron consultar los compradores.')}</p></div>`;
+            riderListEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en el servidor</h4><p>${escapeHtml(res.error || 'No se pudieron consultar los riders.')}</p></div>`;
             initLucide();
             return;
         }
@@ -2928,8 +2965,8 @@ async function renderAdminAllUsers() {
         }
     } catch (err) {
         console.error('Fallo GET /Auth/admin_users:', err);
-        compList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4><p>No se pudo conectar con el servidor.</p></div>`;
-        riderListEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error de conexión con la API PHP</h4><p>No se pudo conectar con el servidor.</p></div>`;
+        compList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error de conexión con el servidor</h4><p>No se pudo conectar con el servidor.</p></div>`;
+        riderListEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error de conexión con el servidor</h4><p>No se pudo conectar con el servidor.</p></div>`;
         initLucide();
         return;
     }
@@ -2971,9 +3008,12 @@ function renderCompradoresList(filter) {
         const canReject = u.ci_status !== 'rejected';
         return `<div class="approval-card">
             <div class="approval-card-header">
-                <div class="approval-user-info">
-                    <strong>${u.nombre}</strong>
-                    <span style="font-size:0.75rem;color:var(--text-secondary);">${u.email}</span>
+                <div style="display:flex; align-items:center; gap:0.65rem;">
+                    <img src="${resolveFileUrl(u.foto_url || u.ci_url, 'foto', u.id)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;" />
+                    <div class="approval-user-info">
+                        <strong>${escapeHtml(u.nombre)}</strong>
+                        <span style="font-size:0.75rem;color:var(--text-secondary);">${escapeHtml(u.email)}</span>
+                    </div>
                 </div>
                 ${getStatusBadge(u.ci_status)}
             </div>
@@ -3010,9 +3050,12 @@ function renderRidersList(filter) {
         const canReject = r.estado_aprobacion !== 'rechazado';
         return `<div class="approval-card">
             <div class="approval-card-header">
-                <div class="approval-user-info">
-                    <strong>${escapeHtml(r.nombre)}</strong>
-                    <span style="font-size:0.75rem;color:var(--text-secondary);">${escapeHtml(r.email)}</span>
+                <div style="display:flex; align-items:center; gap:0.65rem;">
+                    <img src="${resolveFileUrl(r.foto_url || r.ci_url, 'foto', r.rider_id)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;" />
+                    <div class="approval-user-info">
+                        <strong>${escapeHtml(r.nombre)}</strong>
+                        <span style="font-size:0.75rem;color:var(--text-secondary);">${escapeHtml(r.email)}</span>
+                    </div>
                 </div>
                 ${getStatusBadge(r.estado_aprobacion, true)}
             </div>
@@ -3060,7 +3103,7 @@ window.adminUpdateUser = async function(targetId, tipo, estado) {
         }
     } catch (err) {
         console.error('Fallo PUT /Auth/admin_users:', err);
-        showToast('Error de conexión con la API PHP al actualizar usuario.', 'danger');
+        showToast('Error de conexión al actualizar usuario.', 'danger');
     }
 };
 
@@ -3164,7 +3207,7 @@ async function handleProductFormSubmit(e) {
         await syncProductsFromBackend();
     } catch (err) {
         console.error('Error conectando con catalog.php:', err);
-        showToast('Error de conexión con la API PHP al guardar producto.', 'danger');
+        showToast('Error de conexión al guardar producto.', 'danger');
         showGlobalApiError('No se pudo guardar el producto en el catálogo.');
     }
 }
@@ -3210,7 +3253,7 @@ window.deleteProduct = async function(productId) {
         await syncProductsFromBackend();
     } catch (err) {
         console.error('Error eliminando en catalog.php:', err);
-        showToast('Error de conexión con la API PHP al eliminar producto.', 'danger');
+        showToast('Error de conexión al eliminar producto.', 'danger');
         showGlobalApiError('No se pudo eliminar el producto del catálogo.');
     }
 };
@@ -3230,7 +3273,7 @@ async function renderAdminAuditLogs() {
     try {
         const res = await apiGet('/Auth/audit_logs.php');
         if (!res.ok || !res.data) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--accent-red);"><i data-lucide="alert-triangle"></i> Error al cargar logs de auditoría desde la API PHP.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--accent-red);"><i data-lucide="alert-triangle"></i> Error al cargar logs de auditoría del sistema.</td></tr>';
             initLucide();
             showGlobalApiError('Error al consultar auditoria_logs desde MySQL.');
             return;
@@ -3356,7 +3399,7 @@ async function renderAdminReports() {
     try {
         const res = await apiGet('/Transactions/report.php');
         if (!res.ok || !res.data) {
-            if (list) list.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Reportes</h4><p>${res.error || 'No se pudo obtener información del reporte desde la API PHP.'}</p></div>`;
+            if (list) list.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Reportes</h4><p>${res.error || 'No se pudo obtener información del reporte del servidor.'}</p></div>`;
             if (elSales) elSales.innerText = '---';
             if (elOrders) elOrders.innerText = '---';
             initLucide();
@@ -3448,10 +3491,10 @@ async function fetchAndUpdateAdminMonitoring() {
     try {
         const res = await apiGet('/Transactions/live_monitoring.php');
         if (!res.ok || !res.data) {
-            listActive.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Monitoreo</h4><p>${res.error || 'No se pudo obtener el monitoreo en vivo de la API PHP.'}</p></div>`;
-            listSettlements.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Liquidaciones</h4><p>No se pudo conectar con la API de liquidaciones.</p></div>`;
+            listActive.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Monitoreo</h4><p>${res.error || 'No se pudo obtener el monitoreo en vivo del servidor.'}</p></div>`;
+            listSettlements.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error en Liquidaciones</h4><p>No se pudo conectar con el servicio de liquidaciones.</p></div>`;
             initLucide();
-            showGlobalApiError('Error al consultar live_monitoring.php desde MySQL.');
+            showGlobalApiError('Error al consultar el monitoreo en vivo.');
             initAdminMonitoringMap(null);
             return;
         }
@@ -3463,7 +3506,7 @@ async function fetchAndUpdateAdminMonitoring() {
     } catch (err) {
         console.error('Error en live_monitoring.php:', err);
         listActive.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Fallo de Red</h4><p>Error de conexión al consultar el monitoreo de pedidos.</p></div>`;
-        listSettlements.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Fallo de Red</h4><p>Error de conexión con la API PHP.</p></div>`;
+        listSettlements.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Fallo de Red</h4><p>Error de conexión con el servidor.</p></div>`;
         initLucide();
         showGlobalApiError('Error de red al consultar monitoreo en vivo.');
         initAdminMonitoringMap(null);
@@ -3594,7 +3637,7 @@ window.settleRiderCash = async function(riderId) {
         await fetchAndUpdateAdminMonitoring();
     } catch (err) {
         console.error('Error en settle_cash.php:', err);
-        showToast('Error de conexión con la API PHP al liquidar caja.', 'danger');
+        showToast('Error de conexión al liquidar caja.', 'danger');
         showGlobalApiError('Error de red al liquidar caja del repartidor.');
     }
 };

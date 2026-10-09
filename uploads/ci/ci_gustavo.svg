@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%">
+    <defs>
+        <linearGradient id="cardGrad_18" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0f172a"/>
+            <stop offset="100%" stop-color="#1e293b"/>
+        </linearGradient>
+    </defs>
+    <rect width="800" height="480" rx="20" fill="url(#cardGrad_18)" stroke="#334155" stroke-width="2"/>
+    <rect x="0" y="0" width="800" height="6" rx="3" fill="#dc2626"/>
+    <rect x="0" y="6" width="800" height="6" fill="#eab308"/>
+    <rect x="0" y="12" width="800" height="6" fill="#16a34a"/>
+    <rect x="25" y="30" width="750" height="65" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="50" y="55" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="13" font-weight="bold" fill="#f8fafc" letter-spacing="1">ESTADO PLURINACIONAL DE BOLIVIA</text>
+    <text x="50" y="74" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#94a3b8">SERVICIO GENERAL DE IDENTIFICACIÓN PERSONAL (SEGIP) · CÉDULA DE IDENTIDAD DIGITAL</text>
+    <rect x="520" y="42" width="235" height="38" rx="8" fill="rgba(239, 68, 68, 0.15)" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="637" y="66" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" font-weight="bold" fill="#ef4444" text-anchor="middle">RECHAZADO · DENEGADO</text>
+    <rect x="50" y="115" width="200" height="240" rx="14" fill="#020617" stroke="#475569" stroke-width="2"/>
+    <g transform="translate(50, 125) scale(1.0)">
+        
+    <defs>
+        <linearGradient id="bgGrad_18" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#172554"/>
+            <stop offset="100%" stop-color="#1e40af"/>
+        </linearGradient>
+    </defs>
+    <rect width="200" height="200" rx="100" fill="url(#bgGrad_18)"/>
+    <ellipse cx="100" cy="82" rx="38" ry="26" fill="#334155"/><rect x="62" y="82" width="76" height="14" rx="4" fill="#1e293b"/>
+    <rect x="91" y="125" width="18" height="25" fill="#b88255"/>
+    <ellipse cx="100" cy="112" rx="34" ry="40" fill="#b88255"/>
+    <circle cx="87" cy="110" r="3" fill="#1e293b"/>
+    <circle cx="113" cy="110" r="3" fill="#1e293b"/>
+    <path d="M 81 102 Q 87 99 93 102" stroke="#451a03" stroke-width="2" fill="none"/>
+    <path d="M 107 102 Q 113 99 119 102" stroke="#451a03" stroke-width="2" fill="none"/>
+    <path d="M 100 111 L 98 120 L 102 120" stroke="#b45309" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <line x1="92" y1="129" x2="108" y2="129" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 78 128 C 82 152 118 152 122 128 C 122 145 78 145 78 128 Z" fill="#1c1917"/>
+    <path d="M 40 200 C 40 155 80 148 100 148 C 120 148 160 155 160 200 Z" fill="#1e3a8a"/>
+
+    </g>
+    <rect x="50" y="325" width="200" height="30" rx="8" fill="#0f172a"/>
+    <text x="150" y="345" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" font-weight="bold" fill="#cbd5e1" text-anchor="middle">FOTOGRAFÍA BIOMÉTRICA</text>
+    <text x="280" y="140" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#64748b" font-weight="bold">NÚMERO DE CÉDULA DE IDENTIDAD (C.I.)</text>
+    <text x="280" y="168" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="24" fill="#f97316" font-weight="bold">5192840 CB</text>
+    <text x="280" y="200" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#64748b" font-weight="bold">NOMBRE(S) Y APELLIDOS</text>
+    <text x="280" y="224" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="17" fill="#f8fafc" font-weight="bold">Gustavo Beltrán Soto</text>
+    <text x="280" y="255" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#64748b" font-weight="bold">FECHA DE NACIMIENTO</text>
+    <text x="280" y="275" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="14" fill="#cbd5e1">1990-12-01</text>
+    <text x="470" y="255" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#64748b" font-weight="bold">SEXO</text>
+    <text x="470" y="275" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="14" fill="#cbd5e1">MASCULINO</text>
+    <text x="280" y="305" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="11" fill="#64748b" font-weight="bold">LUGAR DE EMISIÓN / DOMICILIO</text>
+    <text x="280" y="325" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="14" fill="#cbd5e1">Cochabamba</text>
+    <rect x="635" y="125" width="120" height="120" rx="10" fill="#ffffff"/>
+    <rect x="645" y="135" width="30" height="30" fill="#0f172a"/><rect x="650" y="140" width="20" height="20" fill="#ffffff"/><rect x="655" y="145" width="10" height="10" fill="#0f172a"/>
+    <rect x="715" y="135" width="30" height="30" fill="#0f172a"/><rect x="720" y="140" width="20" height="20" fill="#ffffff"/><rect x="725" y="145" width="10" height="10" fill="#0f172a"/>
+    <rect x="645" y="205" width="30" height="30" fill="#0f172a"/><rect x="650" y="210" width="20" height="20" fill="#ffffff"/><rect x="655" y="215" width="10" height="10" fill="#0f172a"/>
+    <text x="695" y="260" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">SEGIP QR VERIFIED</text>
+        <rect x="50" y="385" width="700" height="40" rx="8" fill="#450a0a" stroke="#ef4444" stroke-width="1.5"/>
+    <text x="65" y="410" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif" font-size="12" fill="#fca5a5" font-weight="bold">MOTIVO DE RECHAZO: Póliza de seguro SOAT vencida y sin inspección técnica vehicular.</text>
+    <rect x="25" y="440" width="750" height="25" fill="#0b1120" rx="6"/>
+    <text x="40" y="457" font-family="Courier, monospace" font-size="11" fill="#64748b">
+        ID-EXPEDIENTE: 18 · CI: 5192840 CB · BURGER 24/7 IDENTITY SHA-256
+    </text>
+</svg>

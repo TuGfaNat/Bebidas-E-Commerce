@@ -1,0 +1,7 @@
+﻿# Deshabilitar ejecución de scripts PHP / ejecutables en carpetas de uploads
+<FilesMatch "\.(php|phtml|php3|php4|php5|php7|phps|pl|py|cgi|sh|exe|bat|cmd)$">
+    Require all denied
+</FilesMatch>
+
+# Deshabilitar listado de directorios
+Options -Indexes

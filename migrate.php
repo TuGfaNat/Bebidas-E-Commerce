@@ -74,9 +74,33 @@ try {
         throw new Exception("No se encontró el archivo $sqlFile");
     }
 
+    // Soporte para flag --fresh opcional
+    $fresh = in_array('--fresh', $argv ?? []);
+    if ($fresh) {
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+        $dropTables = ['pedido_detalles', 'pedidos', 'documentacion_rider', 'auditoria_logs', 'productos', 'users'];
+        foreach ($dropTables as $t) {
+            $pdo->exec("DROP TABLE IF EXISTS `$t`;");
+        }
+        $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+        echo "[INFO] Tablas previas eliminadas (--fresh).\n";
+    }
+
+    // Asegurar columna foto_url en users si ya existía la tabla previamente
+    try {
+        $checkCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'foto_url'")->fetch();
+        if (!$checkCol) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN foto_url VARCHAR(255) NULL AFTER ci_url");
+        }
+    } catch (Exception $e) {
+        // Ignorar si la tabla users aún no existe
+    }
+
     $sql = file_get_contents($sqlFile);
-    // Ejecutar lote SQL
+    // Ejecutar lote SQL con protección de llaves foráneas desactivada temporalmente durante carga
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
     $pdo->exec($sql);
+    $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
     echo "[OK] Esquema y tablas creados/actualizados exitosamente.\n";
 
     // Mostrar resumen de tablas creadas

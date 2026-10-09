@@ -57,17 +57,107 @@
             </h4>
             <span id="quickSwitchToggleText" style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">(Abrir ▴)</span>
         </div>
-        <div id="quickSwitchContent" style="display: none; margin-top: 0.65rem; flex-direction: column; gap: 0.35rem;">
+        <div id="quickSwitchContent" style="display: none; margin-top: 0.65rem; flex-direction: column; gap: 0.45rem; max-height: 70vh; overflow-y: auto; padding-right: 0.25rem;">
             <div style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:0.2rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.25rem;">
                 Haz clic en una cuenta para iniciar sesión directa:
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('carlos@mail.com', 'carlos')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">✅ Cliente Habilitado (Carlos)</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('maria@mail.com', 'maria')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">⏳ Cliente Pendiente (María)</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('roberto@mail.com', 'roberto')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">❌ Cliente Rechazado (Roberto)</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('pedro@mail.com', 'pedro')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">✅ Rider Habilitado (Pedro)</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('juan@mail.com', 'juan')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">⏳ Rider Pendiente (Juan)</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('marcos@mail.com', 'marcos')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">❌ Rider Rechazado (Marcos)</button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('admin@mail.com', 'admin')" style="text-align:left; font-size:0.75rem; padding: 0.35rem 0.5rem;">🔑 Administrador (Central)</button>
+            
+            <!-- Grupo Clientes Habilitados -->
+            <div style="font-size:0.68rem; font-weight:700; color:#10b981; text-transform:uppercase; letter-spacing:0.04em;">Clientes Habilitados</div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('carlos@mail.com', 'carlos')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_carlos.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Carlos Pérez (La Paz)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('andrea@mail.com', 'andrea')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_andrea.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Andrea Morales (Cochabamba)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('gonzalo@mail.com', 'gonzalo')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_gonzalo.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Gonzalo Salinas (Santa Cruz)</span>
+            </button>
+
+            <!-- Grupo Clientes Pendientes -->
+            <div style="font-size:0.68rem; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Clientes Pendientes</div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('maria@mail.com', 'maria')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_maria.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>María López (La Paz)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('diego@mail.com', 'diego')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_diego.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Diego Quiroga (La Paz)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('camila@mail.com', 'camila')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_camila.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Camila Navarro (Cochabamba)</span>
+            </button>
+
+            <!-- Grupo Clientes Rechazados -->
+            <div style="font-size:0.68rem; font-weight:700; color:#ef4444; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Clientes Rechazados</div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('roberto@mail.com', 'roberto')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_roberto.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Roberto Flores (C.I. Borroso)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('lucia@mail.com', 'lucia')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_lucia.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Lucía Paredes (Menor de edad)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('rodrigo@mail.com', 'rodrigo')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_rodrigo.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Rodrigo Méndez (C.I. Vencido)</span>
+            </button>
+
+            <!-- Grupo Riders Habilitados -->
+            <div style="font-size:0.68rem; font-weight:700; color:#10b981; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Riders Habilitados</div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('pedro@mail.com', 'pedro')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_pedro.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Pedro Gómez (Honda Wave)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('alejandro@mail.com', 'alejandro')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_alejandro.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Alejandro Ríos (Yamaha FZ)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('valeria@mail.com', 'valeria')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_valeria.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Valeria Mamani (Suzuki GN)</span>
+            </button>
+
+            <!-- Grupo Riders Pendientes -->
+            <div style="font-size:0.68rem; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Riders Pendientes</div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('juan@mail.com', 'juan')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_juan.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Juan Rodríguez (Bajaj Pulsar)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('fernando@mail.com', 'fernando')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_fernando.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Fernando Blanco (Honda CG)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('paola@mail.com', 'paola')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_paola.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Paola Zeballos (Kymco Agility)</span>
+            </button>
+
+            <!-- Grupo Riders Rechazados -->
+            <div style="font-size:0.68rem; font-weight:700; color:#ef4444; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Riders Rechazados</div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('marcos@mail.com', 'marcos')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_marcos.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Marcos Vargas (Sin Licencia)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('gustavo@mail.com', 'gustavo')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_gustavo.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Gustavo Beltrán (SOAT Vencido)</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('cristian@mail.com', 'cristian')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_cristian.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Cristian Colque (Sin Papeles)</span>
+            </button>
+
+            <!-- Grupo Administrador -->
+            <div style="font-size:0.68rem; font-weight:700; color:#8b5cf6; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Administrador</div>
+            <button class="btn btn-secondary btn-sm" onclick="quickLogin('admin@mail.com', 'admin')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
+                <img src="uploads/ci/foto_admin.svg" style="width:18px;height:18px;border-radius:50%;" />
+                <span>Admin Central (Gerencia)</span>
+            </button>
         </div>
     </div>
 
@@ -86,32 +176,25 @@
                     <i data-lucide="shopping-cart" style="width: 14px; height: 14px;"></i>
                     <span>Mi Carrito (<span id="headerCartCount">0</span>)</span>
                 </button>
-                <button class="btn btn-secondary btn-sm" id="btnHeaderProfile" style="padding: 0.35rem 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; cursor: pointer; border-radius: 9999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);" title="Ver Mi Perfil">
-                    <i data-lucide="user" style="width: 14px; height: 14px; color: #f97316;"></i>
+                <button class="btn btn-secondary btn-sm" id="btnHeaderProfile" style="padding: 0.25rem 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer; border-radius: 9999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);" title="Ver Mi Perfil">
+                    <img id="headerUserAvatarImg" src="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none;" />
+                    <i id="headerUserDefaultIcon" data-lucide="user" style="width: 14px; height: 14px; color: #f97316;"></i>
                     <span id="lblHeaderUserName" style="font-weight: 600; font-size: 0.82rem; color: #f8fafc;"></span>
                 </button>
                 <button class="btn btn-secondary btn-sm" id="btnHeaderLogout" style="padding: 0.35rem 0.65rem; display: inline-flex; align-items: center; gap: 0.25rem;">
                     <i data-lucide="log-out" style="width: 12px; height: 12px;"></i> Salir
                 </button>
             </div>
-
-            <!-- API Status -->
-            <div class="status-badge-container">
-                <div class="api-status-banner">
-                    <span class="status-dot active" id="apiDot"></span>
-                    <span id="apiStatusText">Verificando API...</span>
-                </div>
-            </div>
         </div>
     </header>
 
     <!-- Main Container -->
     <main>
-        <!-- Banner de Error Visible ante Fallos de la API PHP -->
+        <!-- Banner de Error Visible ante Fallos de Conexión -->
         <div id="globalApiErrorBanner" class="global-api-error-banner" style="display: none;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: var(--accent-red); flex-shrink: 0;"></i>
-                <span id="globalApiErrorMessage">Error de conexión con la API PHP/MySQL.</span>
+                <span id="globalApiErrorMessage">Error de conexión con el servidor.</span>
             </div>
             <button class="btn btn-secondary btn-sm" id="btnRetryApiConnection" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
                 Reintentar
@@ -763,8 +846,9 @@
         <div class="user-profile-modal-container glass-card" style="width: 100%; max-width: 620px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
             <div class="file-view-header" style="padding: 1.15rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6);">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div id="profileRoleAvatar" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white;">
-                        U
+                    <div id="profileRoleAvatar" style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #f97316, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white; border: 2px solid rgba(255, 255, 255, 0.15); flex-shrink: 0;">
+                        <img id="profileUserAvatarImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
+                        <span id="profileUserAvatarLetter">U</span>
                     </div>
                     <div>
                         <h3 id="profileModalUserName" style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #f8fafc;">Mi Perfil</h3>

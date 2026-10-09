@@ -2,23 +2,15 @@
 -- Burger 24/7 - Script de Instalación Idempotente de Base de Datos
 -- Base de Datos: burger_shop (MySQL 8.0+ / MariaDB 10.4+ / XAMPP)
 -- Juego de Caracteres: utf8mb4 / Collation: utf8mb4_unicode_ci
---
--- Uso:
---   1. Vía MySQL CLI:
---      mysql -u root -p < install_db.sql
---   2. Vía phpMyAdmin:
---      Pestaña "Importar" o "SQL" y ejecutar este archivo completo.
---   3. Vía Asistente PHP:
---      php migrate.php
 -- ============================================================================
 
--- 0. Creación Idempotente de la Base de Datos
 CREATE DATABASE IF NOT EXISTS `burger_shop` 
     CHARACTER SET utf8mb4 
     COLLATE utf8mb4_unicode_ci;
 
 USE `burger_shop`;
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- 1. Tabla de Usuarios (users)
 CREATE TABLE IF NOT EXISTS users (
@@ -29,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     fecha_nacimiento DATE NOT NULL,
     ci_url VARCHAR(255),
+    foto_url VARCHAR(255),
     ci_status ENUM('pending', 'verified', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -128,29 +121,33 @@ CREATE TABLE IF NOT EXISTS auditoria_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
--- SEED DATA IDEMPOTENTE (password_hash real bcrypt)
+-- SEED DATA COMPLETO (19 USUARIOS REALES BCRYPT CON FOTOS Y DOCUMENTOS)
 -- ============================================================================
 
--- Contraseñas reales demo:
--- carlos@mail.com   -> carlos
--- pedro@mail.com    -> pedro
--- admin@mail.com    -> admin
--- maria@mail.com    -> maria
--- juan@mail.com     -> juan
--- roberto@mail.com  -> roberto
--- marcos@mail.com   -> marcos
-
-INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, ci_url, ci_status, created_by, updated_by) VALUES
-(1, 'cliente', 'Carlos Pérez', 'carlos@mail.com', '$2y$10$GB.kzxC2cpj2ylTUbm/KzuZsZW/FFg4q0P99Tx1gwxRu.MpXfKx9y', '1995-04-12', '/uploads/ci/ci_carlos.jpg', 'verified', 1, 1),
-(2, 'rider', 'Pedro Gómez', 'pedro@mail.com', '$2y$10$VS6OqUtJEgrTYIL2Ad3ypeZ1MBsqg/D5booI.pGQ.HMzs0RFcKbtO', '1992-08-25', '/uploads/ci/ci_pedro.jpg', 'verified', 1, 1),
-(3, 'super_usuario', 'Admin Central', 'admin@mail.com', '$2y$10$iwDft1al.qObBhKDoy9QMOfs3mmXxKY8SVPyYSklzFhgeWdYdnaAS', '1988-11-03', '/uploads/ci/ci_admin.jpg', 'verified', 3, 3),
-(4, 'cliente', 'María López (Pendiente)', 'maria@mail.com', '$2y$10$NJr/sBFl68EH/xi5t.pe0eD/NfCJf3syzayjCwsoGm0SKD.WUtfqC', '2001-02-14', '/uploads/ci/ci_maria.jpg', 'pending', 1, 1),
-(5, 'rider', 'Juan Rodríguez (Pendiente)', 'juan@mail.com', '$2y$10$L99DK8wwYYK6KlhfFAxxKubImqZOn3eyHpVy2iWA0bA4qi.jhpeNW', '1999-07-19', '/uploads/ci/ci_juan.jpg', 'pending', 1, 1),
-(6, 'cliente', 'Roberto Flores (Rechazado)', 'roberto@mail.com', '$2y$10$GB.kzxC2cpj2ylTUbm/KzuZsZW/FFg4q0P99Tx1gwxRu.MpXfKx9y', '1996-05-20', '/uploads/ci/ci_roberto.jpg', 'rejected', 1, 3),
-(7, 'rider', 'Marcos Vargas (Rechazado)', 'marcos@mail.com', '$2y$10$VS6OqUtJEgrTYIL2Ad3ypeZ1MBsqg/D5booI.pGQ.HMzs0RFcKbtO', '1994-09-10', '/uploads/ci/ci_marcos.jpg', 'rejected', 2, 3)
+INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, ci_url, foto_url, ci_status, created_by, updated_by) VALUES(1, 'cliente', 'Carlos Pérez Mendoza', 'carlos@mail.com', '$2y$10$zCLKEZGphHWQenx1n0AtueOc0IfyoWc6Tsdnf7zFaKqlXtBPG4gxW', '1995-04-12', '/uploads/ci/ci_carlos.svg', '/uploads/ci/foto_carlos.svg', 'verified', 3, 3),
+(2, 'rider', 'Pedro Gómez Alarcón', 'pedro@mail.com', '$2y$10$sGhPyidZkniPURvvy0cpMuRDbh9b77M2JjkpUdXrbNmuLXSgp9/Ti', '1992-08-25', '/uploads/ci/ci_pedro.svg', '/uploads/ci/foto_pedro.svg', 'verified', 3, 3),
+(3, 'super_usuario', 'Admin Central (Gerencia)', 'admin@mail.com', '$2y$10$I9B4fYAZJtMWr0IZkueWU.uV7QkIE8/uLOabs0edICTWvOWFPoPZu', '1988-11-03', '/uploads/ci/ci_admin.svg', '/uploads/ci/foto_admin.svg', 'verified', 3, 3),
+(4, 'cliente', 'María López Guzmán', 'maria@mail.com', '$2y$10$7Z.VtSyy/rZOGvHx7K9bVukBy6v60CRyotjThBU/zJG9hDoT11C3y', '2001-02-14', '/uploads/ci/ci_maria.svg', '/uploads/ci/foto_maria.svg', 'pending', 3, 3),
+(5, 'rider', 'Juan Rodríguez Ticona', 'juan@mail.com', '$2y$10$6pBYphI6DYU4LtEYr4fQhOJ.Hg9FpSLjWmlkEGYAM34M.zRfep8nm', '1999-07-19', '/uploads/ci/ci_juan.svg', '/uploads/ci/foto_juan.svg', 'pending', 3, 3),
+(6, 'cliente', 'Roberto Flores Arze', 'roberto@mail.com', '$2y$10$8oT1R6XApSbwKTeXESchaOM/80T4r8lSCSH9E.0X81HWECBM/hQ6u', '1996-05-20', '/uploads/ci/ci_roberto.svg', '/uploads/ci/foto_roberto.svg', 'rejected', 3, 3),
+(7, 'rider', 'Marcos Vargas Huanca', 'marcos@mail.com', '$2y$10$k9lbObaTKvyrmcISILGI3eZLPjND3lHqr1tchavUcxCB5m4K.x7A6', '1994-09-10', '/uploads/ci/ci_marcos.svg', '/uploads/ci/foto_marcos.svg', 'rejected', 3, 3),
+(8, 'cliente', 'Andrea Morales Ramos', 'andrea@mail.com', '$2y$10$1oW.NjUG69VexE72QqsrceeMycE1A03BbWKfNe9qVzpQHtuJ1Jk.2', '1998-09-18', '/uploads/ci/ci_andrea.svg', '/uploads/ci/foto_andrea.svg', 'verified', 3, 3),
+(9, 'cliente', 'Gonzalo Salinas Castro', 'gonzalo@mail.com', '$2y$10$j5g8nKSQ1GQOaDFLO8eJb.0fVxuutxP6qfl1DVWpqn1FSLTDRe1P2', '1991-12-05', '/uploads/ci/ci_gonzalo.svg', '/uploads/ci/foto_gonzalo.svg', 'verified', 3, 3),
+(10, 'cliente', 'Diego Quiroga Flores', 'diego@mail.com', '$2y$10$WWCoGsoD6/a/.pM8AOgtheR8stX77p1NmCdqHrRCX9PoGibeOiVay', '2003-06-22', '/uploads/ci/ci_diego.svg', '/uploads/ci/foto_diego.svg', 'pending', 3, 3),
+(11, 'cliente', 'Camila Navarro Torrez', 'camila@mail.com', '$2y$10$Xy6b5mZJnnSCB1Dw2Kj3h.sC5EZionkzjTDJi5tSV3Z/HQ8ublqci', '2000-11-30', '/uploads/ci/ci_camila.svg', '/uploads/ci/foto_camila.svg', 'pending', 3, 3),
+(12, 'cliente', 'Lucía Paredes Vega', 'lucia@mail.com', '$2y$10$b8gukVCZ5evldh3Ek6W3AO9sQcdHOfbH59aZuXmvSKrN6tXOOZI02', '2009-08-14', '/uploads/ci/ci_lucia.svg', '/uploads/ci/foto_lucia.svg', 'rejected', 3, 3),
+(13, 'cliente', 'Rodrigo Méndez Balderrama', 'rodrigo@mail.com', '$2y$10$04QLFWu3.GATUlVzLba17u0OQCP/806kihdq3mWBh3YHFA8Q8U5Dq', '1993-01-10', '/uploads/ci/ci_rodrigo.svg', '/uploads/ci/foto_rodrigo.svg', 'rejected', 3, 3),
+(14, 'rider', 'Alejandro Ríos Choque', 'alejandro@mail.com', '$2y$10$0zTFIs/NtNmgFdTYJUcXkeQArDe3HGMLyC7twWOAHvI92G0w1A0XC', '1994-03-15', '/uploads/ci/ci_alejandro.svg', '/uploads/ci/foto_alejandro.svg', 'verified', 3, 3),
+(15, 'rider', 'Valeria Mamani Gutiérrez', 'valeria@mail.com', '$2y$10$7EBNVefeHmmVcMm7QqyS0eLYMkgbxmwOvOlm97Uw7aInTrWUl22MS', '1997-10-08', '/uploads/ci/ci_valeria.svg', '/uploads/ci/foto_valeria.svg', 'verified', 3, 3),
+(16, 'rider', 'Fernando Blanco Heredia', 'fernando@mail.com', '$2y$10$LZPAZC9asZlfXNthj3mcX.QhWHp6f39M8tvneYFoHpRWXHdhld9ti', '2000-04-03', '/uploads/ci/ci_fernando.svg', '/uploads/ci/foto_fernando.svg', 'pending', 3, 3),
+(17, 'rider', 'Paola Zeballos Cruz', 'paola@mail.com', '$2y$10$q5aabD1RbDLExY49qAaDeOpiIMhVs1Qp6j2k9lljj90Jf0HmRF3du', '2002-09-12', '/uploads/ci/ci_paola.svg', '/uploads/ci/foto_paola.svg', 'pending', 3, 3),
+(18, 'rider', 'Gustavo Beltrán Soto', 'gustavo@mail.com', '$2y$10$wK/b0h.dNL9uZYaXNg7mi.INOCEm7YkzN4ndvTv4wA8L8gqi5AAoW', '1990-12-01', '/uploads/ci/ci_gustavo.svg', '/uploads/ci/foto_gustavo.svg', 'rejected', 3, 3),
+(19, 'rider', 'Cristian Colque Poma', 'cristian@mail.com', '$2y$10$4.HtYt5GgEsbwpEuOHtDD.X9KU7vz3tjj90Sd.L37BbCBYV5Dsl2a', '2004-05-18', '/uploads/ci/ci_cristian.svg', '/uploads/ci/foto_cristian.svg', 'rejected', 3, 3)
 ON DUPLICATE KEY UPDATE 
     password_hash = VALUES(password_hash),
     ci_status = VALUES(ci_status),
+    foto_url = VALUES(foto_url),
+    ci_url = VALUES(ci_url),
     `role` = VALUES(`role`),
     nombre = VALUES(nombre);
 
@@ -174,37 +171,51 @@ ON DUPLICATE KEY UPDATE
     precio = VALUES(precio),
     stock = VALUES(stock);
 
--- Documentación de Riders (Pedro aprobado, Juan pendiente, Marcos rechazado)
-INSERT INTO documentacion_rider (id, rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by) VALUES
-(1, 2, '/uploads/docs/licencia_pedro.jpg', '/uploads/docs/seguro_pedro.jpg', '/uploads/docs/cv_pedro.pdf', 'aprobado', 3, 3),
-(2, 5, '/uploads/docs/licencia_juan.jpg', '/uploads/docs/seguro_juan.jpg', '/uploads/docs/cv_juan.pdf', 'pendiente', 5, 5),
-(3, 7, '/uploads/docs/licencia_marcos.jpg', '/uploads/docs/seguro_marcos.jpg', '/uploads/docs/cv_marcos.pdf', 'rechazado', 3, 3)
+-- Documentación de Riders (9 expedientes vehiculares)
+INSERT INTO documentacion_rider (id, rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by) VALUES(1, 2, '/uploads/docs/licencia_pedro.svg', '/uploads/docs/soat_pedro.svg', '/uploads/docs/cv_pedro.svg', 'aprobado', 3, 3),
+(2, 5, '/uploads/docs/licencia_juan.svg', '/uploads/docs/soat_juan.svg', '/uploads/docs/cv_juan.svg', 'pendiente', 3, 3),
+(3, 7, '/uploads/docs/licencia_marcos.svg', '/uploads/docs/soat_marcos.svg', '/uploads/docs/cv_marcos.svg', 'rechazado', 3, 3),
+(4, 14, '/uploads/docs/licencia_alejandro.svg', '/uploads/docs/soat_alejandro.svg', '/uploads/docs/cv_alejandro.svg', 'aprobado', 3, 3),
+(5, 15, '/uploads/docs/licencia_valeria.svg', '/uploads/docs/soat_valeria.svg', '/uploads/docs/cv_valeria.svg', 'aprobado', 3, 3),
+(6, 16, '/uploads/docs/licencia_fernando.svg', '/uploads/docs/soat_fernando.svg', '/uploads/docs/cv_fernando.svg', 'pendiente', 3, 3),
+(7, 17, '/uploads/docs/licencia_paola.svg', '/uploads/docs/soat_paola.svg', '/uploads/docs/cv_paola.svg', 'pendiente', 3, 3),
+(8, 18, '/uploads/docs/licencia_gustavo.svg', '/uploads/docs/soat_gustavo.svg', '/uploads/docs/cv_gustavo.svg', 'rechazado', 3, 3),
+(9, 19, '/uploads/docs/licencia_cristian.svg', '/uploads/docs/soat_cristian.svg', '/uploads/docs/cv_cristian.svg', 'rechazado', 3, 3)
 ON DUPLICATE KEY UPDATE 
+    licencia_url = VALUES(licencia_url),
+    seguro_url = VALUES(seguro_url),
+    cv_url = VALUES(cv_url),
     estado_aprobacion = VALUES(estado_aprobacion);
 
--- Pedidos de Ejemplo
-INSERT INTO pedidos (id, cliente_id, rider_id, estado_pago, estado_pedido, total, latitud, longitud, qr_comprobante_url, created_by, updated_by) VALUES
-(1, 1, 2, 'liquidado', 'entregado', 45.00, -16.50200000, -68.13100000, NULL, 1, 3),
-(2, 4, 2, 'contraentrega', 'cancelado', 36.00, -16.51200000, -68.12500000, NULL, 4, 2),
-(3, 1, 2, 'pagado_qr', 'entregado', 58.00, -16.50800000, -68.13300000, '/uploads/qr/comprobante_carlos1.jpg', 1, 2),
-(4, 1, NULL, 'contraentrega', 'pendiente', 44.00, -16.50900000, -68.13400000, NULL, 1, 1)
+-- Pedidos Iniciales de Demostración
+INSERT INTO pedidos (id, cliente_id, rider_id, estado_pago, estado_pedido, total, latitud, longitud, qr_comprobante_url, created_by, updated_by) VALUES(1, 1, 2, 'liquidado', 'entregado', 45.00, -16.50200000, -68.13100000, NULL, 1, 3),
+(2, 8, 14, 'pagado_qr', 'entregado', 58.00, -16.50800000, -68.13300000, '/uploads/qr/comprobante_andrea.jpg', 8, 14),
+(3, 9, 15, 'contraentrega', 'en_camino', 78.00, -16.51200000, -68.12500000, NULL, 9, 15),
+(4, 1, 2, 'contraentrega', 'asignado', 34.00, -16.50400000, -68.12900000, NULL, 1, 3),
+(5, 8, NULL, 'esperando_pago', 'pendiente', 44.00, -16.50900000, -68.13400000, NULL, 8, 8)
 ON DUPLICATE KEY UPDATE
     estado_pago = VALUES(estado_pago),
     estado_pedido = VALUES(estado_pedido),
     total = VALUES(total);
 
 -- Detalles de Pedidos
-INSERT INTO pedido_detalles (id, pedido_id, producto_id, cantidad, precio_unitario, created_by, updated_by) VALUES
-(1, 1, 1, 1, 22.00, 1, 1),
-(2, 2, 3, 1, 36.00, 4, 4),
-(3, 3, 2, 1, 32.00, 1, 1),
-(4, 3, 10, 2, 6.00, 1, 1),
-(5, 4, 6, 1, 44.00, 1, 1)
+INSERT INTO pedido_detalles (id, pedido_id, producto_id, cantidad, precio_unitario, created_by, updated_by) VALUES(1, 1, 1, 1, 22.00, 1, 1),
+(2, 1, 7, 1, 14.00, 1, 1),
+(3, 1, 10, 1, 6.00, 1, 1),
+(4, 2, 2, 1, 32.00, 8, 8),
+(5, 2, 12, 2, 12.00, 8, 8),
+(6, 2, 11, 1, 6.00, 8, 8),
+(7, 3, 4, 1, 45.00, 9, 9),
+(8, 3, 5, 1, 34.00, 9, 9),
+(9, 4, 5, 1, 34.00, 1, 1),
+(10, 5, 6, 1, 44.00, 8, 8)
 ON DUPLICATE KEY UPDATE
     cantidad = VALUES(cantidad),
     precio_unitario = VALUES(precio_unitario);
 
 -- Auditoría Inicial
 INSERT INTO auditoria_logs (id, tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_by, updated_by) VALUES
-(1, 'productos', 1, 'INSERT', NULL, '{"nombre":"Hamburguesa Clásica Simple","stock":85,"precio":22.00}', '127.0.0.1', 3, 3)
+(1, 'users', 3, 'INSERT', NULL, '{"nombre":"Admin Central (Gerencia)","role":"super_usuario"}', '127.0.0.1', 3, 3)
 ON DUPLICATE KEY UPDATE accion = VALUES(accion);
+
+SET FOREIGN_KEY_CHECKS = 1;

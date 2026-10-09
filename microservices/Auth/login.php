@@ -41,7 +41,7 @@ try {
 
     $db = DatabaseConnection::getInstance()->getConnection();
     
-    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, ci_status, ci_url, COALESCE(foto_url, ci_url, '') AS foto_url FROM users WHERE LOWER(email) = LOWER(?)");
+    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, ci_status, ci_url FROM users WHERE LOWER(email) = LOWER(?)");
     $stmt->execute([$correo]);
     $user = $stmt->fetch();
 

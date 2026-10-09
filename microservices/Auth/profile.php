@@ -40,12 +40,15 @@ try {
     if ($method === 'GET') {
         // Consultar datos del usuario
         $stmtUser = $db->prepare("
-            SELECT id, role, nombre, email, fecha_nacimiento, ci_url, COALESCE(foto_url, ci_url, '') AS foto_url, ci_status, created_at, updated_at
+            SELECT id, role, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at, updated_at
             FROM users 
             WHERE id = ?
         ");
         $stmtUser->execute([$userId]);
         $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if ($userData) {
+            $userData['foto_url'] = $userData['ci_url'] ?? '';
+        }
 
         if (!$userData) {
             http_response_code(404);

@@ -29,6 +29,13 @@ class DatabaseConnection {
 
         try {
             $this->connection = new PDO($dsn, $user, $pass, $options);
+            // Auto-migración silenciosa: asegurar columna foto_url en users si existe la tabla
+            try {
+                $checkCols = $this->connection->query("SHOW COLUMNS FROM users LIKE 'foto_url'")->fetchAll();
+                if (empty($checkCols)) {
+                    $this->connection->exec("ALTER TABLE users ADD COLUMN foto_url VARCHAR(255) NULL AFTER ci_url");
+                }
+            } catch (\Throwable $ignSchema) {}
         } catch (\PDOException $e) {
             throw new \PDOException("Error de conexión a la base de datos '$db' en $host:$port: " . $e->getMessage(), (int)$e->getCode());
         }

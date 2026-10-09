@@ -37,9 +37,12 @@ try {
     // Intentar obtener los datos más recientes de la base de datos
     try {
         $db = DatabaseConnection::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT id, role, nombre, email, ci_status, ci_url, COALESCE(foto_url, ci_url, '') AS foto_url FROM users WHERE id = ?");
+        $stmt = $db->prepare("SELECT id, role, nombre, email, ci_status, ci_url FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($userData) {
+            $userData['foto_url'] = $userData['ci_url'] ?? '';
+        }
     } catch (Exception $dbEx) {
         // En caso de que la conexión a MySQL falle, recurrir a los datos contenidos en el payload JWT
         $userData = null;

@@ -43,11 +43,19 @@ try {
     $nuevoEstado = $_REQUEST['estado'] ?? ($jsonData['estado'] ?? null); // 'aprobado' o 'rechazado'
 
     if ($tipo === 'pending_list') {
-        $stmtUsers = $db->query("SELECT id, nombre, email, fecha_nacimiento, ci_url, COALESCE(foto_url, ci_url, '') AS foto_url, ci_status, created_at FROM users WHERE role = 'cliente' AND ci_status = 'pending' ORDER BY id ASC");
-        $pendingUsers = $stmtUsers->fetchAll();
+        $stmtUsers = $db->query("SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at FROM users WHERE role = 'cliente' AND ci_status = 'pending' ORDER BY id ASC");
+        $pendingUsers = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($pendingUsers as &$u) {
+            $u['foto_url'] = $u['ci_url'] ?? '';
+        }
+        unset($u);
 
-        $stmtRiders = $db->query("SELECT u.id as rider_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status, u.ci_url, COALESCE(u.foto_url, u.ci_url, '') AS foto_url, d.id as doc_id, d.licencia_url, d.seguro_url, d.cv_url, d.estado_aprobacion, d.created_at FROM documentacion_rider d JOIN users u ON d.rider_id = u.id WHERE d.estado_aprobacion = 'pendiente' ORDER BY u.id ASC");
-        $pendingRiders = $stmtRiders->fetchAll();
+        $stmtRiders = $db->query("SELECT u.id as rider_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status, u.ci_url, d.id as doc_id, d.licencia_url, d.seguro_url, d.cv_url, d.estado_aprobacion, d.created_at FROM documentacion_rider d JOIN users u ON d.rider_id = u.id WHERE d.estado_aprobacion = 'pendiente' ORDER BY u.id ASC");
+        $pendingRiders = $stmtRiders->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($pendingRiders as &$r) {
+            $r['foto_url'] = $r['ci_url'] ?? '';
+        }
+        unset($r);
 
         echo formatResponse("success", [
             "pending_customers" => $pendingUsers,

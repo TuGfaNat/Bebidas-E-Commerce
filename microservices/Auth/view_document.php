@@ -61,10 +61,10 @@ if (!empty($fileParam)) {
 // 2. Si se especifica user_id y tipo
 if (!$filePathToServe && $userIdParam) {
     if ($typeParam === 'foto') {
-        $stmt = $db->prepare("SELECT foto_url, ci_url FROM users WHERE id = ?");
+        $stmt = $db->prepare("SELECT ci_url FROM users WHERE id = ?");
         $stmt->execute([$userIdParam]);
         $user = $stmt->fetch();
-        $targetField = (!empty($user['foto_url'])) ? $user['foto_url'] : ($user['ci_url'] ?? '');
+        $targetField = $user['ci_url'] ?? '';
         if (!empty($targetField)) {
             $clean = ltrim(str_replace(['../', '..\\'], '', $targetField), '/\\');
             $candidates = [

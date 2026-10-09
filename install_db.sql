@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (updated_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Asegurar columna foto_url en caso de que la tabla users ya existiese de versiones previas
+ALTER TABLE users ADD COLUMN IF NOT EXISTS foto_url VARCHAR(255) NULL AFTER ci_url;
+
 -- 2. Tabla de Productos y Catálogo (productos)
 CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,

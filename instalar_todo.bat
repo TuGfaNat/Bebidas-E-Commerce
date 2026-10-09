@@ -16,8 +16,9 @@ if "%PROYECTO:~-1%"=="\" set "PROYECTO=%PROYECTO:~0,-1%"
 :: PASO 1: DETECTAR XAMPP
 echo [1/5] Buscando XAMPP en tu equipo...
 set "XAMPP="
-if exist "D:\xampp\apache\bin\httpd.exe" set "XAMPP=D:\xampp"
+if exist "F:\xampp\apache\bin\httpd.exe" set "XAMPP=F:\xampp"
 if not defined XAMPP if exist "C:\xampp\apache\bin\httpd.exe" set "XAMPP=C:\xampp"
+if not defined XAMPP if exist "D:\xampp\apache\bin\httpd.exe" set "XAMPP=D:\xampp"
 if not defined XAMPP if exist "E:\xampp\apache\bin\httpd.exe" set "XAMPP=E:\xampp"
 
 if defined XAMPP (

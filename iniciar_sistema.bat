@@ -9,8 +9,9 @@ echo.
 
 :: Detectar XAMPP
 set "XAMPP="
-if exist "D:\xampp\apache\bin\httpd.exe" set "XAMPP=D:\xampp"
+if exist "F:\xampp\apache\bin\httpd.exe" set "XAMPP=F:\xampp"
 if not defined XAMPP if exist "C:\xampp\apache\bin\httpd.exe" set "XAMPP=C:\xampp"
+if not defined XAMPP if exist "D:\xampp\apache\bin\httpd.exe" set "XAMPP=D:\xampp"
 if not defined XAMPP if exist "E:\xampp\apache\bin\httpd.exe" set "XAMPP=E:\xampp"
 
 :: Asegurar archivo .env para configuracion de seguridad JWT

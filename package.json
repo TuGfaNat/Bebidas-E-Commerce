@@ -1,21 +1,14 @@
 {
   "name": "burger-e-commerce",
   "version": "1.0.1",
-  "description": "Sistema E-commerce Burger 24/7 con arquitectura de pedidos, despacho y entrega de hamburguesas en tiempo real",
-  "main": "server.py",
+  "description": "Sistema E-commerce Burger 24/7 con microservicios PHP, motor C++, MySQL y Frontend interactivo",
+  "main": "index.html",
   "scripts": {
-    "setup": "python setup.py",
-    "install:deps": "pip install -r requirements.txt",
-    "start": "python server.py 8000",
-    "serve": "python server.py 8000",
-    "migrate": "python migrate.py",
-    "export:tesina": "python export_tesina.py",
-    "export:word": "python generate_word_tesina.py",
-    "export:bth": "python generate_monografia_bth.py",
-    "test": "python test_auth_approvals.py",
-    "check:deploy": "python check_deploy.py"
+    "migrate": "php migrate.php",
+    "test:e2e": "php tests/test_e2e_suite.php",
+    "check:deploy": "php check_deploy.php"
   },
-  "keywords": ["ecommerce", "microservices", "python", "php", "javascript", "leaflet"],
+  "keywords": ["ecommerce", "microservices", "php", "cpp", "javascript", "leaflet", "mysql", "apache"],
   "author": "TuGfaNat",
   "license": "ISC"
 }

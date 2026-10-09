@@ -48,13 +48,9 @@ $socket = @fsockopen($host, (int)$port, $errno, $errstr, 2);
 if (!$socket) {
     echo "[AVISO] No se detecta un servidor MySQL activo en $host:$port.\n";
     echo "  Detalle de red: ($errno) $errstr\n\n";
-    echo "Notas de entorno:\n";
-    echo "  1. Si usa XAMPP, Laragon, WampServer o Docker, inicie el servicio MySQL/MariaDB.\n";
-    echo "  2. Recuerde que el servidor autónomo 'python server.py' incluye persistencia\n";
-    echo "     local en memoria y simulación offline, por lo que la plataforma puede ser\n";
-    echo "     probada de inmediato ejecutando 'python server.py' o 'start_services.bat'.\n";
-    echo "  3. El archivo SQL 'init_schema.sql' se encuentra listo para importación manual\n";
-    echo "     vía phpMyAdmin o comando: mysql -u $user -p $db < init_schema.sql\n";
+    echo "  1. Si usa XAMPP, inicie el servicio MySQL/MariaDB desde el panel de control.\n";
+    echo "  2. Puede iniciar el sistema ejecutando 'iniciar_sistema.bat' o 'instalar_todo.bat'.\n";
+    echo "  3. El archivo SQL 'install_db.sql' se encuentra listo para importación manual vía phpMyAdmin.\n";
     echo "========================================================\n";
     exit(0);
 }

@@ -28,7 +28,5 @@ if %ERRORLEVEL% equ 0 (
     goto end
 )
 
-echo [!] No se detecto compilador C++ (g++, clang++ o cl) en el PATH.
 echo [INFO] Para compilarlo manualmente puede instalar MinGW / Visual C++.
-echo [INFO] El sistema utiliza por defecto el motor en microservices\Logistics\calculator.py
 :end

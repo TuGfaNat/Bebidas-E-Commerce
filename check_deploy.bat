@@ -11,10 +11,16 @@ if not exist "%~dp0.env" (
     )
 )
 
-REM Intentar ejecutar con PHP CLI si existe
+REM Intentar ejecutar con PHP CLI si existe en el PATH
 where php >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     php "%~dp0check_deploy.php"
+    goto end
+)
+
+REM Buscar PHP en instalaciones comunes de XAMPP
+if exist "D:\xampp\php\php.exe" (
+    "D:\xampp\php\php.exe" "%~dp0check_deploy.php"
     goto end
 )
 
@@ -23,13 +29,20 @@ if exist "C:\xampp\php\php.exe" (
     goto end
 )
 
+if exist "E:\xampp\php\php.exe" (
+    "E:\xampp\php\php.exe" "%~dp0check_deploy.php"
+    goto end
+)
+
 if exist "F:\xampp\php\php.exe" (
     "F:\xampp\php\php.exe" "%~dp0check_deploy.php"
     goto end
 )
 
-REM Fallback a script Python
-python "%~dp0check_deploy.py"
+echo [AVISO] PHP CLI no fue detectado en PATH ni en las rutas estandar de XAMPP.
+echo Puedes ver el diagnostico visual directamente en tu navegador abriendo:
+echo   http://localhost/Burger-E-Commerce/check_deploy.php
+echo.
 
 :end
 echo.

@@ -3088,7 +3088,7 @@ function renderAdminProductsTable() {
 }
 
 async function syncProductsFromBackend() {
-    // Always connected to Python server — sync catalog
+    // Sincronizar catálogo desde la API de backend
     try {
         const res = await apiGet('/Catalog/catalog.php');
         if (res.ok && res.data && Array.isArray(res.data.productos)) {

@@ -8,8 +8,8 @@
 --      mysql -u root -p < install_db.sql
 --   2. Vía phpMyAdmin:
 --      Pestaña "Importar" o "SQL" y ejecutar este archivo completo.
---   3. Vía Asistente PHP / Python:
---      php migrate.php   O   python migrate.py
+--   3. Vía Asistente PHP:
+--      php migrate.php
 -- ============================================================================
 
 -- 0. Creación Idempotente de la Base de Datos

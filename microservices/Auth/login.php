@@ -54,7 +54,12 @@ try {
 
     $db = DatabaseConnection::getInstance()->getConnection();
     
-    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, fecha_nacimiento, ci_status, ci_url FROM users WHERE LOWER(email) = LOWER(?)");
+    $stmt = $db->prepare("
+        SELECT id, role, nombre, email, password_hash, fecha_nacimiento, 
+               ci_status, ci_url, ci_reverso_url, motivo_rechazo, apelacion_motivo, apelacion_estado 
+        FROM users 
+        WHERE LOWER(email) = LOWER(?)
+    ");
     $stmt->execute([$correo]);
     $user = $stmt->fetch();
 
@@ -76,7 +81,11 @@ try {
         'fecha_nacimiento' => $user['fecha_nacimiento'] ?? '1995-04-12',
         'ci_status' => $user['ci_status'],
         'foto_url' => $user['foto_url'] ?? '',
-        'ci_url' => $user['ci_url'] ?? ''
+        'ci_url' => $user['ci_url'] ?? '',
+        'ci_reverso_url' => $user['ci_reverso_url'] ?? '',
+        'motivo_rechazo' => $user['motivo_rechazo'] ?? null,
+        'apelacion_motivo' => $user['apelacion_motivo'] ?? null,
+        'apelacion_estado' => $user['apelacion_estado'] ?? 'ninguna'
     ], 86400);
 
     echo formatResponse("success", [
@@ -89,7 +98,11 @@ try {
             "fecha_nacimiento" => $user['fecha_nacimiento'] ?? '1995-04-12',
             "ci_status" => $user['ci_status'],
             "foto_url" => $user['foto_url'] ?? '',
-            "ci_url" => $user['ci_url'] ?? ''
+            "ci_url" => $user['ci_url'] ?? '',
+            "ci_reverso_url" => $user['ci_reverso_url'] ?? '',
+            "motivo_rechazo" => $user['motivo_rechazo'] ?? null,
+            "apelacion_motivo" => $user['apelacion_motivo'] ?? null,
+            "apelacion_estado" => $user['apelacion_estado'] ?? 'ninguna'
         ]
     ], $user['id']);
 

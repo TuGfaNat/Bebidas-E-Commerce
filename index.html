@@ -48,118 +48,7 @@
         </div>
     </div>
 
-    <!-- Acceso Rápido Flotante Plegable (Cuentas Demo del Sistema) -->
-    <div class="login-quick-switch collapsed" id="devQuickSwitch">
-        <div class="quick-switch-header" id="quickSwitchHeader" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; gap:0.5rem;" title="Haz clic para abrir o cerrar acceso demo">
-            <h4 style="font-size: 0.78rem; text-transform: uppercase; color: var(--accent-purple); letter-spacing: 0.05em; margin: 0; display:flex; align-items:center; gap:0.35rem; font-weight:700;">
-                <i data-lucide="key" style="width:13px;height:13px;"></i>
-                <span>Cuentas Demo</span>
-            </h4>
-            <span id="quickSwitchToggleText" style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">(Abrir ▴)</span>
-        </div>
-        <div id="quickSwitchContent" style="display: none; margin-top: 0.65rem; flex-direction: column; gap: 0.45rem; max-height: 70vh; overflow-y: auto; padding-right: 0.25rem;">
-            <div style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:0.2rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.25rem;">
-                Haz clic en una cuenta para iniciar sesión directa:
-            </div>
-            
-            <!-- Grupo Clientes Habilitados -->
-            <div style="font-size:0.68rem; font-weight:700; color:#10b981; text-transform:uppercase; letter-spacing:0.04em;">Clientes Habilitados</div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('carlos@mail.com', 'carlos')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_carlos.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Carlos Pérez (La Paz)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('andrea@mail.com', 'andrea')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_andrea.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Andrea Morales (Cochabamba)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('gonzalo@mail.com', 'gonzalo')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_gonzalo.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Gonzalo Salinas (Santa Cruz)</span>
-            </button>
 
-            <!-- Grupo Clientes Pendientes -->
-            <div style="font-size:0.68rem; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Clientes Pendientes</div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('maria@mail.com', 'maria')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_maria.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>María López (La Paz)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('diego@mail.com', 'diego')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_diego.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Diego Quiroga (La Paz)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('camila@mail.com', 'camila')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_camila.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Camila Navarro (Cochabamba)</span>
-            </button>
-
-            <!-- Grupo Clientes Rechazados -->
-            <div style="font-size:0.68rem; font-weight:700; color:#ef4444; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Clientes Rechazados</div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('roberto@mail.com', 'roberto')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_roberto.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Roberto Flores (C.I. Borroso)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('lucia@mail.com', 'lucia')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_lucia.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Lucía Paredes (Menor de edad)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('rodrigo@mail.com', 'rodrigo')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_rodrigo.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Rodrigo Méndez (C.I. Vencido)</span>
-            </button>
-
-            <!-- Grupo Riders Habilitados -->
-            <div style="font-size:0.68rem; font-weight:700; color:#10b981; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Riders Habilitados</div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('pedro@mail.com', 'pedro')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_pedro.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Pedro Gómez (Honda Wave)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('alejandro@mail.com', 'alejandro')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_alejandro.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Alejandro Ríos (Yamaha FZ)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('valeria@mail.com', 'valeria')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_valeria.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Valeria Mamani (Suzuki GN)</span>
-            </button>
-
-            <!-- Grupo Riders Pendientes -->
-            <div style="font-size:0.68rem; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Riders Pendientes</div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('juan@mail.com', 'juan')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_juan.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Juan Rodríguez (Bajaj Pulsar)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('fernando@mail.com', 'fernando')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_fernando.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Fernando Blanco (Honda CG)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('paola@mail.com', 'paola')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_paola.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Paola Zeballos (Kymco Agility)</span>
-            </button>
-
-            <!-- Grupo Riders Rechazados -->
-            <div style="font-size:0.68rem; font-weight:700; color:#ef4444; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Riders Rechazados</div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('marcos@mail.com', 'marcos')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_marcos.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Marcos Vargas (Sin Licencia)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('gustavo@mail.com', 'gustavo')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_gustavo.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Gustavo Beltrán (SOAT Vencido)</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('cristian@mail.com', 'cristian')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_cristian.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Cristian Colque (Sin Papeles)</span>
-            </button>
-
-            <!-- Grupo Administrador -->
-            <div style="font-size:0.68rem; font-weight:700; color:#f97316; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Administrador</div>
-            <button class="btn btn-secondary btn-sm" onclick="quickLogin('admin@mail.com', 'admin')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
-                <img src="uploads/ci/foto_admin.svg" style="width:18px;height:18px;border-radius:50%;" />
-                <span>Admin Central (Gerencia)</span>
-            </button>
-        </div>
-    </div>
 
     <!-- Header Navigation -->
     <header>
@@ -1025,10 +914,26 @@
                             <span id="profileUserId" style="font-weight: 600; color: #f1f5f9;">#</span>
                         </div>
                     </div>
-                    <button class="btn btn-secondary btn-sm" id="btnProfileViewCI" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.45rem 0.75rem; font-size: 0.82rem;">
-                        <i data-lucide="file-text" style="width: 14px; height: 14px; color: #f97316;"></i>
-                        <span>Ver Mi Cédula de Identidad (C.I.)</span>
-                    </button>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewCI" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.45rem 0.5rem; font-size: 0.78rem;">
+                            <i data-lucide="file-text" style="width: 14px; height: 14px; color: #f97316;"></i>
+                            <span>C.I. (Anverso)</span>
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewCIReverso" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.45rem 0.5rem; font-size: 0.78rem;">
+                            <i data-lucide="file-text" style="width: 14px; height: 14px; color: #f97316;"></i>
+                            <span>C.I. (Reverso)</span>
+                        </button>
+                    </div>
+                    <!-- Banner de Rechazo y Apelación Directa -->
+                    <div id="profileRejectionBanner" style="display: none; margin-top: 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 0.75rem; font-size: 0.82rem;">
+                        <p style="margin: 0 0 0.25rem 0; font-weight: 700; color: #ef4444; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="alert-octagon" style="width: 15px; height: 15px;"></i> Cuenta / Documento Rechazado
+                        </p>
+                        <p id="profileRejectionReasonText" style="margin: 0 0 0.5rem 0; color: #fca5a5; font-size: 0.78rem;"></p>
+                        <button class="btn btn-warning btn-sm" id="btnProfileOpenAppeal" style="width: 100%; font-size: 0.78rem; font-weight: 700; padding: 0.45rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem; background: #f59e0b; color: #1e1b4b; border: none;">
+                            <i data-lucide="scale" style="width: 14px; height: 14px;"></i> Presentar Apelación y Resubir Documentos
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Sección Específica Rider (Expediente Vehicular & Liquidaciones) -->
@@ -1037,14 +942,17 @@
                         <i data-lucide="bike" style="width: 15px; height: 15px;"></i>
                         <span>Expediente de Repartidor & Documentos Vehiculares</span>
                     </h4>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; margin-bottom: 0.85rem;">
-                        <button class="btn btn-secondary btn-sm" id="btnProfileViewLicencia" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.4rem 0.5rem;">
-                            <i data-lucide="award" style="width: 12px; height: 12px; color: #3b82f6;"></i> Licencia
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem; margin-bottom: 0.85rem;">
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewLicencia" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.72rem; padding: 0.4rem 0.2rem;">
+                            <i data-lucide="award" style="width: 12px; height: 12px; color: #3b82f6;"></i> Lic. Anverso
                         </button>
-                        <button class="btn btn-secondary btn-sm" id="btnProfileViewSOAT" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.4rem 0.5rem;">
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewLicenciaReverso" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.72rem; padding: 0.4rem 0.2rem;">
+                            <i data-lucide="award" style="width: 12px; height: 12px; color: #3b82f6;"></i> Lic. Reverso
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewSOAT" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.72rem; padding: 0.4rem 0.2rem;">
                             <i data-lucide="shield" style="width: 12px; height: 12px; color: #10b981;"></i> SOAT
                         </button>
-                        <button class="btn btn-secondary btn-sm" id="btnProfileViewCV" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.4rem 0.5rem;">
+                        <button class="btn btn-secondary btn-sm" id="btnProfileViewCV" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.72rem; padding: 0.4rem 0.2rem;">
                             <i data-lucide="file-check" style="width: 12px; height: 12px; color: #a855f7;"></i> CV (PDF)
                         </button>
                     </div>
@@ -1177,6 +1085,67 @@
             <div style="padding: 0.75rem 1.25rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; gap: 0.5rem; background: rgba(30, 41, 59, 0.4);">
                 <button class="btn btn-secondary btn-sm" id="btnReceiptCloseAction" style="padding: 0.35rem 1rem;">Cerrar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL: APELACIÓN DE RECHAZO (CLIENTES Y RIDERS) -->
+    <div class="file-view-modal" id="appealModal">
+        <div class="glass-card" style="width: 100%; max-width: 520px; background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; max-height: 92vh;">
+            <div style="padding: 1rem 1.3rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6);">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="scale" style="color: #f59e0b; width: 20px; height: 20px;"></i>
+                    <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #f8fafc;">Apelación de Documentos Rechazados</h3>
+                </div>
+                <button class="close-drawer" id="btnAppealModalClose" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.2rem 0.4rem;">&times;</button>
+            </div>
+            <form id="formSubmitAppeal" style="padding: 1.25rem 1.3rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 0.65rem 0.8rem; font-size: 0.78rem; color: #fef3c7;">
+                    ⚖️ <strong>Proceso de Apelación Oficial:</strong> Si tus documentos fueron rechazados por estar borrosos o incompletos, explica los cambios realizados y carga los nuevos archivos legibles en anverso y reverso (formato PDF o JPG).
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Motivo / Justificación de la Apelación:</label>
+                    <textarea class="form-control" id="txtAppealMotivo" rows="3" placeholder="Ej: Vuelvo a subir fotografías claras con buena iluminación de mi documento anverso y reverso..." required style="resize: vertical; font-size: 0.82rem;"></textarea>
+                </div>
+
+                <!-- Campos para Cliente -->
+                <div id="appealClientFields" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div class="form-group">
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Nuevo C.I. (Anverso - JPG/PNG/PDF):</label>
+                        <input type="file" class="form-control" id="fileAppealCiAnverso" accept="image/jpeg,image/png,application/pdf" required>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Nuevo C.I. (Reverso - JPG/PNG/PDF):</label>
+                        <input type="file" class="form-control" id="fileAppealCiReverso" accept="image/jpeg,image/png,application/pdf" required>
+                    </div>
+                </div>
+
+                <!-- Campos para Rider -->
+                <div id="appealRiderFields" style="display: none; flex-direction: column; gap: 0.75rem;">
+                    <div class="form-group">
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Nueva Licencia (Anverso - JPG/PNG/PDF):</label>
+                        <input type="file" class="form-control" id="fileAppealLicenciaAnverso" accept="image/jpeg,image/png,application/pdf">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Nueva Licencia (Reverso - JPG/PNG/PDF):</label>
+                        <input type="file" class="form-control" id="fileAppealLicenciaReverso" accept="image/jpeg,image/png,application/pdf">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Nuevo Seguro SOAT (Opcional - JPG/PNG/PDF):</label>
+                        <input type="file" class="form-control" id="fileAppealSeguro" accept="image/jpeg,image/png,application/pdf">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Nuevo Currículum Vitae (Opcional - PDF):</label>
+                        <input type="file" class="form-control" id="fileAppealCv" accept="application/pdf">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnAppealCancel">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnAppealSubmit" style="background: #f59e0b; border: none; font-weight: 700; color: #1e1b4b;">
+                        Enviar Apelación al Administrador
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

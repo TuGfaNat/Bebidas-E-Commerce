@@ -496,21 +496,7 @@ function setupEventListeners() {
         });
     }
 
-    // Toggle para desplegar/plegar Acceso Rápido Demo
-    const qsHeader = document.getElementById('quickSwitchHeader');
-    const qsPanel = document.getElementById('devQuickSwitch');
-    const qsContent = document.getElementById('quickSwitchContent');
-    const qsToggleTxt = document.getElementById('quickSwitchToggleText');
 
-    if (qsHeader && qsPanel && qsContent) {
-        qsHeader.addEventListener('click', () => {
-            const isCollapsed = qsPanel.classList.toggle('collapsed');
-            qsContent.style.display = isCollapsed ? 'none' : 'flex';
-            if (qsToggleTxt) {
-                qsToggleTxt.innerText = isCollapsed ? '(Abrir ▴)' : '(Cerrar ▾)';
-            }
-        });
-    }
 
     document.getElementById('cartDrawerBody').addEventListener('click', (e) => {
         if (e.target.classList.contains('cart-qty-btn') || e.target.closest('.cart-qty-btn')) {
@@ -670,6 +656,101 @@ function setupEventListeners() {
             if (e.target === recModal && window.closeReceiptModal) window.closeReceiptModal();
         });
     }
+
+    // Modal Apelación de Rechazo Listeners
+    const btnAppClose = document.getElementById('btnAppealModalClose');
+    if (btnAppClose) {
+        btnAppClose.addEventListener('click', () => {
+            if (window.closeAppealModal) window.closeAppealModal();
+        });
+    }
+
+    const btnAppCancel = document.getElementById('btnAppealCancel');
+    if (btnAppCancel) {
+        btnAppCancel.addEventListener('click', () => {
+            if (window.closeAppealModal) window.closeAppealModal();
+        });
+    }
+
+    const appealModal = document.getElementById('appealModal');
+    if (appealModal) {
+        appealModal.addEventListener('click', (e) => {
+            if (e.target === appealModal && window.closeAppealModal) window.closeAppealModal();
+        });
+    }
+
+    const formAppeal = document.getElementById('formSubmitAppeal');
+    if (formAppeal) {
+        formAppeal.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = currentSession.currentUser;
+            if (!u) return;
+
+            const motivo = document.getElementById('txtAppealMotivo').value.trim();
+            if (!motivo) {
+                showToast('Ingresa un motivo para la apelación.', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('motivo', motivo);
+
+            if (u.role === 'rider') {
+                const lAnv = document.getElementById('fileAppealLicenciaAnverso').files[0];
+                const lRev = document.getElementById('fileAppealLicenciaReverso').files[0];
+                const seg = document.getElementById('fileAppealSeguro').files[0];
+                const cv = document.getElementById('fileAppealCv').files[0];
+
+                if (!lAnv || !lRev) {
+                    showToast('Debes subir la licencia en anverso y reverso (PDF o JPG).', 'warning');
+                    return;
+                }
+                formData.append('licencia_anverso', lAnv);
+                formData.append('licencia_reverso', lRev);
+                if (seg) formData.append('seguro', seg);
+                if (cv) formData.append('cv', cv);
+            } else {
+                const ciAnv = document.getElementById('fileAppealCiAnverso').files[0];
+                const ciRev = document.getElementById('fileAppealCiReverso').files[0];
+
+                if (!ciAnv || !ciRev) {
+                    showToast('Debes subir tu C.I. en anverso y reverso (PDF o JPG).', 'warning');
+                    return;
+                }
+                formData.append('ci_anverso', ciAnv);
+                formData.append('ci_reverso', ciRev);
+            }
+
+            const btnSub = document.getElementById('btnAppealSubmit');
+            if (btnSub) {
+                btnSub.disabled = true;
+                btnSub.innerText = 'Enviando apelación...';
+            }
+
+            try {
+                const res = await apiPost('/Auth/appeal.php', formData);
+                if (res.ok) {
+                    showToast('¡Apelación enviada con éxito! El administrador evaluará tu caso.', 'success');
+                    window.closeAppealModal();
+                    u.ci_status = 'pending';
+                    u.apelacion_estado = 'pendiente';
+                    u.apelacion_motivo = motivo;
+                    localStorage.setItem('burger_user_session', JSON.stringify(u));
+                    updateUIForCurrentRole();
+                } else {
+                    showToast(`Error al enviar apelación: ${res.error || 'Rechazado por el servidor'}`, 'danger');
+                }
+            } catch (err) {
+                console.error('Error enviando apelación:', err);
+                showToast(`Error de conexión al enviar apelación: ${err.message}`, 'danger');
+            } finally {
+                if (btnSub) {
+                    btnSub.disabled = false;
+                    btnSub.innerText = 'Enviar Apelación al Administrador';
+                }
+            }
+        });
+    }
 }
 
 function getActiveCategory() {
@@ -786,12 +867,14 @@ function renderAuthCard(view = 'login') {
                         <input type="date" class="form-control" id="regClientDob" required>
                         <div id="clientDobStatus" class="age-checker-status"></div>
                     </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.75rem; margin-bottom: 0.2rem; display:block;">Carga tu C.I. (Foto/PDF):</label>
-                        <div class="file-upload-styled" style="padding: 0.65rem;">
-                            <i data-lucide="upload" style="width: 18px; height: 18px; margin-bottom: 0;"></i>
-                            <span style="font-size: 0.8rem;" id="lblRegClientCiFile">Elegir Archivo</span>
-                            <input type="file" id="regClientCiFile" accept="image/*,application/pdf" required>
+                    <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                        <div>
+                            <label style="font-size: 0.73rem; margin-bottom: 0.2rem; display:block;">C.I. (Anverso):</label>
+                            <input type="file" class="form-control" id="regClientCiAnverso" accept="image/jpeg,image/png,application/pdf" required>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.73rem; margin-bottom: 0.2rem; display:block;">C.I. (Reverso):</label>
+                            <input type="file" class="form-control" id="regClientCiReverso" accept="image/jpeg,image/png,application/pdf" required>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary" id="btnSubmitRegClient" style="width: 100%; margin-top: 0.5rem;">Registrarme</button>
@@ -802,11 +885,11 @@ function renderAuthCard(view = 'login') {
     } 
     else if (view === 'register_rider') {
         content = `
-            <div class="login-card glass-card" style="max-width: 500px;">
+            <div class="login-card glass-card" style="max-width: 520px;">
                 <div style="text-align: center; margin-bottom: 1.25rem;">
                     <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="bike"></i></div>
                     <h2>Postulación de Repartidor - Burger 24/7</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Carga tu expediente digital para entregas de pedidos de hamburguesas</p>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">Carga tu expediente digital con anverso y reverso (PDF o JPG)</p>
                 </div>
                 <form id="formAuthRegisterRider" style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <div class="form-group">
@@ -825,17 +908,23 @@ function renderAuthCard(view = 'login') {
                     </div>
                     <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
                         <div>
-                            <label style="font-size: 0.75rem; display:block;">Licencia Conducir:</label>
-                            <input type="file" class="form-control" id="regRiderLicencia" accept="image/*,application/pdf" required>
+                            <label style="font-size: 0.73rem; display:block;">Licencia (Anverso):</label>
+                            <input type="file" class="form-control" id="regRiderLicenciaAnverso" accept="image/jpeg,image/png,application/pdf" required>
                         </div>
                         <div>
-                            <label style="font-size: 0.75rem; display:block;">Seguro SOAT:</label>
-                            <input type="file" class="form-control" id="regRiderSeguro" accept="image/*,application/pdf" required>
+                            <label style="font-size: 0.73rem; display:block;">Licencia (Reverso):</label>
+                            <input type="file" class="form-control" id="regRiderLicenciaReverso" accept="image/jpeg,image/png,application/pdf" required>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label style="font-size: 0.75rem; display:block;">Curriculum Vitae (PDF):</label>
-                        <input type="file" class="form-control" id="regRiderCv" accept="application/pdf" required>
+                    <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                        <div>
+                            <label style="font-size: 0.73rem; display:block;">Seguro SOAT:</label>
+                            <input type="file" class="form-control" id="regRiderSeguro" accept="image/jpeg,image/png,application/pdf" required>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.73rem; display:block;">CV (PDF):</label>
+                            <input type="file" class="form-control" id="regRiderCv" accept="application/pdf" required>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary" id="btnSubmitRegRider" style="width: 100%; margin-top: 0.5rem;">Enviar Postulación</button>
                     <button type="button" class="btn btn-secondary" onclick="renderAuthCard('login')" style="width: 100%;">Volver al Login</button>
@@ -882,23 +971,17 @@ function setupAuthFormListeners(view) {
             }
         });
 
-        document.getElementById('regClientCiFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                document.getElementById('lblRegClientCiFile').innerText = file.name;
-            }
-        });
-
         document.getElementById('formAuthRegisterClient').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('regClientName').value.trim();
             const email = document.getElementById('regClientEmail').value.trim();
             const pass = document.getElementById('regClientPass').value.trim();
             const dob = dobInput.value;
-            const file = document.getElementById('regClientCiFile').files[0];
+            const fileAnverso = document.getElementById('regClientCiAnverso').files[0];
+            const fileReverso = document.getElementById('regClientCiReverso').files[0];
 
-            if (!name || !email || !pass || !dob || !file) {
-                showToast('Faltan campos obligatorios.', 'error');
+            if (!name || !email || !pass || !dob || !fileAnverso || !fileReverso) {
+                showToast('Faltan campos obligatorios o documentos de C.I. anverso/reverso.', 'error');
                 return;
             }
 
@@ -907,7 +990,8 @@ function setupAuthFormListeners(view) {
             formData.append('correo', email);
             formData.append('password', pass);
             formData.append('fecha_nacimiento', dob);
-            formData.append('ci_image', file);
+            formData.append('ci_anverso', fileAnverso);
+            formData.append('ci_reverso', fileReverso);
 
             try {
                 const res = await apiPost('/Auth/register.php', formData, { skipAuth: true });
@@ -921,9 +1005,9 @@ function setupAuthFormListeners(view) {
                         nombre: name,
                         email: email,
                         ci_status: 'pending',
-                        ci_url: `/uploads/ci/ci_${file.name}`
+                        ci_url: `/uploads/ci/ci_${fileAnverso.name}`
                     };
-                    showToast('Cliente registrado con éxito en el backend MySQL. Esperando aprobación de C.I.', 'success');
+                    showToast('Cliente registrado con éxito. C.I. Anverso y Reverso enviados a revisión.', 'success');
                     onLoginSuccess(registeredUser);
                 } else {
                     showToast(`Error al registrar cliente: ${res.error || 'No se pudo completar el registro en la API.'}`, 'danger');
@@ -958,12 +1042,13 @@ function setupAuthFormListeners(view) {
             const pass = document.getElementById('regRiderPass').value.trim();
             const dob = dobInput.value;
 
-            const l = document.getElementById('regRiderLicencia').files[0];
+            const lAnverso = document.getElementById('regRiderLicenciaAnverso').files[0];
+            const lReverso = document.getElementById('regRiderLicenciaReverso').files[0];
             const s = document.getElementById('regRiderSeguro').files[0];
             const c = document.getElementById('regRiderCv').files[0];
 
-            if (!name || !email || !pass || !dob || !l || !s || !c) {
-                showToast('Faltan campos u hojas de postulación.', 'error');
+            if (!name || !email || !pass || !dob || !lAnverso || !lReverso || !s || !c) {
+                showToast('Faltan campos u hojas de postulación (licencia anverso/reverso, seguro o CV).', 'error');
                 return;
             }
 
@@ -972,7 +1057,8 @@ function setupAuthFormListeners(view) {
             formData.append('correo', email);
             formData.append('password', pass);
             formData.append('fecha_nacimiento', dob);
-            formData.append('licencia', l);
+            formData.append('licencia_anverso', lAnverso);
+            formData.append('licencia_reverso', lReverso);
             formData.append('seguro', s);
             formData.append('cv', c);
 
@@ -989,7 +1075,7 @@ function setupAuthFormListeners(view) {
                         email: email,
                         ci_status: 'pending'
                     };
-                    showToast('Rider registrado y expediente digital guardado en MySQL con éxito.', 'success');
+                    showToast('Rider registrado y expediente digital (anverso/reverso) guardado con éxito.', 'success');
                     onLoginSuccess(registeredRider);
                 } else {
                     showToast(`Error al postular: ${res.error || 'No se pudo procesar la postulación.'}`, 'danger');
@@ -1023,21 +1109,6 @@ function verifyPassword(password, hash) {
         } catch (e) {
             console.warn('Bcrypt compareSync error:', e);
         }
-    }
-
-    // Direct fallback for demo accounts if bcrypt library fails to load
-    const demoHashes = {
-        'carlos': ['$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e', '$2y$10$xyz...'],
-        'pedro': ['$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2', '$2y$10$abc...'],
-        'admin': ['$2a$10$yvebu1TvWJgj7wE7L1QCDuroqNwHJaELe4E.R3UNDIzwG06EFIJOq', '$2y$10$admin...'],
-        'maria': ['$2b$12$TYK.4OXjw6rT6CvUeIUH3O6CawYZp4qyouHv1Urv5p9Gws9kkr8Ym', '$2y$10$maria...'],
-        'juan': ['$2b$12$ARkI5fD1NdgTtJmJRQo0Y.sbSRPzKgWGpbDtmYzS9yV8eS6sGG0s6', '$2y$10$juan...'],
-        'roberto': ['$2a$10$NHYkGy/q.W57QI7bIumQ9.J7DfEZm9d32MxvdvY5z7XHhwh7KPj/e'],
-        'marcos': ['$2a$10$Of//sDFxLZrPBXCb7BNuPe.FQSqxu3du7iMj.K7.M9QXr5OXtMwN2']
-    };
-
-    if (demoHashes[password] && demoHashes[password].includes(hash)) {
-        return true;
     }
 
     return false;
@@ -1214,26 +1285,7 @@ function handleLogout(notify = true) {
     renderAuthCard('login');
 }
 
-// Global quick-login function for presentation
-window.quickLogin = function(email, password) {
-    // Make sure email/pass inputs exist (they're in loginScreen rendered via renderAuthCard)
-    const emailEl = document.getElementById('loginEmail');
-    const passEl = document.getElementById('loginPassword');
-    if (emailEl) emailEl.value = email;
-    if (passEl) passEl.value = password;
 
-    // Auto-plegar el panel demo al iniciar sesión para no interrumpir operaciones
-    const qsPanel = document.getElementById('devQuickSwitch');
-    const qsContent = document.getElementById('quickSwitchContent');
-    const qsToggleTxt = document.getElementById('quickSwitchToggleText');
-    if (qsPanel && qsContent) {
-        qsPanel.classList.add('collapsed');
-        qsContent.style.display = 'none';
-        if (qsToggleTxt) qsToggleTxt.innerText = '(Abrir ▴)';
-    }
-
-    handleLogin(email, password);
-};
 
 // ----------------------------------------------------
 // 6. CLIENT PORTAL LOGIC
@@ -1256,12 +1308,19 @@ function renderClienteAccountInfo() {
 
     let pendingMsg = '';
     if (u.ci_status === 'pending') {
+        const enApelacion = u.apelacion_estado === 'pendiente';
         pendingMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(245,158,11,0.1); border-radius:var(--radius-md); border:1px solid rgba(245,158,11,0.25); font-size:0.85rem; color:var(--accent-amber);">
-            ⏳ Tu C.I. está pendiente de aprobación. El administrador revisará tu documentación a la brevedad.
+            ⏳ ${enApelacion ? 'Tu apelación con nuevos documentos está en revisión por la administración.' : 'Tu C.I. (anverso y reverso) está pendiente de aprobación por el administrador.'}
         </div>`;
     } else if (u.ci_status === 'rejected') {
-        pendingMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.25); font-size:0.85rem; color:var(--accent-red);">
-            ❌ Tu C.I. fue rechazado. Contacta al administrador o vuelve a registrarte con un documento más claro.
+        pendingMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(239,68,68,0.12); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.3); font-size:0.85rem; color:var(--accent-red);">
+            <div style="font-weight:700; margin-bottom:0.25rem;">❌ Tu C.I. fue rechazado</div>
+            ${u.motivo_rechazo ? `<div style="font-size:0.78rem; margin-bottom:0.45rem; color:#fca5a5;"><strong>Motivo:</strong> ${escapeHtml(u.motivo_rechazo)}</div>` : ''}
+            ${u.apelacion_estado === 'pendiente' 
+                ? `<div style="font-size:0.78rem; color:#fde047; font-weight:600;">⚖️ Apelación enviada: En revisión administrativa.</div>` 
+                : `<button class="btn btn-warning btn-sm" onclick="openAppealModal()" style="width:100%; margin-top:0.35rem; font-size:0.78rem; font-weight:700; background:#f59e0b; color:#1e1b4b; border:none; padding:0.4rem;">
+                    ⚖️ Apelar Rechazo (Subir Anverso/Reverso)
+                   </button>`}
         </div>`;
     }
 
@@ -1939,13 +1998,23 @@ function renderRiderProfile() {
     }
 
     let riderStatusMsg = '';
-    if (doc && doc.estado_aprobacion === 'rechazado') {
-        riderStatusMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.25); font-size:0.85rem; color:var(--accent-red);">
-            ❌ Tu expediente fue rechazado por el Administrador. Contacta con la administración para más información.
+    const esRechazado = (doc && doc.estado_aprobacion === 'rechazado') || r.ci_status === 'rejected';
+    const enApelacion = (doc && doc.apelacion_estado === 'pendiente') || r.apelacion_estado === 'pendiente';
+    const motivoRechazo = (doc && doc.motivo_rechazo) || r.motivo_rechazo;
+
+    if (esRechazado) {
+        riderStatusMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(239,68,68,0.12); border-radius:var(--radius-md); border:1px solid rgba(239,68,68,0.3); font-size:0.85rem; color:var(--accent-red);">
+            <div style="font-weight:700; margin-bottom:0.25rem;">❌ Expediente Rechazado</div>
+            ${motivoRechazo ? `<div style="font-size:0.78rem; margin-bottom:0.45rem; color:#fca5a5;"><strong>Motivo:</strong> ${escapeHtml(motivoRechazo)}</div>` : ''}
+            ${enApelacion 
+                ? `<div style="font-size:0.78rem; color:#fde047; font-weight:600;">⚖️ Apelación enviada: En evaluación por la administración.</div>` 
+                : `<button class="btn btn-warning btn-sm" onclick="openAppealModal()" style="width:100%; margin-top:0.35rem; font-size:0.78rem; font-weight:700; background:#f59e0b; color:#1e1b4b; border:none; padding:0.4rem;">
+                    ⚖️ Apelar Rechazo y Resubir Expediente
+                   </button>`}
         </div>`;
     } else if (!doc || doc.estado_aprobacion === 'pendiente') {
         riderStatusMsg = `<div style="margin-top:0.75rem; padding:0.75rem; background:rgba(245,158,11,0.1); border-radius:var(--radius-md); border:1px solid rgba(245,158,11,0.25); font-size:0.85rem; color:var(--accent-amber);">
-            ⏳ Tu expediente está en revisión. Se te notificará cuando el administrador lo apruebe.
+            ⏳ ${enApelacion ? 'Tu apelación con documentos corregidos está en revisión administrativa.' : 'Tu expediente está en revisión. Se te notificará cuando el administrador lo apruebe.'}
         </div>`;
     }
 
@@ -1970,12 +2039,24 @@ function renderRiderProfile() {
         
         <div class="doc-upload-item">
             <div class="doc-upload-item-info">
-                <span class="doc-upload-name">Licencia de Conducir (Categoría A/M)</span>
+                <span class="doc-upload-name">Licencia de Conducir (Anverso)</span>
                 <span class="doc-upload-status ${doc && doc.estado_aprobacion === 'aprobado' ? 'age-valid' : 'text-secondary'}">
                     ${doc ? '✓ Subido' : 'No cargado'}
                 </span>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${doc ? (doc.licencia_url || '') : ''}', 'Licencia de Conducir - ${escapeHtml(r.nombre)}', 'licencia', ${r.id})">
+            <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${doc ? (doc.licencia_url || '') : ''}', 'Licencia Anverso - ${escapeHtml(r.nombre)}', 'licencia', ${r.id})">
+                <i data-lucide="eye" style="width:12px;height:12px;"></i> Ver
+            </button>
+        </div>
+
+        <div class="doc-upload-item">
+            <div class="doc-upload-item-info">
+                <span class="doc-upload-name">Licencia de Conducir (Reverso)</span>
+                <span class="doc-upload-status ${doc && doc.licencia_reverso_url ? 'age-valid' : 'text-secondary'}">
+                    ${doc && doc.licencia_reverso_url ? '✓ Subido' : 'Opcional / Carga'}
+                </span>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${doc ? (doc.licencia_reverso_url || doc.licencia_url || '') : ''}', 'Licencia Reverso - ${escapeHtml(r.nombre)}', 'licencia', ${r.id})">
                 <i data-lucide="eye" style="width:12px;height:12px;"></i> Ver
             </button>
         </div>
@@ -1994,7 +2075,7 @@ function renderRiderProfile() {
 
         <div class="doc-upload-item">
             <div class="doc-upload-item-info">
-                <span class="doc-upload-name">Curriculum Vitae</span>
+                <span class="doc-upload-name">Curriculum Vitae (PDF)</span>
                 <span class="doc-upload-status ${doc && doc.estado_aprobacion === 'aprobado' ? 'age-valid' : 'text-secondary'}">
                     ${doc ? '✓ Subido' : 'No cargado'}
                 </span>
@@ -2605,7 +2686,9 @@ async function renderAdminPendingApprovals() {
     if (pendingCustomers.length === 0) {
         custContainer.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.9rem;">No hay clientes pendientes de verificación de C.I.</div>`;
     } else {
-        custContainer.innerHTML = pendingCustomers.map(u => `
+        custContainer.innerHTML = pendingCustomers.map(u => {
+            const isAppeal = u.apelacion_estado === 'pendiente';
+            return `
             <div class="approval-card">
                 <div class="approval-card-header">
                     <div style="display:flex; align-items:center; gap:0.65rem;">
@@ -2615,21 +2698,28 @@ async function renderAdminPendingApprovals() {
                             <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(u.email)}</span>
                         </div>
                     </div>
-                    <span class="badge badge-pending">Pendiente</span>
+                    <span class="badge ${isAppeal ? 'badge-warning' : 'badge-pending'}">${isAppeal ? '⚖️ Apelación' : 'Pendiente'}</span>
                 </div>
+                ${isAppeal ? `
+                <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:6px; padding:0.45rem 0.6rem; font-size:0.78rem; margin:0.45rem 0;">
+                    <strong style="color:#f59e0b;">⚖️ Motivo de Apelación:</strong> ${escapeHtml(u.apelacion_motivo || 'Revisión solicitada')}
+                    ${u.motivo_rechazo ? `<div style="color:#fca5a5; font-size:0.72rem; margin-top:0.2rem;">Rechazo previo: ${escapeHtml(u.motivo_rechazo)}</div>` : ''}
+                </div>` : ''}
                 <div class="approval-details-row">
                     <span>Nacimiento: ${u.fecha_nacimiento || 'N/A'}</span>
                     <span>Edad: ${u.fecha_nacimiento ? calculateAge(u.fecha_nacimiento) : 18} años</span>
                 </div>
-                <div style="display: flex; align-items:center; justify-content:space-between;">
-                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
-                    <div class="approval-actions">
-                        <button class="btn btn-danger btn-sm" onclick="approveUser(${u.id}, 'rejected')">Rechazar</button>
-                        <button class="btn btn-success btn-sm" onclick="approveUser(${u.id}, 'verified')">Aprobar</button>
-                    </div>
+                <div style="display: flex; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. Anverso - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:13px;height:13px;"></i> C.I. Anverso</a>
+                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_reverso_url || u.ci_url || ''}', 'C.I. Reverso - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:13px;height:13px;"></i> C.I. Reverso</a>
+                </div>
+                <div class="approval-actions" style="justify-content: flex-end;">
+                    <button class="btn btn-danger btn-sm" onclick="promptRejectUser(${u.id})">Rechazar</button>
+                    <button class="btn btn-success btn-sm" onclick="approveUser(${u.id}, 'verified')">Aprobar</button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     if (pendingRidersDocs.length === 0) {
@@ -2639,6 +2729,7 @@ async function renderAdminPendingApprovals() {
             const riderId = d.rider_id || d.id;
             const riderName = d.nombre || 'Rider';
             const riderEmail = d.email || '';
+            const isAppeal = d.apelacion_estado === 'pendiente';
 
             return `
                 <div class="approval-card">
@@ -2650,15 +2741,23 @@ async function renderAdminPendingApprovals() {
                                 <span style="font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(riderEmail)}</span>
                             </div>
                         </div>
-                        <span class="badge badge-pending">Expediente</span>
+                        <span class="badge ${isAppeal ? 'badge-warning' : 'badge-pending'}">${isAppeal ? '⚖️ Apelación' : 'Expediente'}</span>
                     </div>
+                    ${isAppeal ? `
+                    <div style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:6px; padding:0.45rem 0.6rem; font-size:0.78rem; margin:0.45rem 0;">
+                        <strong style="color:#f59e0b;">⚖️ Motivo de Apelación:</strong> ${escapeHtml(d.apelacion_motivo || 'Revisión solicitada')}
+                        ${d.motivo_rechazo ? `<div style="color:#fca5a5; font-size:0.72rem; margin-top:0.2rem;">Rechazo previo: ${escapeHtml(d.motivo_rechazo)}</div>` : ''}
+                    </div>` : ''}
                     <div style="display: flex; flex-direction:column; gap:0.35rem; font-size: 0.85rem; border:1px solid var(--border-color); padding:0.5rem; border-radius:var(--radius-md); background: rgba(0,0,0,0.1);">
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.licencia_url}', 'Licencia de Conducir - ${escapeHtml(riderName)}', 'licencia', ${riderId})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.seguro_url}', 'Seguro SOAT - ${escapeHtml(riderName)}', 'seguro', ${riderId})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
-                        <a class="file-view-trigger" onclick="openFileViewer('${d.cv_url}', 'Currículum Vitae - ${escapeHtml(riderName)}', 'cv', ${riderId})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Currículum Vitae</a>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.35rem;">
+                            <a class="file-view-trigger" onclick="openFileViewer('${d.licencia_url}', 'Licencia Anverso - ${escapeHtml(riderName)}', 'licencia', ${riderId})"><i data-lucide="file-text" style="width:13px;height:13px;"></i> Lic. Anverso</a>
+                            <a class="file-view-trigger" onclick="openFileViewer('${d.licencia_reverso_url || d.licencia_url}', 'Licencia Reverso - ${escapeHtml(riderName)}', 'licencia', ${riderId})"><i data-lucide="file-text" style="width:13px;height:13px;"></i> Lic. Reverso</a>
+                        </div>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.seguro_url}', 'Seguro SOAT - ${escapeHtml(riderName)}', 'seguro', ${riderId})"><i data-lucide="shield" style="width:13px;height:13px;"></i> Seguro SOAT</a>
+                        <a class="file-view-trigger" onclick="openFileViewer('${d.cv_url}', 'Currículum Vitae - ${escapeHtml(riderName)}', 'cv', ${riderId})"><i data-lucide="file-check" style="width:13px;height:13px;"></i> Currículum Vitae (PDF)</a>
                     </div>
-                    <div class="approval-actions" style="justify-content: flex-end;">
-                        <button class="btn btn-danger btn-sm" onclick="approveRiderDocs(${riderId}, 'rechazado')">Rechazar</button>
+                    <div class="approval-actions" style="justify-content: flex-end; margin-top:0.5rem;">
+                        <button class="btn btn-danger btn-sm" onclick="promptRejectRider(${riderId})">Rechazar</button>
                         <button class="btn btn-success btn-sm" onclick="approveRiderDocs(${riderId}, 'aprobado')">Aprobar Rider</button>
                     </div>
                 </div>
@@ -2668,15 +2767,34 @@ async function renderAdminPendingApprovals() {
     initLucide();
 }
 
-window.approveUser = async function(userId, status) {
+window.promptRejectUser = function(userId) {
+    const motivo = prompt('Por favor, ingresa el motivo del rechazo del C.I. (el usuario podrá verlo para apelar):', 'C.I. ilegible o fotos borrosas');
+    if (motivo !== null) {
+        approveUser(userId, 'rejected', motivo);
+    }
+};
+
+window.promptRejectRider = function(riderId) {
+    const motivo = prompt('Por favor, ingresa el motivo del rechazo del expediente (el rider podrá verlo para apelar):', 'Documentos ilegibles o incompletos');
+    if (motivo !== null) {
+        approveRiderDocs(riderId, 'rechazado', motivo);
+    }
+};
+
+window.approveUser = async function(userId, status, motivo = null) {
     const mappedState = (status === 'verified' ? 'aprobado' : 'rechazado');
 
     try {
-        const res = await apiPost('/Auth/admin_approval.php', {
+        const payload = {
             target_id: userId,
             tipo: 'user',
             estado: mappedState
-        });
+        };
+        if (motivo) {
+            payload.motivo_rechazo = motivo;
+        }
+
+        const res = await apiPost('/Auth/admin_approval.php', payload);
         if (res.ok) {
             showToast(`Cliente ${status === 'verified' ? 'aprobado' : 'rechazado'} en MySQL exitosamente.`, 'success');
             await renderAdminPendingApprovals();
@@ -2690,16 +2808,21 @@ window.approveUser = async function(userId, status) {
     }
 };
 
-window.approveRiderDocs = async function(riderOrDocId, status) {
+window.approveRiderDocs = async function(riderOrDocId, status, motivo = null) {
     const doc = (window._adminAllRiders || []).find(d => d.doc_id === riderOrDocId || d.rider_id === riderOrDocId);
     const targetRiderId = doc ? doc.rider_id : riderOrDocId;
 
     try {
-        const res = await apiPost('/Auth/admin_approval.php', {
+        const payload = {
             target_id: targetRiderId,
             tipo: 'rider',
             estado: status
-        });
+        };
+        if (motivo) {
+            payload.motivo_rechazo = motivo;
+        }
+
+        const res = await apiPost('/Auth/admin_approval.php', payload);
         if (res.ok) {
             showToast(`Expediente de Rider ${status} en MySQL exitosamente.`, 'success');
             await renderAdminPendingApprovals();
@@ -2873,11 +2996,49 @@ window.openUserProfile = async function() {
     }
     if (ciBadgeEl) ciBadgeEl.innerHTML = `<span class="badge ${ciClass}">${ciText}</span>`;
 
-    // Wire view CI button
+    // Wire view CI buttons (Anverso y Reverso)
+    const btnViewCIReverso = document.getElementById('btnProfileViewCIReverso');
     if (btnViewCI) {
         btnViewCI.onclick = () => {
-            window.openFileViewer(u.ci_url || '', `C.I. Oficial - ${cleanUserName}`, 'ci', u.id);
+            window.openFileViewer(u.ci_url || '', `C.I. Anverso - ${cleanUserName}`, 'ci', u.id);
         };
+    }
+    if (btnViewCIReverso) {
+        btnViewCIReverso.onclick = () => {
+            window.openFileViewer(u.ci_reverso_url || u.ci_url || '', `C.I. Reverso - ${cleanUserName}`, 'ci', u.id);
+        };
+    }
+
+    // Banner de Rechazo en el Perfil
+    const rejectionBanner = document.getElementById('profileRejectionBanner');
+    const rejectionReasonText = document.getElementById('profileRejectionReasonText');
+    const btnProfileOpenAppeal = document.getElementById('btnProfileOpenAppeal');
+
+    const esRechazado = u.ci_status === 'rejected';
+    const motivoRechazo = u.motivo_rechazo || 'Documento ilegible o no válido.';
+
+    if (rejectionBanner) {
+        if (esRechazado) {
+            rejectionBanner.style.display = 'block';
+            if (rejectionReasonText) {
+                rejectionReasonText.innerHTML = `<strong>Motivo reportado:</strong> ${escapeHtml(motivoRechazo)}`;
+            }
+            if (btnProfileOpenAppeal) {
+                if (u.apelacion_estado === 'pendiente') {
+                    btnProfileOpenAppeal.innerText = '⚖️ Apelación Enviada (En Revisión)';
+                    btnProfileOpenAppeal.disabled = true;
+                } else {
+                    btnProfileOpenAppeal.innerText = '⚖️ Presentar Apelación y Resubir Documentos';
+                    btnProfileOpenAppeal.disabled = false;
+                    btnProfileOpenAppeal.onclick = () => {
+                        window.closeUserProfile();
+                        window.openAppealModal();
+                    };
+                }
+            }
+        } else {
+            rejectionBanner.style.display = 'none';
+        }
     }
 
     // Default loading metrics
@@ -2904,7 +3065,15 @@ window.openUserProfile = async function() {
                 birthEl.innerText = fullUser.fecha_nacimiento ? `${fullUser.fecha_nacimiento} (${calculateAge(fullUser.fecha_nacimiento)} años)` : 'No especificada';
             }
             if (memberSinceEl) {
-                memberSinceEl.innerText = fullUser.created_at ? fullUser.created_at.substring(0, 10) : 'Semilla / Demo';
+                memberSinceEl.innerText = fullUser.created_at ? fullUser.created_at.substring(0, 10) : 'Activo';
+            }
+
+            // Actualizar botones de CI con datos del perfil real
+            if (btnViewCI) {
+                btnViewCI.onclick = () => window.openFileViewer(fullUser.ci_url || '', `C.I. Anverso - ${cleanUserName}`, 'ci', fullUser.id);
+            }
+            if (btnViewCIReverso) {
+                btnViewCIReverso.onclick = () => window.openFileViewer(fullUser.ci_reverso_url || fullUser.ci_url || '', `C.I. Reverso - ${cleanUserName}`, 'ci', fullUser.id);
             }
 
             // Rider Section
@@ -2912,6 +3081,7 @@ window.openUserProfile = async function() {
                 if (riderSection) riderSection.style.display = 'block';
 
                 const btnLic = document.getElementById('btnProfileViewLicencia');
+                const btnLicRev = document.getElementById('btnProfileViewLicenciaReverso');
                 const btnSoat = document.getElementById('btnProfileViewSOAT');
                 const btnCv = document.getElementById('btnProfileViewCV');
                 const cashEl = document.getElementById('profileRiderCash');
@@ -2921,13 +3091,24 @@ window.openUserProfile = async function() {
                 if (delivEl) delivEl.innerText = metrics.entregas_completadas || 0;
 
                 if (btnLic) {
-                    btnLic.onclick = () => window.openFileViewer(riderDocs.licencia_url || '', `Licencia - ${cleanUserName}`, 'licencia', fullUser.id);
+                    btnLic.onclick = () => window.openFileViewer(riderDocs.licencia_url || '', `Licencia Anverso - ${cleanUserName}`, 'licencia', fullUser.id);
+                }
+                if (btnLicRev) {
+                    btnLicRev.onclick = () => window.openFileViewer(riderDocs.licencia_reverso_url || riderDocs.licencia_url || '', `Licencia Reverso - ${cleanUserName}`, 'licencia', fullUser.id);
                 }
                 if (btnSoat) {
                     btnSoat.onclick = () => window.openFileViewer(riderDocs.seguro_url || '', `SOAT - ${cleanUserName}`, 'soat', fullUser.id);
                 }
                 if (btnCv) {
                     btnCv.onclick = () => window.openFileViewer(riderDocs.cv_url || '', `Currículum Vitae - ${cleanUserName}`, 'cv', fullUser.id);
+                }
+
+                // Banner de rechazo específico de rider
+                if (rejectionBanner && (riderDocs.estado_aprobacion === 'rechazado' || fullUser.ci_status === 'rejected')) {
+                    rejectionBanner.style.display = 'block';
+                    if (rejectionReasonText) {
+                        rejectionReasonText.innerHTML = `<strong>Motivo de rechazo de expediente:</strong> ${escapeHtml(riderDocs.motivo_rechazo || fullUser.motivo_rechazo || 'Documentación no aprobada.')}`;
+                    }
                 }
 
                 if (metricsContent) {
@@ -3012,6 +3193,59 @@ window.openUserProfile = async function() {
 
 window.closeUserProfile = function() {
     const modal = document.getElementById('userProfileModal');
+    if (modal) modal.classList.remove('active');
+};
+
+// =======================================================
+// ⚖️ SISTEMA DE APELACIÓN DE RECHAZO (CLIENTES Y RIDERS)
+// =======================================================
+window.openAppealModal = function() {
+    const modal = document.getElementById('appealModal');
+    if (!modal) return;
+
+    const u = currentSession.currentUser;
+    if (!u) {
+        showToast('Debes iniciar sesión para apelar un rechazo.', 'warning');
+        return;
+    }
+
+    const clientFields = document.getElementById('appealClientFields');
+    const riderFields = document.getElementById('appealRiderFields');
+
+    if (u.role === 'rider') {
+        if (clientFields) clientFields.style.display = 'none';
+        if (riderFields) riderFields.style.display = 'flex';
+        // Configurar required para rider
+        const lAnv = document.getElementById('fileAppealLicenciaAnverso');
+        const lRev = document.getElementById('fileAppealLicenciaReverso');
+        if (lAnv) lAnv.required = true;
+        if (lRev) lRev.required = true;
+        const ciAnv = document.getElementById('fileAppealCiAnverso');
+        const ciRev = document.getElementById('fileAppealCiReverso');
+        if (ciAnv) ciAnv.required = false;
+        if (ciRev) ciRev.required = false;
+    } else {
+        if (clientFields) clientFields.style.display = 'flex';
+        if (riderFields) riderFields.style.display = 'none';
+        const ciAnv = document.getElementById('fileAppealCiAnverso');
+        const ciRev = document.getElementById('fileAppealCiReverso');
+        if (ciAnv) ciAnv.required = true;
+        if (ciRev) ciRev.required = true;
+        const lAnv = document.getElementById('fileAppealLicenciaAnverso');
+        const lRev = document.getElementById('fileAppealLicenciaReverso');
+        if (lAnv) lAnv.required = false;
+        if (lRev) lRev.required = false;
+    }
+
+    const txtMotivo = document.getElementById('txtAppealMotivo');
+    if (txtMotivo) txtMotivo.value = '';
+
+    modal.classList.add('active');
+    initLucide();
+};
+
+window.closeAppealModal = function() {
+    const modal = document.getElementById('appealModal');
     if (modal) modal.classList.remove('active');
 };
 
@@ -3165,7 +3399,8 @@ function renderCompradoresList(filter) {
     el.innerHTML = filtered.map(u => {
         const canEnable = u.ci_status !== 'verified';
         const canReject = u.ci_status !== 'rejected';
-        return `<div class="approval-card">
+        const isAppeal = u.apelacion_estado === 'pendiente';
+        return `<div class="approval-card" style="${isAppeal ? 'border: 1px solid #eab308; box-shadow: 0 0 10px rgba(234, 179, 8, 0.2);' : ''}">
             <div class="approval-card-header">
                 <div style="display:flex; align-items:center; gap:0.65rem;">
                     <img src="${resolveFileUrl(u.foto_url || u.ci_url, 'foto', u.id)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;" />
@@ -3174,14 +3409,22 @@ function renderCompradoresList(filter) {
                         <span style="font-size:0.75rem;color:var(--text-secondary);">${escapeHtml(u.email)}</span>
                     </div>
                 </div>
-                ${getStatusBadge(u.ci_status)}
+                <div style="display:flex; gap:0.35rem; align-items:center;">
+                    ${isAppeal ? '<span class="badge" style="background:rgba(234, 179, 8, 0.2); color:#eab308; border:1px solid #eab308;"><i data-lucide="help-circle" style="width:12px;height:12px;margin-right:2px;"></i> Apelación</span>' : ''}
+                    ${getStatusBadge(u.ci_status)}
+                </div>
             </div>
             <div class="approval-details-row">
                 <span>Nacimiento: ${u.fecha_nacimiento || 'N/A'}</span>
                 <span>ID #${u.id}</span>
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem;">
-                <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> Ver C.I.</a>
+            ${u.motivo_rechazo ? `<div style="font-size:0.8rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo rechazo:</strong> ${escapeHtml(u.motivo_rechazo)}</div>` : ''}
+            ${u.apelacion_motivo ? `<div style="font-size:0.8rem; color:#eab308; background:rgba(234,179,8,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo apelación:</strong> ${escapeHtml(u.apelacion_motivo)}</div>` : ''}
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem; flex-wrap:wrap; gap:0.5rem;">
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. Anverso - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> C.I. Anverso</a>
+                    ${u.ci_reverso_url ? `<a class="file-view-trigger" onclick="openFileViewer('${u.ci_reverso_url}', 'C.I. Reverso - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> C.I. Reverso</a>` : ''}
+                </div>
                 <div class="approval-actions">
                     ${canReject ? `<button class="btn btn-danger btn-sm" onclick="adminUpdateUser(${u.id},'cliente','rejected')">Rechazar</button>` : ''}
                     ${canEnable ? `<button class="btn btn-success btn-sm" onclick="adminUpdateUser(${u.id},'cliente','verified')">Habilitar</button>` : ''}
@@ -3207,7 +3450,8 @@ function renderRidersList(filter) {
     el.innerHTML = filtered.map(r => {
         const canApprove = r.estado_aprobacion !== 'aprobado';
         const canReject = r.estado_aprobacion !== 'rechazado';
-        return `<div class="approval-card">
+        const isAppeal = r.apelacion_estado === 'pendiente';
+        return `<div class="approval-card" style="${isAppeal ? 'border: 1px solid #eab308; box-shadow: 0 0 10px rgba(234, 179, 8, 0.2);' : ''}">
             <div class="approval-card-header">
                 <div style="display:flex; align-items:center; gap:0.65rem;">
                     <img src="${resolveFileUrl(r.foto_url || r.ci_url, 'foto', r.rider_id)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(255,255,255,0.15);flex-shrink:0;" />
@@ -3216,14 +3460,26 @@ function renderRidersList(filter) {
                         <span style="font-size:0.75rem;color:var(--text-secondary);">${escapeHtml(r.email)}</span>
                     </div>
                 </div>
-                ${getStatusBadge(r.estado_aprobacion, true)}
+                <div style="display:flex; gap:0.35rem; align-items:center;">
+                    ${isAppeal ? '<span class="badge" style="background:rgba(234, 179, 8, 0.2); color:#eab308; border:1px solid #eab308;"><i data-lucide="help-circle" style="width:12px;height:12px;margin-right:2px;"></i> Apelación</span>' : ''}
+                    ${getStatusBadge(r.estado_aprobacion, true)}
+                </div>
             </div>
             <div class="approval-details-row">
                 <span>Nacimiento: ${r.fecha_nacimiento || 'N/A'}</span>
                 <span>Rider ID #${r.rider_id}</span>
             </div>
+            ${r.motivo_rechazo ? `<div style="font-size:0.8rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo rechazo:</strong> ${escapeHtml(r.motivo_rechazo)}</div>` : ''}
+            ${r.apelacion_motivo ? `<div style="font-size:0.8rem; color:#eab308; background:rgba(234,179,8,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo apelación:</strong> ${escapeHtml(r.apelacion_motivo)}</div>` : ''}
             <div style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; border:1px solid var(--border-color); padding:0.5rem; border-radius:var(--radius-md); background:rgba(0,0,0,0.1); margin-top:0.5rem;">
-                <a class="file-view-trigger" onclick="openFileViewer('${r.licencia_url}','Licencia de Conducir - ${escapeHtml(r.nombre)}','licencia',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia de Conducir</a>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <a class="file-view-trigger" onclick="openFileViewer('${r.licencia_url}','Licencia Anverso - ${escapeHtml(r.nombre)}','licencia',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia Anverso</a>
+                    ${r.licencia_reverso_url ? `<a class="file-view-trigger" onclick="openFileViewer('${r.licencia_reverso_url}','Licencia Reverso - ${escapeHtml(r.nombre)}','licencia',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Licencia Reverso</a>` : ''}
+                </div>
+                ${r.ci_url ? `<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <a class="file-view-trigger" onclick="openFileViewer('${r.ci_url}','C.I. Anverso - ${escapeHtml(r.nombre)}','ci',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> C.I. Anverso</a>
+                    ${r.ci_reverso_url ? `<a class="file-view-trigger" onclick="openFileViewer('${r.ci_reverso_url}','C.I. Reverso - ${escapeHtml(r.nombre)}','ci',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> C.I. Reverso</a>` : ''}
+                </div>` : ''}
                 <a class="file-view-trigger" onclick="openFileViewer('${r.seguro_url}','Seguro SOAT - ${escapeHtml(r.nombre)}','seguro',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
                 <a class="file-view-trigger" onclick="openFileViewer('${r.cv_url}','Currículum Vitae - ${escapeHtml(r.nombre)}','cv',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Curriculum Vitae</a>
             </div>
@@ -3251,8 +3507,26 @@ function setupUsersFilterButtons() {
 }
 
 window.adminUpdateUser = async function(targetId, tipo, estado) {
+    let motivoRechazo = '';
+    if (estado === 'rejected' || estado === 'rechazado') {
+        const input = prompt('Ingrese el motivo del rechazo para informar al usuario:');
+        if (input === null) return;
+        motivoRechazo = input.trim();
+        if (!motivoRechazo) {
+            showToast('Debe ingresar un motivo para el rechazo.', 'warning');
+            return;
+        }
+    }
     try {
-        const res = await apiRequest('/Auth/admin_users.php', { method: 'PUT', data: { target_id: targetId, tipo, estado } });
+        const res = await apiRequest('/Auth/admin_users.php', { 
+            method: 'PUT', 
+            data: { 
+                target_id: targetId, 
+                tipo, 
+                estado, 
+                motivo_rechazo: motivoRechazo 
+            } 
+        });
         if (res.ok) {
             showToast('Estado actualizado en MySQL correctamente.', 'success');
             await renderAdminAllUsers();

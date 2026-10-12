@@ -40,11 +40,12 @@ try {
     $password = $_POST['password'] ?? '';
     $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? '';
 
-    $licencia = $_FILES['licencia'] ?? null;
+    $licencia_anverso = $_FILES['licencia_anverso'] ?? ($_FILES['licencia'] ?? null);
+    $licencia_reverso = $_FILES['licencia_reverso'] ?? null;
     $seguro = $_FILES['seguro'] ?? null;
     $cv = $_FILES['cv'] ?? null;
 
-    if (empty($nombre) || empty($correo) || empty($password) || empty($fecha_nacimiento) || empty($licencia) || empty($seguro) || empty($cv)) {
+    if (empty($nombre) || empty($correo) || empty($password) || empty($fecha_nacimiento) || empty($licencia_anverso) || empty($seguro) || empty($cv)) {
         throw new Exception("Faltan campos obligatorios o archivos del expediente.");
     }
 
@@ -57,15 +58,12 @@ try {
         throw new Exception("El rider debe ser mayor de 18 años.");
     }
 
-    // 2. Validación de formatos de archivos
+    // 2. Validación de formatos de archivos (JPG, PNG, PDF)
     $allowedMimeTypes = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'application/pdf' => 'pdf'
     ];
-
-    $uploadedFiles = [];
-    $docTypes = ['licencia' => $licencia, 'seguro' => $seguro, 'cv' => $cv];
 
     $uploadDir = __DIR__ . '/uploads/docs/';
     if (!is_dir($uploadDir)) {
@@ -73,11 +71,10 @@ try {
         file_put_contents($uploadDir . '.htaccess', "Require all denied\n");
     }
 
-    foreach ($docTypes as $key => $file) {
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception("Error al subir el documento: $key.");
+    $guardarDoc = function($file, $key) use ($allowedMimeTypes, $uploadDir) {
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            return null;
         }
-
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $realMime = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
@@ -94,8 +91,13 @@ try {
             throw new Exception("No se pudo guardar el archivo físico: $key.");
         }
 
-        $uploadedFiles[$key] = '/uploads/docs/' . $filename;
-    }
+        return '/uploads/docs/' . $filename;
+    };
+
+    $licenciaUrl = $guardarDoc($licencia_anverso, 'licencia_anverso');
+    $licenciaReversoUrl = $licencia_reverso ? $guardarDoc($licencia_reverso, 'licencia_reverso') : null;
+    $seguroUrl = $guardarDoc($seguro, 'seguro');
+    $cvUrl = $guardarDoc($cv, 'cv');
 
     $db = DatabaseConnection::getInstance()->getConnection();
 
@@ -125,10 +127,10 @@ try {
 
     // 5. Insertar en tabla documentacion_rider
     $stmtDoc = $db->prepare("
-        INSERT INTO documentacion_rider (rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by)
-        VALUES (?, ?, ?, ?, 'pendiente', ?, ?)
+        INSERT INTO documentacion_rider (rider_id, licencia_url, licencia_reverso_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by)
+        VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?)
     ");
-    $stmtDoc->execute([$newRiderId, $uploadedFiles['licencia'], $uploadedFiles['seguro'], $uploadedFiles['cv'], $newRiderId, $newRiderId]);
+    $stmtDoc->execute([$newRiderId, $licenciaUrl, $licenciaReversoUrl, $seguroUrl, $cvUrl, $newRiderId, $newRiderId]);
     $newDocId = $db->lastInsertId();
 
 

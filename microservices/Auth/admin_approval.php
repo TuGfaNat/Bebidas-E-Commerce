@@ -54,16 +54,30 @@ try {
     $tipo = $_REQUEST['tipo'] ?? ($jsonData['tipo'] ?? ($_SERVER['REQUEST_METHOD'] === 'GET' ? 'pending_list' : null));
     $targetId = $_REQUEST['target_id'] ?? ($jsonData['target_id'] ?? null);
     $nuevoEstado = $_REQUEST['estado'] ?? ($jsonData['estado'] ?? null); // 'aprobado' o 'rechazado'
+    $motivoRechazo = trim($_REQUEST['motivo_rechazo'] ?? ($jsonData['motivo_rechazo'] ?? ''));
 
     if ($tipo === 'pending_list') {
-        $stmtUsers = $db->query("SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at FROM users WHERE role = 'cliente' AND ci_status = 'pending' ORDER BY id ASC");
+        $stmtUsers = $db->query("
+            SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_reverso_url, ci_status, motivo_rechazo, apelacion_motivo, apelacion_estado, created_at 
+            FROM users 
+            WHERE role = 'cliente' AND (ci_status = 'pending' OR apelacion_estado = 'pendiente') 
+            ORDER BY id ASC
+        ");
         $pendingUsers = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
         foreach ($pendingUsers as &$u) {
             $u['foto_url'] = $u['ci_url'] ?? '';
         }
         unset($u);
 
-        $stmtRiders = $db->query("SELECT u.id as rider_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status, u.ci_url, d.id as doc_id, d.licencia_url, d.seguro_url, d.cv_url, d.estado_aprobacion, d.created_at FROM documentacion_rider d JOIN users u ON d.rider_id = u.id WHERE d.estado_aprobacion = 'pendiente' ORDER BY u.id ASC");
+        $stmtRiders = $db->query("
+            SELECT u.id as rider_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status, u.ci_url, u.ci_reverso_url, 
+                   d.id as doc_id, d.licencia_url, d.licencia_reverso_url, d.seguro_url, d.cv_url, 
+                   d.estado_aprobacion, d.motivo_rechazo, d.apelacion_motivo, d.apelacion_estado, d.created_at 
+            FROM documentacion_rider d 
+            JOIN users u ON d.rider_id = u.id 
+            WHERE (d.estado_aprobacion = 'pendiente' OR d.apelacion_estado = 'pendiente' OR u.apelacion_estado = 'pendiente') 
+            ORDER BY u.id ASC
+        ");
         $pendingRiders = $stmtRiders->fetchAll(PDO::FETCH_ASSOC);
         foreach ($pendingRiders as &$r) {
             $r['foto_url'] = $r['ci_url'] ?? '';
@@ -91,13 +105,30 @@ try {
         $stmtOld->execute([$targetId]);
         $oldData = $stmtOld->fetch();
 
-        $stmt = $db->prepare("UPDATE users SET ci_status = ?, updated_by = ? WHERE id = ?");
-        $stmt->execute([$mappedState, $adminId, $targetId]);
-
-
+        if ($mappedState === 'verified') {
+            $stmt = $db->prepare("
+                UPDATE users 
+                SET ci_status = 'verified', 
+                    motivo_rechazo = NULL, 
+                    apelacion_estado = 'resuelta', 
+                    updated_by = ? 
+                WHERE id = ?
+            ");
+            $stmt->execute([$adminId, $targetId]);
+        } else {
+            $stmt = $db->prepare("
+                UPDATE users 
+                SET ci_status = 'rejected', 
+                    motivo_rechazo = ?, 
+                    apelacion_estado = 'resuelta', 
+                    updated_by = ? 
+                WHERE id = ?
+            ");
+            $stmt->execute([$motivoRechazo ?: 'Documentación no válida o incompleta.', $adminId, $targetId]);
+        }
 
     } elseif ($tipo === 'view_user') {
-        $stmtView = $db->prepare("SELECT id, nombre, email, ci_url, ci_status FROM users WHERE id = ?");
+        $stmtView = $db->prepare("SELECT id, nombre, email, ci_url, ci_reverso_url, ci_status, motivo_rechazo, apelacion_motivo, apelacion_estado FROM users WHERE id = ?");
         $stmtView->execute([$targetId]);
         $data = $stmtView->fetch();
         $db->commit();
@@ -105,7 +136,12 @@ try {
         exit;
 
     } elseif ($tipo === 'view_rider') {
-        $stmtView = $db->prepare("SELECT u.nombre, d.* FROM documentacion_rider d JOIN users u ON d.rider_id = u.id WHERE d.rider_id = ?");
+        $stmtView = $db->prepare("
+            SELECT u.nombre, u.email, u.ci_url, u.ci_reverso_url, d.* 
+            FROM documentacion_rider d 
+            JOIN users u ON d.rider_id = u.id 
+            WHERE d.rider_id = ?
+        ");
         $stmtView->execute([$targetId]);
         $data = $stmtView->fetch();
         $db->commit();
@@ -122,13 +158,47 @@ try {
             throw new Exception("Documentación no encontrada para este rider.");
         }
 
-        $stmt = $db->prepare("UPDATE documentacion_rider SET estado_aprobacion = ?, updated_by = ? WHERE rider_id = ?");
-        $stmt->execute([$nuevoEstado, $adminId, $targetId]);
+        if ($nuevoEstado === 'aprobado') {
+            $stmt = $db->prepare("
+                UPDATE documentacion_rider 
+                SET estado_aprobacion = 'aprobado', 
+                    motivo_rechazo = NULL, 
+                    apelacion_estado = 'resuelta', 
+                    updated_by = ? 
+                WHERE rider_id = ?
+            ");
+            $stmt->execute([$adminId, $targetId]);
 
-        $mappedState = ($nuevoEstado === 'aprobado') ? 'verified' : 'rejected';
-        $stmtU = $db->prepare("UPDATE users SET ci_status = ?, updated_by = ? WHERE id = ?");
-        $stmtU->execute([$mappedState, $adminId, $targetId]);
+            $stmtU = $db->prepare("
+                UPDATE users 
+                SET ci_status = 'verified', 
+                    motivo_rechazo = NULL, 
+                    apelacion_estado = 'resuelta', 
+                    updated_by = ? 
+                WHERE id = ?
+            ");
+            $stmtU->execute([$adminId, $targetId]);
+        } else {
+            $stmt = $db->prepare("
+                UPDATE documentacion_rider 
+                SET estado_aprobacion = 'rechazado', 
+                    motivo_rechazo = ?, 
+                    apelacion_estado = 'resuelta', 
+                    updated_by = ? 
+                WHERE rider_id = ?
+            ");
+            $stmt->execute([$motivoRechazo ?: 'Expediente no válido o documentos ilegibles.', $adminId, $targetId]);
 
+            $stmtU = $db->prepare("
+                UPDATE users 
+                SET ci_status = 'rejected', 
+                    motivo_rechazo = ?, 
+                    apelacion_estado = 'resuelta', 
+                    updated_by = ? 
+                WHERE id = ?
+            ");
+            $stmtU->execute([$motivoRechazo ?: 'Expediente no válido o documentos ilegibles.', $adminId, $targetId]);
+        }
 
     } else {
         throw new Exception("Tipo inválido. Use 'user', 'rider', 'view_user', o 'view_rider'.");

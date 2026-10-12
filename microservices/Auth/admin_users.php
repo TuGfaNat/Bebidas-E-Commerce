@@ -41,7 +41,8 @@ try {
 
     if ($method === 'GET') {
         $stmtUsers = $db->query("
-            SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at 
+            SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_reverso_url, ci_status, 
+                   motivo_rechazo, apelacion_motivo, apelacion_estado, created_at 
             FROM users 
             WHERE role = 'cliente' 
             ORDER BY id ASC
@@ -54,11 +55,15 @@ try {
 
         $stmtRiders = $db->query("
             SELECT u.id as rider_id, d.id as doc_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status,
-                   u.ci_url,
+                   u.ci_url, u.ci_reverso_url,
                    COALESCE(d.estado_aprobacion, 'pendiente') as estado_aprobacion,
                    COALESCE(d.licencia_url, '') as licencia_url,
+                   COALESCE(d.licencia_reverso_url, '') as licencia_reverso_url,
                    COALESCE(d.seguro_url, '') as seguro_url,
                    COALESCE(d.cv_url, '') as cv_url,
+                   COALESCE(d.motivo_rechazo, u.motivo_rechazo, '') as motivo_rechazo,
+                   COALESCE(d.apelacion_motivo, u.apelacion_motivo, '') as apelacion_motivo,
+                   COALESCE(d.apelacion_estado, u.apelacion_estado, 'ninguna') as apelacion_estado,
                    u.created_at
             FROM users u
             LEFT JOIN documentacion_rider d ON u.id = d.rider_id
@@ -85,6 +90,7 @@ try {
         $targetId = isset($input['target_id']) ? (int)$input['target_id'] : 0;
         $tipo = $input['tipo'] ?? null;
         $estado = $input['estado'] ?? null;
+        $motivoRechazo = trim($input['motivo_rechazo'] ?? '');
 
         if (!$targetId || !$tipo || !$estado) {
             http_response_code(400);
@@ -107,8 +113,16 @@ try {
                 exit;
             }
 
-            $stmtUpdate = $db->prepare("UPDATE users SET ci_status = ?, updated_by = ?, updated_at = NOW() WHERE id = ?");
-            $stmtUpdate->execute([$mappedCi, $adminId, $targetId]);
+            if ($mappedCi === 'verified') {
+                $stmtUpdate = $db->prepare("UPDATE users SET ci_status = 'verified', motivo_rechazo = NULL, apelacion_estado = 'resuelta', updated_by = ?, updated_at = NOW() WHERE id = ?");
+                $stmtUpdate->execute([$adminId, $targetId]);
+            } elseif ($mappedCi === 'rejected') {
+                $stmtUpdate = $db->prepare("UPDATE users SET ci_status = 'rejected', motivo_rechazo = ?, apelacion_estado = 'resuelta', updated_by = ?, updated_at = NOW() WHERE id = ?");
+                $stmtUpdate->execute([$motivoRechazo ?: 'Documentación no válida o incompleta.', $adminId, $targetId]);
+            } else {
+                $stmtUpdate = $db->prepare("UPDATE users SET ci_status = 'pending', updated_by = ?, updated_at = NOW() WHERE id = ?");
+                $stmtUpdate->execute([$adminId, $targetId]);
+            }
 
             logAudit($db, 'users', $targetId, 'UPDATE', ['ci_status' => $old['ci_status']], ['ci_status' => $mappedCi], $adminId);
             $db->commit();
@@ -122,19 +136,27 @@ try {
             $oldDoc = $stmtOld->fetch();
 
             if ($oldDoc) {
-                $stmtUpdate = $db->prepare("UPDATE documentacion_rider SET estado_aprobacion = ?, updated_by = ?, updated_at = NOW() WHERE rider_id = ?");
-                $stmtUpdate->execute([$mappedDoc, $adminId, $targetId]);
+                if ($mappedDoc === 'aprobado') {
+                    $stmtUpdate = $db->prepare("UPDATE documentacion_rider SET estado_aprobacion = 'aprobado', motivo_rechazo = NULL, apelacion_estado = 'resuelta', updated_by = ?, updated_at = NOW() WHERE rider_id = ?");
+                    $stmtUpdate->execute([$adminId, $targetId]);
+                } elseif ($mappedDoc === 'rechazado') {
+                    $stmtUpdate = $db->prepare("UPDATE documentacion_rider SET estado_aprobacion = 'rechazado', motivo_rechazo = ?, apelacion_estado = 'resuelta', updated_by = ?, updated_at = NOW() WHERE rider_id = ?");
+                    $stmtUpdate->execute([$motivoRechazo ?: 'Documentación de rider no válida o incompleta.', $adminId, $targetId]);
+                } else {
+                    $stmtUpdate = $db->prepare("UPDATE documentacion_rider SET estado_aprobacion = 'pendiente', updated_by = ?, updated_at = NOW() WHERE rider_id = ?");
+                    $stmtUpdate->execute([$adminId, $targetId]);
+                }
                 logAudit($db, 'documentacion_rider', $targetId, 'UPDATE', ['estado_aprobacion' => $oldDoc['estado_aprobacion']], ['estado_aprobacion' => $mappedDoc], $adminId);
             } else {
-                $stmtInsert = $db->prepare("INSERT INTO documentacion_rider (rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by) VALUES (?, '', '', '', ?, ?, ?)");
-                $stmtInsert->execute([$targetId, $mappedDoc, $adminId, $adminId]);
+                $stmtInsert = $db->prepare("INSERT INTO documentacion_rider (rider_id, licencia_url, licencia_reverso_url, seguro_url, cv_url, estado_aprobacion, motivo_rechazo, apelacion_estado, created_by, updated_by) VALUES (?, '', '', '', '', ?, ?, 'resuelta', ?, ?)");
+                $stmtInsert->execute([$targetId, $mappedDoc, $mappedDoc === 'rechazado' ? ($motivoRechazo ?: 'Documentación rechazada.') : null, $adminId, $adminId]);
                 logAudit($db, 'documentacion_rider', $targetId, 'INSERT', null, ['estado_aprobacion' => $mappedDoc], $adminId);
             }
 
-            // Actualizar también ci_status del usuario rider si aplica
+            // Actualizar también ci_status y motivo_rechazo del usuario rider si aplica
             $userCiStatus = ($mappedDoc === 'aprobado') ? 'verified' : (($mappedDoc === 'rechazado') ? 'rejected' : 'pending');
-            $stmtUserCi = $db->prepare("UPDATE users SET ci_status = ?, updated_by = ?, updated_at = NOW() WHERE id = ?");
-            $stmtUserCi->execute([$userCiStatus, $adminId, $targetId]);
+            $stmtUserCi = $db->prepare("UPDATE users SET ci_status = ?, motivo_rechazo = ?, apelacion_estado = 'resuelta', updated_by = ?, updated_at = NOW() WHERE id = ?");
+            $stmtUserCi->execute([$userCiStatus, $mappedDoc === 'rechazado' ? ($motivoRechazo ?: 'Documentación de rider rechazada.') : null, $adminId, $targetId]);
 
             $db->commit();
 

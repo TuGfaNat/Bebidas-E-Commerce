@@ -45,7 +45,8 @@ try {
     if ($method === 'GET') {
         // Consultar datos del usuario
         $stmtUser = $db->prepare("
-            SELECT id, role, nombre, email, fecha_nacimiento, ci_url, ci_status, created_at, updated_at
+            SELECT id, role, nombre, email, fecha_nacimiento, ci_url, ci_reverso_url, ci_status, 
+                   motivo_rechazo, apelacion_motivo, apelacion_estado, created_at, updated_at
             FROM users 
             WHERE id = ?
         ");
@@ -69,8 +70,12 @@ try {
                 "role" => $userData['role'],
                 "fecha_nacimiento" => $userData['fecha_nacimiento'],
                 "ci_url" => $userData['ci_url'],
+                "ci_reverso_url" => $userData['ci_reverso_url'] ?? null,
                 "foto_url" => $userData['foto_url'] ?? '',
                 "ci_status" => $userData['ci_status'] ?? 'pending',
+                "motivo_rechazo" => $userData['motivo_rechazo'] ?? null,
+                "apelacion_motivo" => $userData['apelacion_motivo'] ?? null,
+                "apelacion_estado" => $userData['apelacion_estado'] ?? 'ninguna',
                 "created_at" => $userData['created_at']
             ],
             "metrics" => []
@@ -80,7 +85,8 @@ try {
         if ($userData['role'] === 'rider') {
             // Documentación y expediente del Rider
             $stmtRiderDoc = $db->prepare("
-                SELECT estado_aprobacion, licencia_url, seguro_url, cv_url, created_at
+                SELECT estado_aprobacion, licencia_url, licencia_reverso_url, seguro_url, cv_url, 
+                       motivo_rechazo, apelacion_motivo, apelacion_estado, created_at
                 FROM documentacion_rider
                 WHERE rider_id = ?
             ");
@@ -90,8 +96,12 @@ try {
             $profile['rider_docs'] = [
                 "estado_aprobacion" => $riderDoc['estado_aprobacion'] ?? 'pendiente',
                 "licencia_url" => $riderDoc['licencia_url'] ?? null,
+                "licencia_reverso_url" => $riderDoc['licencia_reverso_url'] ?? null,
                 "seguro_url" => $riderDoc['seguro_url'] ?? null,
                 "cv_url" => $riderDoc['cv_url'] ?? null,
+                "motivo_rechazo" => $riderDoc['motivo_rechazo'] ?? null,
+                "apelacion_motivo" => $riderDoc['apelacion_motivo'] ?? null,
+                "apelacion_estado" => $riderDoc['apelacion_estado'] ?? 'ninguna',
                 "doc_created_at" => $riderDoc['created_at'] ?? null
             ];
 

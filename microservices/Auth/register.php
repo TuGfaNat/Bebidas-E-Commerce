@@ -38,10 +38,11 @@ try {
     $correo = $_POST['correo'] ?? '';
     $password = $_POST['password'] ?? '';
     $fecha_nacimiento = $_POST['fecha_nacimiento'] ?? '';
-    $ci_image = $_FILES['ci_image'] ?? null;
+    $ci_anverso = $_FILES['ci_anverso'] ?? ($_FILES['ci_image'] ?? null);
+    $ci_reverso = $_FILES['ci_reverso'] ?? null;
 
-    if (empty($nombre) || empty($correo) || empty($password) || empty($fecha_nacimiento) || empty($ci_image)) {
-        throw new Exception("Faltan campos obligatorios.");
+    if (empty($nombre) || empty($correo) || empty($password) || empty($fecha_nacimiento) || empty($ci_anverso)) {
+        throw new Exception("Faltan campos obligatorios o el documento anverso del C.I.");
     }
 
     // Validación de edad (> 18 años)
@@ -53,26 +54,11 @@ try {
         throw new Exception("El usuario debe ser mayor de 18 años.");
     }
 
-    // Validación y guardado de imagen en carpeta protegida
-    if ($ci_image['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception("Error al subir la imagen del C.I.");
-    }
-
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $realMime = finfo_file($finfo, $ci_image['tmp_name']);
-    finfo_close($finfo);
-
     $allowedMimeTypes = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
         'application/pdf' => 'pdf'
     ];
-
-    if (!array_key_exists($realMime, $allowedMimeTypes)) {
-        throw new Exception("El formato del archivo C.I. no es válido (solo JPG, PNG, PDF).");
-    }
-
-    $ext = $allowedMimeTypes[$realMime];
 
     $uploadDir = __DIR__ . '/uploads/ci/';
     if (!is_dir($uploadDir)) {
@@ -80,11 +66,35 @@ try {
         file_put_contents($uploadDir . '.htaccess', "Require all denied\n");
     }
 
-    $filename = uniqid('ci_') . '.' . $ext;
-    $destination = $uploadDir . $filename;
+    // Función para procesar y guardar un archivo de carnet
+    $procesarArchivoDoc = function($fileObj, $prefijo) use ($allowedMimeTypes, $uploadDir) {
+        if (!$fileObj || $fileObj['error'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $realMime = finfo_file($finfo, $fileObj['tmp_name']);
+        finfo_close($finfo);
 
-    if (!move_uploaded_file($ci_image['tmp_name'], $destination)) {
-        throw new Exception("No se pudo guardar la imagen del C.I.");
+        if (!array_key_exists($realMime, $allowedMimeTypes)) {
+            throw new Exception("El formato del documento ($prefijo) debe ser JPG, PNG o PDF.");
+        }
+        $ext = $allowedMimeTypes[$realMime];
+        $filename = uniqid($prefijo . '_') . '.' . $ext;
+        $dest = $uploadDir . $filename;
+        if (!move_uploaded_file($fileObj['tmp_name'], $dest)) {
+            throw new Exception("No se pudo guardar el archivo del C.I. ($prefijo).");
+        }
+        return '/uploads/ci/' . $filename;
+    };
+
+    $ciAnversoUrl = $procesarArchivoDoc($ci_anverso, 'ci_anverso');
+    if (!$ciAnversoUrl) {
+        throw new Exception("Error al subir el anverso del C.I.");
+    }
+
+    $ciReversoUrl = null;
+    if (!empty($ci_reverso) && $ci_reverso['error'] === UPLOAD_ERR_OK) {
+        $ciReversoUrl = $procesarArchivoDoc($ci_reverso, 'ci_reverso');
     }
 
     // Guardar en la base de datos
@@ -99,23 +109,20 @@ try {
 
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
     $role = 'cliente'; // Por defecto registramos como cliente
-    $ciUrl = '/uploads/ci/' . $filename;
 
     $db->beginTransaction();
 
     $stmt = $db->prepare("
-        INSERT INTO users (role, nombre, email, password_hash, fecha_nacimiento, ci_url, ci_status)
-        VALUES (?, ?, ?, ?, ?, ?, 'pending')
+        INSERT INTO users (role, nombre, email, password_hash, fecha_nacimiento, ci_url, ci_reverso_url, ci_status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
     ");
 
-    $stmt->execute([$role, $nombre, $correo, $passwordHash, $fecha_nacimiento, $ciUrl]);
+    $stmt->execute([$role, $nombre, $correo, $passwordHash, $fecha_nacimiento, $ciAnversoUrl, $ciReversoUrl]);
     $newUserId = $db->lastInsertId();
 
     // Actualizar campos de auditoría (created_by) con el propio ID
     $stmtUpdateAudit = $db->prepare("UPDATE users SET created_by = ?, updated_by = ? WHERE id = ?");
     $stmtUpdateAudit->execute([$newUserId, $newUserId, $newUserId]);
-
-
 
     $db->commit();
 
@@ -127,7 +134,7 @@ try {
     ]);
 
     echo formatResponse("success", [
-        "mensaje" => "Usuario registrado correctamente y C.I. guardado.",
+        "mensaje" => "Usuario registrado correctamente y documentos anverso/reverso de C.I. guardados.",
         "user_id" => (int)$newUserId,
         "token" => $token
     ], $newUserId);

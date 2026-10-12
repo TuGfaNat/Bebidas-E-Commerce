@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Burger 24/7 - Hamburguesería & Delivery v1.0.1</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2.0">
     <!-- Leaflet.js Map Assets -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -695,15 +695,32 @@
                 <div class="checkout-grid">
                     <!-- Left: GPS and location -->
                     <div>
-                        <h3>1. Ubicación de Entrega</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
-                            Haz clic en el mapa para marcar tu dirección o pulsa el botón para usar tu ubicación sugerida.
+                        <h3>1. Ubicación de Entrega (La Paz, Bolivia)</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
+                            Haz clic en el mapa de La Paz o elige tu zona para calcular la distancia y flete en tiempo real:
                         </p>
-                        <div class="gps-selector-box" style="height: 200px;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <label for="selectLaPazZone" style="font-size: 0.72rem; color: var(--text-secondary); display: block; margin-bottom: 0.2rem; font-weight: 600;">
+                                📍 Zona / Barrio en La Paz:
+                            </label>
+                            <select id="selectLaPazZone" class="form-control" style="width: 100%; font-size: 0.8rem; padding: 0.4rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #1e293b; color: #f8fafc;">
+                                <option value="-16.5090,-68.1340" selected>📍 Sopocachi (Plaza Abaroa / Av. 20 de Octubre)</option>
+                                <option value="-16.4985,-68.1335">📍 El Prado / Plaza del Estudiante (Centro)</option>
+                                <option value="-16.4955,-68.1330">📍 Casco Urbano Central (Plaza Murillo / San Francisco)</option>
+                                <option value="-16.5015,-68.1375">📍 San Pedro (Plaza Sucre)</option>
+                                <option value="-16.5045,-68.1205">📍 Miraflores (Plaza Triangular / Estadio Siles)</option>
+                                <option value="-16.5125,-68.1245">📍 San Jorge (Av. Arce / Teleférico Celeste)</option>
+                                <option value="-16.5280,-68.1120">📍 Obrajes (Calle 17 / Av. Hernando Siles)</option>
+                                <option value="-16.5410,-68.0860">📍 Calacoto (San Miguel / Calle 21)</option>
+                                <option value="-16.5385,-68.0670">📍 Achumani (Av. Alexander)</option>
+                                <option value="-16.5250,-68.0650">📍 Los Pinos / Chasquipampa</option>
+                            </select>
+                        </div>
+                        <div class="gps-selector-box" style="height: 200px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-color);">
                             <div id="gpsSelectorMap" style="width: 100%; height: 100%;"></div>
                         </div>
                         <button type="button" class="btn btn-secondary btn-sm" id="btnUseDefaultLocation" style="width: 100%; margin-top: 0.4rem; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
-                            <i data-lucide="map-pin"></i> Usar Dirección Sugerida (Sopocachi Central)
+                            <i data-lucide="map-pin"></i> Centrar en Sopocachi Central (Sede Cocina)
                         </button>
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-top: 0.6rem; font-size: 0.85rem;" id="logisticsResults">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
@@ -1034,7 +1051,7 @@
     </footer>
 
     <!-- App JavaScript -->
-    <script src="api.js"></script>
-    <script src="app.js"></script>
+    <script src="api.js?v=2.0"></script>
+    <script src="app.js?v=2.0"></script>
 </body>
 </html>

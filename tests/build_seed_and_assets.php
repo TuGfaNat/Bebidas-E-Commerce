@@ -837,7 +837,7 @@ $sqlPedidos = [
     "(1, 1, 2, 'liquidado', 'entregado', 45.00, -16.50200000, -68.13100000, NULL, 1, 3)",
     "(2, 8, 14, 'pagado_qr', 'entregado', 58.00, -16.50800000, -68.13300000, '/uploads/qr/comprobante_andrea.jpg', 8, 14)",
     "(3, 9, 15, 'contraentrega', 'en_camino', 78.00, -16.51200000, -68.12500000, NULL, 9, 15)",
-    "(4, 1, 2, 'contraentrega', 'asignado', 34.00, -16.50400000, -68.12900000, NULL, 1, 3)",
+    "(4, 1, 5, 'contraentrega', 'asignado', 34.00, -16.50400000, -68.12900000, NULL, 1, 3)",
     "(5, 8, NULL, 'esperando_pago', 'pendiente', 44.00, -16.50900000, -68.13400000, NULL, 8, 8)"
 ];
 
@@ -987,6 +987,7 @@ SQL
 <<<SQL
 
 ON DUPLICATE KEY UPDATE 
+    email = VALUES(email),
     password_hash = VALUES(password_hash),
     ci_status = VALUES(ci_status),
     foto_url = VALUES(foto_url),

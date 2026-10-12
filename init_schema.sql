@@ -31,9 +31,6 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (updated_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Asegurar columna foto_url en caso de que la tabla users ya existiese de versiones previas
-ALTER TABLE users ADD COLUMN IF NOT EXISTS foto_url VARCHAR(255) NULL AFTER ci_url;
-
 -- 2. Tabla de Productos y Catálogo (productos)
 CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -127,26 +124,27 @@ CREATE TABLE IF NOT EXISTS auditoria_logs (
 -- SEED DATA COMPLETO (19 USUARIOS REALES BCRYPT CON FOTOS Y DOCUMENTOS)
 -- ============================================================================
 
-INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, ci_url, foto_url, ci_status, created_by, updated_by) VALUES(1, 'cliente', 'Carlos Pérez Mendoza', 'carlos@mail.com', '$2y$10$zCLKEZGphHWQenx1n0AtueOc0IfyoWc6Tsdnf7zFaKqlXtBPG4gxW', '1995-04-12', '/uploads/ci/ci_carlos.svg', '/uploads/ci/foto_carlos.svg', 'verified', 3, 3),
-(2, 'rider', 'Pedro Gómez Alarcón', 'pedro@mail.com', '$2y$10$sGhPyidZkniPURvvy0cpMuRDbh9b77M2JjkpUdXrbNmuLXSgp9/Ti', '1992-08-25', '/uploads/ci/ci_pedro.svg', '/uploads/ci/foto_pedro.svg', 'verified', 3, 3),
-(3, 'super_usuario', 'Admin Central (Gerencia)', 'admin@mail.com', '$2y$10$I9B4fYAZJtMWr0IZkueWU.uV7QkIE8/uLOabs0edICTWvOWFPoPZu', '1988-11-03', '/uploads/ci/ci_admin.svg', '/uploads/ci/foto_admin.svg', 'verified', 3, 3),
-(4, 'cliente', 'María López Guzmán', 'maria@mail.com', '$2y$10$7Z.VtSyy/rZOGvHx7K9bVukBy6v60CRyotjThBU/zJG9hDoT11C3y', '2001-02-14', '/uploads/ci/ci_maria.svg', '/uploads/ci/foto_maria.svg', 'pending', 3, 3),
-(5, 'rider', 'Juan Rodríguez Ticona', 'juan@mail.com', '$2y$10$6pBYphI6DYU4LtEYr4fQhOJ.Hg9FpSLjWmlkEGYAM34M.zRfep8nm', '1999-07-19', '/uploads/ci/ci_juan.svg', '/uploads/ci/foto_juan.svg', 'pending', 3, 3),
-(6, 'cliente', 'Roberto Flores Arze', 'roberto@mail.com', '$2y$10$8oT1R6XApSbwKTeXESchaOM/80T4r8lSCSH9E.0X81HWECBM/hQ6u', '1996-05-20', '/uploads/ci/ci_roberto.svg', '/uploads/ci/foto_roberto.svg', 'rejected', 3, 3),
-(7, 'rider', 'Marcos Vargas Huanca', 'marcos@mail.com', '$2y$10$k9lbObaTKvyrmcISILGI3eZLPjND3lHqr1tchavUcxCB5m4K.x7A6', '1994-09-10', '/uploads/ci/ci_marcos.svg', '/uploads/ci/foto_marcos.svg', 'rejected', 3, 3),
-(8, 'cliente', 'Andrea Morales Ramos', 'andrea@mail.com', '$2y$10$1oW.NjUG69VexE72QqsrceeMycE1A03BbWKfNe9qVzpQHtuJ1Jk.2', '1998-09-18', '/uploads/ci/ci_andrea.svg', '/uploads/ci/foto_andrea.svg', 'verified', 3, 3),
-(9, 'cliente', 'Gonzalo Salinas Castro', 'gonzalo@mail.com', '$2y$10$j5g8nKSQ1GQOaDFLO8eJb.0fVxuutxP6qfl1DVWpqn1FSLTDRe1P2', '1991-12-05', '/uploads/ci/ci_gonzalo.svg', '/uploads/ci/foto_gonzalo.svg', 'verified', 3, 3),
-(10, 'cliente', 'Diego Quiroga Flores', 'diego@mail.com', '$2y$10$WWCoGsoD6/a/.pM8AOgtheR8stX77p1NmCdqHrRCX9PoGibeOiVay', '2003-06-22', '/uploads/ci/ci_diego.svg', '/uploads/ci/foto_diego.svg', 'pending', 3, 3),
-(11, 'cliente', 'Camila Navarro Torrez', 'camila@mail.com', '$2y$10$Xy6b5mZJnnSCB1Dw2Kj3h.sC5EZionkzjTDJi5tSV3Z/HQ8ublqci', '2000-11-30', '/uploads/ci/ci_camila.svg', '/uploads/ci/foto_camila.svg', 'pending', 3, 3),
-(12, 'cliente', 'Lucía Paredes Vega', 'lucia@mail.com', '$2y$10$b8gukVCZ5evldh3Ek6W3AO9sQcdHOfbH59aZuXmvSKrN6tXOOZI02', '2009-08-14', '/uploads/ci/ci_lucia.svg', '/uploads/ci/foto_lucia.svg', 'rejected', 3, 3),
-(13, 'cliente', 'Rodrigo Méndez Balderrama', 'rodrigo@mail.com', '$2y$10$04QLFWu3.GATUlVzLba17u0OQCP/806kihdq3mWBh3YHFA8Q8U5Dq', '1993-01-10', '/uploads/ci/ci_rodrigo.svg', '/uploads/ci/foto_rodrigo.svg', 'rejected', 3, 3),
-(14, 'rider', 'Alejandro Ríos Choque', 'alejandro@mail.com', '$2y$10$0zTFIs/NtNmgFdTYJUcXkeQArDe3HGMLyC7twWOAHvI92G0w1A0XC', '1994-03-15', '/uploads/ci/ci_alejandro.svg', '/uploads/ci/foto_alejandro.svg', 'verified', 3, 3),
-(15, 'rider', 'Valeria Mamani Gutiérrez', 'valeria@mail.com', '$2y$10$7EBNVefeHmmVcMm7QqyS0eLYMkgbxmwOvOlm97Uw7aInTrWUl22MS', '1997-10-08', '/uploads/ci/ci_valeria.svg', '/uploads/ci/foto_valeria.svg', 'verified', 3, 3),
-(16, 'rider', 'Fernando Blanco Heredia', 'fernando@mail.com', '$2y$10$LZPAZC9asZlfXNthj3mcX.QhWHp6f39M8tvneYFoHpRWXHdhld9ti', '2000-04-03', '/uploads/ci/ci_fernando.svg', '/uploads/ci/foto_fernando.svg', 'pending', 3, 3),
-(17, 'rider', 'Paola Zeballos Cruz', 'paola@mail.com', '$2y$10$q5aabD1RbDLExY49qAaDeOpiIMhVs1Qp6j2k9lljj90Jf0HmRF3du', '2002-09-12', '/uploads/ci/ci_paola.svg', '/uploads/ci/foto_paola.svg', 'pending', 3, 3),
-(18, 'rider', 'Gustavo Beltrán Soto', 'gustavo@mail.com', '$2y$10$wK/b0h.dNL9uZYaXNg7mi.INOCEm7YkzN4ndvTv4wA8L8gqi5AAoW', '1990-12-01', '/uploads/ci/ci_gustavo.svg', '/uploads/ci/foto_gustavo.svg', 'rejected', 3, 3),
-(19, 'rider', 'Cristian Colque Poma', 'cristian@mail.com', '$2y$10$4.HtYt5GgEsbwpEuOHtDD.X9KU7vz3tjj90Sd.L37BbCBYV5Dsl2a', '2004-05-18', '/uploads/ci/ci_cristian.svg', '/uploads/ci/foto_cristian.svg', 'rejected', 3, 3)
+INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, ci_url, foto_url, ci_status, created_by, updated_by) VALUES(1, 'cliente', 'Carlos Pérez Mendoza', 'carlos@mail.com', '$2y$12$oBrJVxe/.0RYwzHKH5.zo.c8Wdzt4cLP9wyYfbgQAfAxebAArj7/O', '1995-04-12', '/uploads/ci/ci_carlos.svg', '/uploads/ci/foto_carlos.svg', 'verified', 3, 3),
+(2, 'rider', 'Pedro Gómez Alarcón', 'pedro@mail.com', '$2y$12$kwaN4pWuH0ADm/j14Sx5UOY0exD2qoDG23WO/mWHkHz.6jXTTw5t2', '1992-08-25', '/uploads/ci/ci_pedro.svg', '/uploads/ci/foto_pedro.svg', 'verified', 3, 3),
+(3, 'super_usuario', 'Admin Central (Gerencia)', 'admin@mail.com', '$2y$12$OVN/UBcNDnmSSfTLofnU6evA8C94ZP51xwHBNnkffR32/B.GigQsy', '1988-11-03', '/uploads/ci/ci_admin.svg', '/uploads/ci/foto_admin.svg', 'verified', 3, 3),
+(4, 'cliente', 'María López Guzmán', 'maria@mail.com', '$2y$12$utDBlLZhtTPMP4HdEDfMIuRsfz2/RdpioV1xq7BCc7VGcJq.1NnfC', '2001-02-14', '/uploads/ci/ci_maria.svg', '/uploads/ci/foto_maria.svg', 'pending', 3, 3),
+(5, 'rider', 'Juan Rodríguez Ticona', 'juan@mail.com', '$2y$12$DBACYNEPH.B6bfAP5rWonebq2K/b/k4XIYCySAVQm8OC/eJcksd/C', '1999-07-19', '/uploads/ci/ci_juan.svg', '/uploads/ci/foto_juan.svg', 'pending', 3, 3),
+(6, 'cliente', 'Roberto Flores Arze', 'roberto@mail.com', '$2y$12$rvtYrne0C1twsJXm8sdV4e7q/UFmuax2l8QLaC4MHdqaW88smgbh2', '1996-05-20', '/uploads/ci/ci_roberto.svg', '/uploads/ci/foto_roberto.svg', 'rejected', 3, 3),
+(7, 'rider', 'Marcos Vargas Huanca', 'marcos@mail.com', '$2y$12$AJ4nPCvRsjdatgrFECtYpOLUKW9BIVJlR/XUesZVlY9bTSF4D4wLe', '1994-09-10', '/uploads/ci/ci_marcos.svg', '/uploads/ci/foto_marcos.svg', 'rejected', 3, 3),
+(8, 'cliente', 'Andrea Morales Ramos', 'andrea@mail.com', '$2y$12$2Jsvn3tAFrrLTAleVB33wuT20znjf172KrwtmlK0ZNGh9jMmDy7Nm', '1998-09-18', '/uploads/ci/ci_andrea.svg', '/uploads/ci/foto_andrea.svg', 'verified', 3, 3),
+(9, 'cliente', 'Gonzalo Salinas Castro', 'gonzalo@mail.com', '$2y$12$.tQkS5VoaBsMbYyjbNRMUuv5c/lLiCqUMH4.nm/mxsWcjEZH63Oo.', '1991-12-05', '/uploads/ci/ci_gonzalo.svg', '/uploads/ci/foto_gonzalo.svg', 'verified', 3, 3),
+(10, 'cliente', 'Diego Quiroga Flores', 'diego@mail.com', '$2y$12$lcUy.pf72uRvgTaEFt/ebeWC3fcWkliznJcN/ObIol55L7kj2u9gS', '2003-06-22', '/uploads/ci/ci_diego.svg', '/uploads/ci/foto_diego.svg', 'pending', 3, 3),
+(11, 'cliente', 'Camila Navarro Torrez', 'camila@mail.com', '$2y$12$1tiueWslGF863S79C6Sd3OVWljktMi5Xo6MJXvNZo/EKRM50Hs7wy', '2000-11-30', '/uploads/ci/ci_camila.svg', '/uploads/ci/foto_camila.svg', 'pending', 3, 3),
+(12, 'cliente', 'Lucía Paredes Vega', 'lucia@mail.com', '$2y$12$xODp/G2wwRJ59RwZ.6ibb.gho6pAMC5U3s.Y6YWrPwVE7r/s1cr86', '2009-08-14', '/uploads/ci/ci_lucia.svg', '/uploads/ci/foto_lucia.svg', 'rejected', 3, 3),
+(13, 'cliente', 'Rodrigo Méndez Balderrama', 'rodrigo@mail.com', '$2y$12$c54SUJEWfSUCsou.nw79EOtX21ZZzCfaYvo1Z3Js.dTE2vQUyWU6.', '1993-01-10', '/uploads/ci/ci_rodrigo.svg', '/uploads/ci/foto_rodrigo.svg', 'rejected', 3, 3),
+(14, 'rider', 'Alejandro Ríos Choque', 'alejandro@mail.com', '$2y$12$SU8Kk73j13XUTerxr3dvKe1G4AgP6qSALo0Hcs4mLIWMoKlgSTFYa', '1994-03-15', '/uploads/ci/ci_alejandro.svg', '/uploads/ci/foto_alejandro.svg', 'verified', 3, 3),
+(15, 'rider', 'Valeria Mamani Gutiérrez', 'valeria@mail.com', '$2y$12$9mdRjjqt./3au7wKmBCugu4M.x1KQLk9OoiuzQJd6CrSp8J0/dnua', '1997-10-08', '/uploads/ci/ci_valeria.svg', '/uploads/ci/foto_valeria.svg', 'verified', 3, 3),
+(16, 'rider', 'Fernando Blanco Heredia', 'fernando@mail.com', '$2y$12$dacn.eh4b6IJgkbZ1tNQj.UqhYlA7WZ8WQwB7SBWNGKuKRtw1HHkW', '2000-04-03', '/uploads/ci/ci_fernando.svg', '/uploads/ci/foto_fernando.svg', 'pending', 3, 3),
+(17, 'rider', 'Paola Zeballos Cruz', 'paola@mail.com', '$2y$12$p9p676AErhqHgfT4p/yPuuEiBT/8526ItYPx2AO.oyzERGbVZ4ehq', '2002-09-12', '/uploads/ci/ci_paola.svg', '/uploads/ci/foto_paola.svg', 'pending', 3, 3),
+(18, 'rider', 'Gustavo Beltrán Soto', 'gustavo@mail.com', '$2y$12$rSiCmv4sRlPq2GkYt30gOOu0tMxsF5Uf5AI4hqmywdSqUlVJbMCne', '1990-12-01', '/uploads/ci/ci_gustavo.svg', '/uploads/ci/foto_gustavo.svg', 'rejected', 3, 3),
+(19, 'rider', 'Cristian Colque Poma', 'cristian@mail.com', '$2y$12$UoB52EGEGABMB.kKveKocetQ6W0b1Slyxn7CEUJbmFvzHzaOK216q', '2004-05-18', '/uploads/ci/ci_cristian.svg', '/uploads/ci/foto_cristian.svg', 'rejected', 3, 3)
 ON DUPLICATE KEY UPDATE 
+    email = VALUES(email),
     password_hash = VALUES(password_hash),
     ci_status = VALUES(ci_status),
     foto_url = VALUES(foto_url),
@@ -194,7 +192,7 @@ ON DUPLICATE KEY UPDATE
 INSERT INTO pedidos (id, cliente_id, rider_id, estado_pago, estado_pedido, total, latitud, longitud, qr_comprobante_url, created_by, updated_by) VALUES(1, 1, 2, 'liquidado', 'entregado', 45.00, -16.50200000, -68.13100000, NULL, 1, 3),
 (2, 8, 14, 'pagado_qr', 'entregado', 58.00, -16.50800000, -68.13300000, '/uploads/qr/comprobante_andrea.jpg', 8, 14),
 (3, 9, 15, 'contraentrega', 'en_camino', 78.00, -16.51200000, -68.12500000, NULL, 9, 15),
-(4, 1, 2, 'contraentrega', 'asignado', 34.00, -16.50400000, -68.12900000, NULL, 1, 3),
+(4, 1, 5, 'contraentrega', 'asignado', 34.00, -16.50400000, -68.12900000, NULL, 1, 3),
 (5, 8, NULL, 'esperando_pago', 'pendiente', 44.00, -16.50900000, -68.13400000, NULL, 8, 8)
 ON DUPLICATE KEY UPDATE
     estado_pago = VALUES(estado_pago),

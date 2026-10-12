@@ -40,6 +40,16 @@ let cart = [];
 // Geolocation of Store (La Paz, Sopocachi)
 const STORE_COORDS = { lat: -16.5050, lon: -68.1290 };
 
+// Delimitación geográfica de La Paz, Bolivia (Evita salirse del área metropolitana)
+const LA_PAZ_BOUNDS = [
+    [-16.5900, -68.2300], // Suroeste (Sur / Ceja)
+    [-16.4400, -68.0300]  // Noreste (Norte / Achumani / Casco Central)
+];
+
+// Capa de mapas estándar OpenStreetMap con visualización nítida de calles paceñas
+const MAP_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const MAP_TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
 // Selected client delivery coordinates during checkout
 let selectedDeliveryCoords = null;
 
@@ -345,8 +355,28 @@ function setupEventListeners() {
     const btnUseDefaultLoc = document.getElementById('btnUseDefaultLocation');
     if (btnUseDefaultLoc) btnUseDefaultLoc.addEventListener('click', () => {
         setCheckoutDeliveryCoords(-16.5090, -68.1340);
-        showToast('Ubicación fijada en Sopocachi Central.', 'info');
+        const zoneSelect = document.getElementById('selectLaPazZone');
+        if (zoneSelect) zoneSelect.value = "-16.5090,-68.1340";
+        if (checkoutMapInstance) checkoutMapInstance.flyTo([-16.5090, -68.1340], 15);
+        showToast('Ubicación fijada en Sopocachi Central (Sede Cocina).', 'info');
     });
+
+    const selectLaPazZone = document.getElementById('selectLaPazZone');
+    if (selectLaPazZone) {
+        selectLaPazZone.addEventListener('change', (e) => {
+            const parts = e.target.value.split(',');
+            if (parts.length === 2) {
+                const lat = parseFloat(parts[0]);
+                const lon = parseFloat(parts[1]);
+                setCheckoutDeliveryCoords(lat, lon);
+                if (checkoutMapInstance) {
+                    checkoutMapInstance.flyTo([lat, lon], 15);
+                }
+                const selectedText = e.target.options[e.target.selectedIndex].text;
+                showToast(`Punto de entrega en La Paz: ${selectedText}`, 'info');
+            }
+        });
+    }
 
     // Toggle para desplegar/plegar Acceso Rápido Demo
     const qsHeader = document.getElementById('quickSwitchHeader');
@@ -1131,7 +1161,7 @@ async function renderProducts(category = 'todos', searchQuery = '') {
         } else if (u.ci_status === 'rejected') {
             alertBox.innerHTML = `<span class="badge badge-rejected"><i data-lucide="octagon-alert"></i> C.I. rechazado. Sube un documento legible.</span>`;
         } else {
-            alertBox.innerHTML = `<span class="badge badge-verified"><i data-lucide="circle-check"></i> Catalogo desbloqueado</span>`;
+            alertBox.innerHTML = `<span class="badge badge-verified"><i data-lucide="check-circle"></i> Catalogo desbloqueado</span>`;
         }
         initLucide();
     }
@@ -1423,21 +1453,25 @@ function initCheckoutMap() {
     setTimeout(() => {
         if (!checkoutMapInstance) {
             checkoutMapInstance = L.map('gpsSelectorMap', {
-                zoomControl: true
+                zoomControl: true,
+                maxBounds: LA_PAZ_BOUNDS,
+                minZoom: 12,
+                maxZoom: 18
             }).setView([STORE_COORDS.lat, STORE_COORDS.lon], 14);
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap & CartoDB'
+            L.tileLayer(MAP_TILE_URL, {
+                attribution: MAP_TILE_ATTR,
+                maxZoom: 19
             }).addTo(checkoutMapInstance);
 
             checkoutMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: L.divIcon({
                     className: 'node-store-wrap',
-                    html: '<div style="background:#f97316; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f97316;"></div>',
-                    iconSize: [14, 14],
-                    iconAnchor: [7, 7]
+                    html: '<div style="background:#f97316; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f97316; display:flex; align-items:center; justify-content:center; font-size:10px;">🍔</div>',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
                 })
-            }).addTo(checkoutMapInstance).bindPopup("Burger 24/7 - Central Sopocachi (Cocina & Despacho)").openPopup();
+            }).addTo(checkoutMapInstance).bindPopup("<b>Burger 24/7 - Central Sopocachi</b><br>Av. 20 de Octubre #2150 (La Paz)").openPopup();
 
             checkoutMapInstance.on('click', (e) => {
                 setCheckoutDeliveryCoords(e.latlng.lat, e.latlng.lng);
@@ -1631,11 +1665,14 @@ async function renderClienteActiveOrderTracker() {
     setTimeout(() => {
         if (!clientTrackingMapInstance) {
             clientTrackingMapInstance = L.map('activeOrderMap', {
-                zoomControl: false
+                zoomControl: false,
+                maxBounds: LA_PAZ_BOUNDS,
+                minZoom: 12
             });
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap & CartoDB'
+            L.tileLayer(MAP_TILE_URL, {
+                attribution: MAP_TILE_ATTR,
+                maxZoom: 19
             }).addTo(clientTrackingMapInstance);
 
             clientTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
@@ -2077,11 +2114,14 @@ function renderRiderActiveOrderPanel() {
     setTimeout(() => {
         if (!riderTrackingMapInstance) {
             riderTrackingMapInstance = L.map('riderOrderMap', {
-                zoomControl: false
+                zoomControl: false,
+                maxBounds: LA_PAZ_BOUNDS,
+                minZoom: 12
             });
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap & CartoDB'
+            L.tileLayer(MAP_TILE_URL, {
+                attribution: MAP_TILE_ATTR,
+                maxZoom: 19
             }).addTo(riderTrackingMapInstance);
 
             riderTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
@@ -3526,11 +3566,15 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
 
         if (!adminMonitoringMapInstance) {
             adminMonitoringMapInstance = L.map('adminMonitoringMap', {
-                zoomControl: true
+                zoomControl: true,
+                maxBounds: LA_PAZ_BOUNDS,
+                minZoom: 12,
+                maxZoom: 18
             }).setView([STORE_COORDS.lat, STORE_COORDS.lon], 14);
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap & CartoDB'
+            L.tileLayer(MAP_TILE_URL, {
+                attribution: MAP_TILE_ATTR,
+                maxZoom: 19
             }).addTo(adminMonitoringMapInstance);
 
             adminMonitoringMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {

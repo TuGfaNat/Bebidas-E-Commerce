@@ -80,8 +80,8 @@ try {
     // =========================================================================
     if ($method === 'GET' || $action === 'list_pending') {
         // Coordenadas fijas de la tienda central Burger 24/7 (Sopocachi, La Paz)
-        $latTienda = -16.4897;
-        $lonTienda = -68.1193;
+        $latTienda = -16.5050;
+        $lonTienda = -68.1290;
 
         $stmt = $db->query("
             SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 

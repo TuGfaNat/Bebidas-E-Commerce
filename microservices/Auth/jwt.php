@@ -1,5 +1,17 @@
 <?php
 // microservices/Auth/jwt.php
+/**
+ * ============================================================================
+ * 🎟️ EXPLICACIÓN FÁCIL: LA PULSERA MÁGICA VIP (TOKENS JWT CRIPTOGRÁFICOS)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Cuando inicias sesión con tu correo y contraseña, no sería divertido tener
+ * que volver a escribir tu contraseña cada 5 segundos al apretar un botón.
+ * Este archivo te entrega una pulsera digital sellada con cera criptográfica (JWT).
+ * Cada vez que pides una hamburguesa o ves un pedido, le muestras la pulsera al mesero.
+ * La pulsera dice quién eres, qué rol tienes (cliente, rider o admin) y caduca en 24 horas.
+ * ============================================================================
+ */
 require_once __DIR__ . '/connection.php';
 
 if (!function_exists('getallheaders')) {

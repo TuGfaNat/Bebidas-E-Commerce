@@ -1,5 +1,22 @@
 <?php
 // microservices/Catalog/catalog.php
+/**
+ * ============================================================================
+ * 🍔 EXPLICACIÓN FÁCIL: LA PIZARRA DEL MENÚ Y EL REFRIGERADOR (CATÁLOGO)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es la pizarra gigante del restaurante donde anotamos todas las hamburguesas,
+ * papas fritas y sodas que tenemos a la venta.
+ *
+ * ¿Qué trucos tiene?
+ * 1. 👁️ Mostrar el menú (GET): Te dice qué comidas hay listas.
+ * 2. 🙈 Ocultar el precio: Si eres un cliente nuevo y aún no revisaron tu carnet,
+ *    te muestra la foto pero te esconde el precio como un secreto.
+ * 3. 👨‍🍳 Agregar o cambiar comida (POST / PUT / DELETE): Solo el Jefe Administrador
+ *    puede crear una nueva hamburguesa, cambiar su precio o borrarla del menú.
+ * ============================================================================
+ */
+
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 require_once __DIR__ . '/../Auth/security.php';
@@ -9,10 +26,8 @@ applyCorsMiddleware();
 
 header('Content-Type: application/json; charset=UTF-8');
 
-/**
- * Formatea respuestas según el estándar BMAD:
- * { status, data, audit, error_details }
- */
+// 🧒 EXPLICACIÓN FÁCIL:
+// Empaca la respuesta en un sobre digital ordenado (estándar BMAD).
 function formatResponse($status, $data, $userId = null, $errorDetails = null, $action = null) {
     return json_encode([
         "status" => $status,
@@ -27,9 +42,8 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null, $a
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 }
 
-/**
- * Obtiene el cuerpo de la petición (JSON o Form-data)
- */
+// 🧒 EXPLICACIÓN FÁCIL:
+// Lee los datos que le envió la pantalla web (en formato JSON o formulario).
 function getRequestPayload() {
     $raw = file_get_contents('php://input');
     if (!empty($raw)) {
@@ -41,16 +55,15 @@ function getRequestPayload() {
     return $_POST;
 }
 
-/**
- * Registra automáticamente la operación en auditoria_logs
- */
+// 🧒 EXPLICACIÓN FÁCIL:
+// Avisa al libro de seguridad si alguien modificó una hamburguesa en la cocina.
 function logAuditRecord($db, $table, $recordId, $action, $oldData, $newData, $userId) {
     return logAudit($db, $table, $recordId, $action, $oldData, $newData, $userId);
 }
 
-/**
- * Valida autenticación y rol de administrador (super_usuario o admin)
- */
+// 🧒 EXPLICACIÓN FÁCIL:
+// Revisa si el que está intentando cambiar el menú es de verdad el Jefe (Admin).
+// Si es un cliente común, ¡le dice que no toque la cocina!
 function requireAdminRole() {
     // Rechazo estricto de tokens por URL / query string
     if (isset($_GET['token']) || isset($_POST['token']) || isset($_REQUEST['token'])) {

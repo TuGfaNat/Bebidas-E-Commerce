@@ -1,5 +1,16 @@
 <?php
 // microservices/Auth/admin_users.php
+/**
+ * ============================================================================
+ * 👥 EXPLICACIÓN FÁCIL: EL DIRECTORIO COMPLETO DE CLIENTES Y REPARTIDORES
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es el padrón general donde el jefe puede ver la lista completa de todas
+ * las personas registradas en el sistema.
+ * Además, le permite cambiar manualmente el estado de cualquier usuario
+ * si cometió un error o si necesita suspenderlo.
+ * ============================================================================
+ */
 require_once __DIR__ . '/connection.php';
 require_once __DIR__ . '/jwt.php';
 require_once __DIR__ . '/security.php';

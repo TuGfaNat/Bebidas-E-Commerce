@@ -1,4 +1,14 @@
 <?php
+/**
+ * ============================================================================
+ * 🧹 EXPLICACIÓN FÁCIL: EL LIMPIADOR DE TILDES Y LETRAS RARAS
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * A veces las computadoras se confunden con los acentos y las eñes (como Pérez o Gómez).
+ * Este archivo es como un borrador mágico que repasa los nombres de los clientes
+ * y las hamburguesas para que se lean prolijos y con sus tildes correctas.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 
 $db = DatabaseConnection::getInstance()->getConnection();

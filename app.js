@@ -1,4 +1,17 @@
 // app.js
+/**
+ * ============================================================================
+ * 📱 EXPLICACIÓN FÁCIL: LA TABLET MÁGICA Y PANTALLA PRINCIPAL (FRONTEND SPA)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es el cerebro de la pantalla interactiva. Aquí ocurre toda la diversión visual:
+ *  1. 🍔 La Lupa del Menú (renderProducts): Muestra las hamburguesas y busca al escribir.
+ *  2. 🛒 La Mochila de Compras (cart): Guarda lo que quieres pedir y suma el precio.
+ *  3. 🗺️ El Mapa GPS de La Paz (Leaflet & OSRM): Traza la ruta real por las calles paceñas.
+ *  4. 🛵 El Panel del Repartidor: Donde la moto acepta pedidos y los marca como entregados.
+ *  5. 👑 El Panel del Administrador: Donde el jefe ve las motos en vivo y cuenta el dinero.
+ * ============================================================================
+ */
 
 // Global Database State
 let DB = {
@@ -390,8 +403,10 @@ function logAuditoria(tabla, registroId, accion, datosAnteriores, datosNuevos, u
 }
 
 // ----------------------------------------------------
-// 3. HAVERSINE FORMULA & LOGISTICS
+// 3. 🤖 MOTOR DE CÁLCULO EN FRONTEND: FÓRMULA HAVERSINE Y LOGÍSTICA
 // ----------------------------------------------------
+// 🧒 EXPLICACIÓN FÁCIL:
+// La regla matemática de la Tierra. Mide la distancia en línea recta entre dos puntos GPS.
 function haversine(lat1, lon1, lat2, lon2) {
     const R = 6371.0; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -404,7 +419,9 @@ function haversine(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-// Calculate delivery metrics
+// 🧒 EXPLICACIÓN FÁCIL:
+// Calcula cuánto debe pagar el cliente por el envío (5 Bs base + 2 Bs por km)
+// y cuántos minutos tardará la moto en llegar a su casa.
 function calculateLogistics(lat, lon) {
     const distance = haversine(STORE_COORDS.lat, STORE_COORDS.lon, lat, lon);
     const timeMin = (distance / 30.0) * 60.0;
@@ -1029,6 +1046,13 @@ function hashPassword(password) {
     return `$2a$10$sim_${Date.now()}_${btoa(password).replace(/=/g, '')}`;
 }
 
+// ========================================================================================
+// 🚪 FUNCIÓN: handleLogin (La Puerta de Entrada al Restaurante)
+// ¿Para qué sirve?
+// Cuando un cliente o repartidor llega y escribe su correo y clave, esta función va con el
+// servidor (Auth/login.php) a preguntar si es bienvenido. Si todo está bien, nos dan una
+// "pulsera mágica" (token JWT) que guardamos para saber quién es en las siguientes compras.
+// ========================================================================================
 function handleLogin(email, password) {
     // Autenticación obligatoria mediante API PHP / MySQL
     apiPost('/Auth/login.php', { correo: email, email: email, password: password }, { skipAuth: true })
@@ -1247,6 +1271,16 @@ function renderClienteAccountInfo() {
     initLucide();
 }
 
+// ----------------------------------------------------
+// 🔍 MOTOR DE BÚSQUEDA Y MENÚ EN FRONTEND (LA LUPA MÁGICA)
+// ----------------------------------------------------
+// 🧒 EXPLICACIÓN FÁCIL:
+// Esta función es la Lupa Mágica del menú:
+// 1. Pide todas las hamburguesas a MySQL llamando a /Catalog/catalog.php.
+// 2. Filtra por categoría (Hamburguesas, Combos, Acompañamientos, Bebidas).
+// 3. Busca en vivo las palabras que escribas (nombre, marca o sabor).
+// 4. Si tu carnet está verificado te muestra el precio y te deja comprar;
+//    si aún está pendiente, oculta el precio para protegerte.
 async function renderProducts(category = 'todos', searchQuery = '') {
     const grid = document.getElementById('productsGrid');
     if (!grid) return;
@@ -1365,8 +1399,11 @@ async function renderProducts(category = 'todos', searchQuery = '') {
 }
 
 // ----------------------------------------------------
-// 7. CLIENT CART LOGIC
+// 7. CLIENT CART LOGIC (LA MOCHILA DE COMPRAS)
 // ----------------------------------------------------
+// 🧒 EXPLICACIÓN FÁCIL:
+// Mete la hamburguesa seleccionada a la bolsa del carrito.
+// Si ya la tenías, le suma +1 a la cantidad, pero cuida que no pidas más del stock que existe.
 window.addToCart = function(productId) {
     const prod = DB.productos.find(p => p.id === productId);
     if (!prod) return;
@@ -1619,6 +1656,12 @@ function validateCheckoutForm() {
     }
 }
 
+// 🧒 EXPLICACIÓN FÁCIL:
+// ¡El momento de la verdad! Cuando aprietas "Confirmar Pedido":
+// 1. Empaqueta tu carrito y la ubicación de tu casa.
+// 2. Llama al mesero de internet (apiPost /Transactions/checkout.php).
+// 3. La caja registradora llama al Robot C++, descuenta las hamburguesas de la cocina
+//    y te muestra tu recibo digital oficial en pantalla.
 async function submitOrderCheckout() {
     if (cart.length === 0 || !selectedDeliveryCoords) return;
 
@@ -2088,6 +2131,9 @@ async function renderRiderOrderQueue() {
     }
 }
 
+// 🧒 EXPLICACIÓN FÁCIL:
+// El repartidor presiona "Aceptar Pedido" para decir "¡Yo llevo esta comida en mi moto!".
+// Llama a /Rider/assignment.php y bloquea el pedido para que nadie más se lo quite.
 window.acceptRiderOrder = async function(orderId) {
     const token = getAuthToken();
     if (!token) {
@@ -2248,6 +2294,13 @@ function renderRiderActiveOrderPanel() {
     }, 200);
 }
 
+// ========================================================================================
+// 🛵 FUNCIÓN: processRiderActiveOrderStep (El Semáforo de la Motito)
+// ¿Para qué sirve?
+// Hace avanzar el viaje en la motito paso a paso:
+// 1. Si estaba "asignado", cambia a "en camino" (la moto arranca hacia la casa).
+// 2. Si estaba "en camino", cambia a "entregado" (el cliente recibe su comida caliente).
+// ========================================================================================
 async function processRiderActiveOrderStep() {
     const r = currentSession.rider;
     const activeOrder = window._riderActiveOrder;
@@ -3455,6 +3508,13 @@ function stopAdminMonitoringPolling() {
     }
 }
 
+// ========================================================================================
+// 📡 FUNCIÓN: fetchAndUpdateAdminMonitoring (El Radar del Dueño de la Tienda)
+// ¿Para qué sirve?
+// Pregunta cada pocos segundos a Transactions/live_monitoring.php:
+// "¿Dónde están todos los repartidores y qué pedidos faltan entregar?".
+// Luego actualiza la pantalla del jefe con el mapa en vivo y las cuentas de dinero.
+// ========================================================================================
 async function fetchAndUpdateAdminMonitoring() {
     const listActive = document.getElementById('adminLiveOrdersList');
     const listSettlements = document.getElementById('adminRiderSettlementsList');
@@ -3594,6 +3654,13 @@ window.cancelAdminOrder = async function(orderId) {
     }
 };
 
+// ========================================================================================
+// 💰 FUNCIÓN: settleRiderCash (La Entrega de la Alcancía del Repartidor)
+// ¿Para qué sirve?
+// Cuando el repartidor vuelve de entregar hamburguesas pagadas en efectivo, el jefe aprieta
+// este botón. Llama a Rider/settle_cash.php para registrar que los billetes ya entraron a la
+// caja registradora principal del restaurante y la cuenta del repartidor queda limpia en 0.
+// ========================================================================================
 window.settleRiderCash = async function(riderId) {
     try {
         const res = await apiPost('/Rider/settle_cash.php', { rider_id: riderId });

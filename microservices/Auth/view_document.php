@@ -1,19 +1,18 @@
 <?php
 /**
  * ============================================================================
- * Burger 24/7 - Visor Dinámico y Seguro de Documentos (PDF, Imágenes, Recibos)
+ * 🔍 EXPLICACIÓN FÁCIL: EL VISOR MÁGICO DE FOTOS Y DOCUMENTOS OFICIALES
  * ============================================================================
- * Permite visualizar de forma nativa e integrada:
- *  - Carnets de Identidad (C.I.) de Clientes y Riders (PDF / JPG / PNG / SVG).
- *  - Expedientes vehiculares de Riders (Licencia, Seguro SOAT, CV).
- *  - Comprobantes de transferencia QR de Pedidos.
+ * ¿Para qué sirve este archivo?
+ * Es como una lupa o pantalla especial para mirar papeles importantes:
+ *  - Carnets de Identidad de los clientes.
+ *  - Licencias de conducir de los repartidores.
+ *  - Comprobantes de pago con código QR.
  *
- * Características:
- *  - Detección automática de tipo MIME e incrustación segura inline.
- *  - Búsqueda tolerante de extensiones (.svg, .png, .jpg, .pdf) y nombres de usuario.
- *  - Protección perimetral contra Directory Traversal (../).
- *  - Generador dinámico de Cédula de Identidad SEGIP y documentos oficiales en caso
- *    de archivos no existentes en disco.
+ * ¿Qué magia tiene?
+ * Si una imagen o carnet no existe en el disco duro, este archivo tiene
+ * un dibujante automático que genera en vivo un carnet oficial de Bolivia (SEGIP)
+ * o una licencia con sello verde para que la pantalla nunca se quede en blanco.
  * ============================================================================
  */
 

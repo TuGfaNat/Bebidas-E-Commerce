@@ -1,5 +1,18 @@
 <?php
 // microservices/Transactions/report.php
+/**
+ * ============================================================================
+ * 📊 EXPLICACIÓN FÁCIL: EL CUADERNO DE CUENTAS Y GANANCIAS DEL DÍA
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Al final del día, el dueño del restaurante quiere saber cómo le fue al negocio.
+ * Este archivo calcula:
+ *  1. 💰 Cuánto dinero total ingresó a la tienda.
+ *  2. 💳 Comparativa: Cuántos pagaron por QR y cuántos con billetes en efectivo.
+ *  3. 🍔 Cuál fue la hamburguesa más vendida y qué categoría gustó más.
+ *  4. 🏆 El ranking de los repartidores estrella con más entregas exitosas.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 require_once __DIR__ . '/../Auth/security.php';

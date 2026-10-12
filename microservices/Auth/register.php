@@ -1,5 +1,18 @@
 <?php
 // microservices/Auth/register.php
+/**
+ * ============================================================================
+ * 📝 EXPLICACIÓN FÁCIL: LA MESA DE REGISTRO DE NUEVOS CLIENTES
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Cuando una persona nueva quiere crearse una cuenta para pedir hamburguesas:
+ * 1. 🎂 Revisa la edad: Comprueba que tenga más de 18 años.
+ * 2. 📸 Recibe la foto de su Carnet de Identidad (C.I.): La guarda en una carpeta
+ *    blindada con .htaccess para que nadie se la robe.
+ * 3. ✍️ Anota su nombre y correo en la base de datos con estado "pending"
+ *    (en espera de que el administrador mire la foto y le ponga sello verde).
+ * ============================================================================
+ */
 require_once 'connection.php';
 
 header('Content-Type: application/json');

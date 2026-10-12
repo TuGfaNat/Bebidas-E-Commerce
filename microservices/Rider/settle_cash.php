@@ -1,6 +1,18 @@
 <?php
 // microservices/Rider/settle_cash.php
-// Microservicio de Liquidación de Caja de Riders - Burger 24/7
+/**
+ * ============================================================================
+ * 💰 EXPLICACIÓN FÁCIL: EL ARQUEO DE CAJA (ENTREGA DE BILLETES AL JEFE)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Cuando el repartidor vuelve a la tienda con los bolsillos llenos de dinero
+ * de los clientes que pagaron en efectivo:
+ *  1. 💵 El administrador cuenta los billetes junto con el repartidor.
+ *  2. 🧮 Este archivo suma todas las órdenes entregadas pendientes de rendir.
+ *  3. ✅ Cambia su estado a "liquidado" (cuenta saldada a cero), dejando la caja
+ *     del repartidor limpia para su próximo turno.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 require_once __DIR__ . '/../Auth/security.php';

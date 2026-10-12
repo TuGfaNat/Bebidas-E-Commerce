@@ -1,5 +1,15 @@
 <?php
 // microservices/Auth/audit_logs.php
+/**
+ * ============================================================================
+ * 📹 EXPLICACIÓN FÁCIL: LA CÁMARA DE SEGURIDAD (BITÁCORA DE AUDITORÍA)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es como la cámara de seguridad del restaurante.
+ * Muestra una lista de los últimos 100 movimientos importantes que se hicieron:
+ * quién inició sesión, qué producto se editó o quién aprobó un carnet.
+ * ============================================================================
+ */
 require_once __DIR__ . '/connection.php';
 require_once __DIR__ . '/jwt.php';
 require_once __DIR__ . '/security.php';

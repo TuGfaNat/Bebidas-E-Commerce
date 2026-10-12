@@ -1,10 +1,23 @@
 <?php
 // microservices/Auth/connection.php
+/**
+ * ============================================================================
+ * 🔑 EXPLICACIÓN FÁCIL: LA LLAVE DEL ALMACÉN CENTRAL (CONEXIÓN SEGURA MYSQL)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es la llave maestra que conecta a los guardias de seguridad, el registro de clientes
+ * y la caja registradora con la base de datos MySQL (burger_shop).
+ * Además, si alguien entra directo por el navegador a este archivo, funciona como
+ * un termómetro de salud que te avisa con un mensaje si la base de datos está despierta.
+ * ============================================================================
+ */
 
 class DatabaseConnection {
     private static $instance = null;
     private $connection;
 
+    // 🧒 EXPLICACIÓN FÁCIL:
+    // Lee las claves secretas y abre la puerta de MySQL con la codificación utf8mb4.
     private function __construct() {
         self::loadEnv();
 

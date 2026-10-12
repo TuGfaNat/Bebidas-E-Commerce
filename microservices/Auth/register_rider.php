@@ -1,5 +1,18 @@
 <?php
 // microservices/Auth/register_rider.php
+/**
+ * ============================================================================
+ * 🛵 EXPLICACIÓN FÁCIL: LA CONTRATACIÓN DE REPARTIDORES EN MOTO (RIDERS)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Para ser repartidor de Burger 24/7 se necesita ser muy responsable.
+ * Este archivo recibe la postulación del motociclista:
+ * 1. 🪪 Pide 3 documentos oficiales: Licencia de conducir, Seguro SOAT y Currículum.
+ * 2. 📁 Guarda los 3 archivos en la carpeta protegida de documentos.
+ * 3. ⏳ Crea su expediente en estado "pendiente" para que el dueño del restaurante
+ *    lo revise antes de darle permiso de repartir comida.
+ * ============================================================================
+ */
 require_once 'connection.php';
 require_once 'jwt.php';
 

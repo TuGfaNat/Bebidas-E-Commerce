@@ -1,5 +1,17 @@
 <?php
 // microservices/Transactions/cancel_order.php
+/**
+ * ============================================================================
+ * ↩️ EXPLICACIÓN FÁCIL: EL BOTÓN DE ARREPENTIRSE (CANCELAR Y DEVOLVER COMIDA)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Si un cliente o el jefe decide cancelar un pedido antes de que salga la moto:
+ * 1. 🔍 Revisa que el pedido siga en cocina y no esté ya entregado.
+ * 2. 🍔 Devuelve la comida al refrigerador: Suma de vuelta las hamburguesas
+ *    al stock para que otros clientes puedan comprarlas.
+ * 3. ❌ Marca el pedido como "cancelado" para que nadie lo cobre.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 require_once __DIR__ . '/../Auth/security.php';

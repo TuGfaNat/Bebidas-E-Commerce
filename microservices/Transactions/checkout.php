@@ -1,5 +1,19 @@
 <?php
 // microservices/Transactions/checkout.php
+/**
+ * ============================================================================
+ * 💳 EXPLICACIÓN FÁCIL: LA CAJA REGISTRADORA DEL RESTAURANTE (CHECKOUT)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es el corazón de las compras de Burger 24/7.
+ * Cuando el cliente aprieta el botón verde de "Confirmar Pedido", este código:
+ * 1. 🧊 Congela las hamburguesas (SELECT FOR UPDATE) para que nadie se las gane.
+ * 2. 🤖 Despierta al Robot de C++ (runCppMotorCore) para que valide el inventario
+ *    y calcule el costo del viaje con la regla geodésica de Haversine.
+ * 3. 📉 Si el robot aprueba la compra, descuenta los panes y carnes de la base de datos.
+ * 4. 🧾 Genera el pedido oficial y emite el recibo digital para el cliente.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 require_once __DIR__ . '/../Auth/security.php';
@@ -9,9 +23,6 @@ applyCorsMiddleware();
 
 header('Content-Type: application/json; charset=UTF-8');
 
-/**
- * Formato de respuesta estándar BMAD
- */
 function formatResponse($status, $data, $userId = null, $errorDetails = null, $action = "CHECKOUT") {
     return json_encode([
         "status" => $status,
@@ -26,9 +37,6 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null, $a
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 }
 
-/**
- * Obtiene el cuerpo de la petición (JSON o Form-data)
- */
 function getRequestData() {
     $raw = file_get_contents('php://input');
     if (!empty($raw)) {
@@ -40,9 +48,9 @@ function getRequestData() {
     return $_POST;
 }
 
-/**
- * Cálculo de distancia Haversine (en km)
- */
+// 🧒 EXPLICACIÓN FÁCIL:
+// Esta función es la regla mágica de la Tierra (Fórmula Haversine).
+// Mide la distancia en kilómetros entre la hamburguesería de Sopocachi y la casa del cliente.
 function calculateHaversine($lat1, $lon1, $lat2, $lon2) {
     $R = 6371.0;
     $lat1_rad = deg2rad($lat1);
@@ -56,10 +64,9 @@ function calculateHaversine($lat1, $lon1, $lat2, $lon2) {
     return $R * $c;
 }
 
-/**
- * Invocación del Módulo Crítico C++ (SPEC §2 y §4)
- * Ejecuta validación de existencias y liquidación de tarifas con alta precisión.
- */
+// 🧒 EXPLICACIÓN FÁCIL:
+// Esta función es el teléfono secreto que despierta al Robot de C++ (motor_core.exe).
+// Le pasa la orden por un tubo (STDIN) y espera la respuesta matemática en microsegundos.
 function runCppMotorCore($payload, &$errorDetails = null) {
     $binPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'cpp' . DIRECTORY_SEPARATOR . 'motor_core.exe';
 

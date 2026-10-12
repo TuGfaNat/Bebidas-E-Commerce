@@ -1,5 +1,16 @@
 <?php
 // microservices/Auth/UserRegistration.php
+/**
+ * ============================================================================
+ * 🗄️ EXPLICACIÓN FÁCIL: EL ARCHIVERO DE CARNETS Y PERMISOS
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Esta clase es como el archivador de documentos de la oficina:
+ *  1. Recibe el archivo de carnet que subió el cliente.
+ *  2. Le pone un nombre único para que no se mezcle con el de nadie más.
+ *  3. Lo guarda en el archivador y marca que está "en espera de revisión".
+ * ============================================================================
+ */
 
 require_once 'connection.php';
 

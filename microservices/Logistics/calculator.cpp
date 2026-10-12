@@ -1,13 +1,15 @@
 /**
- * Módulo Crítico de Rendimiento en C++ (SPEC.md Sección 2)
- * Sistema E-Commerce Burger 24/7 - Servicio de Logística Geoespacial
- *
- * Propósito:
- * Cálculo geodésico de alto rendimiento mediante la fórmula Haversine,
- * estimación de tiempo de arribo (ETA) y liquidación de tarifa de flete.
- *
- * Estándar de Retorno:
- * Devuelve un payload JSON conforme a la especificación de envolvente BMAD.
+ * ============================================================================
+ * 📏 EXPLICACIÓN FÁCIL: LA CALCULADORA DE DISTANCIAS Y RUTAS (LOGÍSTICA C++)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Este programa es como la regla mágica de un mapa.
+ * Le das dos puntos en el planeta Tierra (donde está la hamburguesería y dónde está tu casa)
+ * y en un instante te dice:
+ *  1. Cuántos kilómetros de distancia hay.
+ *  2. Cuántos minutos tardará la moto en llegar a tu puerta.
+ *  3. Cuántas monedas debes pagar por el viaje (5 Bs base + 2 Bs por km).
+ * ============================================================================
  */
 
 #include <iostream>
@@ -21,13 +23,15 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-// Conversión de grados a radianes
+// 🧒 EXPLICACIÓN FÁCIL:
+// Convierte los grados del mapa a radianes (el idioma de las matemáticas de círculos).
 inline double toRadians(double degrees) {
     return degrees * (M_PI / 180.0);
 }
 
-// Algoritmo Geodésico Haversine
-// Retorna la distancia en kilómetros entre dos coordenadas (WGS84)
+// 🧒 EXPLICACIÓN FÁCIL:
+// Esta es la famosa "Fórmula de Haversine". Mide la curvatura de la Tierra para saber
+// la distancia exacta entre dos puntos GPS en kilómetros.
 double haversineDistance(double lat1, double lon1, double lat2, double lon2) {
     const double EARTH_RADIUS_KM = 6371.0;
 
@@ -60,7 +64,9 @@ std::string getTimestampISO8601() {
     return std::string(buf);
 }
 
-// Generador de respuesta estructurada BMAD
+// 🧒 EXPLICACIÓN FÁCIL:
+// Empaqueta la respuesta en un sobre digital prolijo y ordenado (envolvente BMAD)
+// con el resultado, la fecha, y quién pidió la cuenta.
 std::string formatBmadResponse(const std::string& status,
                                const std::string& jsonData,
                                const std::string& userId,
@@ -83,6 +89,10 @@ std::string formatBmadResponse(const std::string& status,
     return ss.str();
 }
 
+// 🧒 EXPLICACIÓN FÁCIL:
+// Aquí se despierta la calculadora:
+// Recibe las coordenadas GPS del cliente y de la tienda, llama a la fórmula Haversine
+// y calcula: distancia, minutos de viaje y precio del flete en Bolivianos (Bs).
 int main(int argc, char* argv[]) {
     // Parámetros esperados:
     // argv[1]: user_id

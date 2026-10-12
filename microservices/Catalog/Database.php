@@ -1,10 +1,24 @@
 <?php
 // microservices/Catalog/Database.php
+/**
+ * ============================================================================
+ * ☎️ EXPLICACIÓN FÁCIL: EL TELÉFONO CON EL ALMACÉN (CONEXIÓN MYSQL)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es el teléfono directo con la gran libreta de la base de datos (MySQL).
+ * Cuando el catálogo necesita saber cuántas hamburguesas quedan, usa esta clase
+ * para comunicarse rápidamente con el almacén.
+ * Usa el "Patrón Singleton", que significa que solo hay un teléfono abierto
+ * para no saturar la línea de llamadas.
+ * ============================================================================
+ */
 
 class Database {
     private static $instance = null;
     private $pdo;
 
+    // 🧒 EXPLICACIÓN FÁCIL:
+    // Lee la contraseña secreta del archivo .env y marca el número de MySQL para conectar.
     private function __construct() {
         $this->loadEnv();
 

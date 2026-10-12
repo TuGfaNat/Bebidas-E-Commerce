@@ -1,5 +1,18 @@
 <?php
 // microservices/Auth/login.php
+/**
+ * ============================================================================
+ * 🚪 EXPLICACIÓN FÁCIL: LA PUERTA DE ENTRADA (INICIO DE SESIÓN)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Cuando escribes tu correo y tu contraseña y le das a "Entrar", este código:
+ * 1. 🛡️ Pregunta si no estás intentando adivinar muchas veces (Rate Limit).
+ * 2. 📖 Busca tu nombre en la libreta secreta de MySQL.
+ * 3. 🔐 Comprueba que tu contraseña encaje con la cerradura cifrada (Bcrypt).
+ * 4. 🎟️ Si todo está bien, te entrega tu pulsera mágica sellada (Token JWT)
+ *    para que puedas navegar y comprar con tu cuenta.
+ * ============================================================================
+ */
 require_once 'connection.php';
 require_once 'jwt.php';
 require_once 'security.php';

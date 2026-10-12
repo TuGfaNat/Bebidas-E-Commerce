@@ -1,17 +1,17 @@
 /**
  * ============================================================================
- * Módulo Crítico de Rendimiento en C++ (SPEC.md Sección 2)
- * Sistema E-Commerce Burger 24/7 - Motor Core de Tarifas y Validación de Stock
+ * 🤖 EXPLICACIÓN FÁCIL: EL ROBOT SÚPER CALCULADOR EN C++ (MOTOR CORE)
  * ============================================================================
+ * ¿Quién soy?
+ * Soy el robot más rápido de la hamburguesería Burger 24/7.
+ * Estoy programado en C++ para hacer cuentas matemáticas en menos de 0.0001 segundos.
  *
- * Propósito:
- * Ejecutar con latencia ultra-baja y precisión estricta de punto flotante:
- * 1. Validación atómica de existencias (stock disponible vs solicitado).
- * 2. Liquidación algorítmica de tarifa de flete geodésico y despacho.
- * 3. Cálculo de subtotales por línea y total general de la transacción.
- *
- * Estándar de Retorno:
- * Devuelve un payload JSON conforme a la especificación de envolvente BMAD (SPEC §4).
+ * ¿Cuál es mi trabajo?
+ * 1. 🍔 Contar el refrigerador: Reviso que no pidan 5 hamburguesas si solo quedan 2 en cocina.
+ * 2. 📏 Medir el viaje: Calculo la distancia desde la tienda en Sopocachi hasta la casa del cliente.
+ * 3. 💰 Calcular el precio: Cobro 5 monedas fijas de envío + 2 monedas por cada kilómetro de viaje.
+ * 4. ⚡ Dar el visto bueno: Si todo está bien, le aviso a la caja registradora para que cobre.
+ * ============================================================================
  */
 
 #include <iostream>
@@ -23,7 +23,9 @@
 #include <chrono>
 #include <ctime>
 
-// Estructura para ítems del pedido
+// 🧒 EXPLICACIÓN FÁCIL:
+// Esta cajita guarda los datos de cada hamburguesa pedida:
+// su código (ID), su nombre, su precio, cuántas pidió el cliente y cuántas quedan en cocina.
 struct ItemPedido {
     int producto_id;
     std::string nombre;
@@ -32,14 +34,16 @@ struct ItemPedido {
     int stock_disponible;
 };
 
-// Utilidad para formatear números flotantes con precisión fija
+// 🧒 EXPLICACIÓN FÁCIL:
+// Esta función convierte números con decimales a texto bonito con 2 decimales (ejemplo: 22.50 Bs).
 std::string formatDouble(double val, int precision = 2) {
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(precision) << val;
     return ss.str();
 }
 
-// Obtener marca temporal UTC en formato ISO-8601
+// 🧒 EXPLICACIÓN FÁCIL:
+// Esta función mira el reloj del mundo para ponerle la fecha y hora exacta a la cuenta.
 std::string getTimestampISO8601() {
     auto now = std::chrono::system_clock::now();
     std::time_t now_c = std::chrono::system_clock::to_time_t(now);
@@ -54,7 +58,8 @@ std::string getTimestampISO8601() {
     return std::string(buf);
 }
 
-// Escapar cadenas para JSON seguro
+// 🧒 EXPLICACIÓN FÁCIL:
+// Limpia el texto para que las comillas o caracteres raros no rompan la carta digital (JSON).
 std::string escapeJson(const std::string& str) {
     std::ostringstream ss;
     for (char c : str) {
@@ -70,7 +75,11 @@ std::string escapeJson(const std::string& str) {
     return ss.str();
 }
 
-// Parser simple y robusto de parámetros JSON sin librerías externas
+// 🧒 EXPLICACIÓN FÁCIL:
+// Abre la carta digital (JSON) que le envió la cocina y saca tres cosas importantes:
+// 1. Quién es el cliente (userId).
+// 2. Cuántos kilómetros hay que viajar (distanciaKm).
+// 3. La lista de hamburguesas que pidió con sus cantidades y precios.
 bool parsePayload(const std::string& json, double& distanciaKm, std::vector<ItemPedido>& items, int& userId, std::string& err) {
     // 1. Extraer user_id
     size_t posUser = json.find("\"user_id\"");
@@ -182,7 +191,12 @@ bool parsePayload(const std::string& json, double& distanciaKm, std::vector<Item
     return true;
 }
 
-// Función principal
+// 🧒 EXPLICACIÓN FÁCIL:
+// ¡Aquí empieza a trabajar el Robot C++!
+// 1. Recibe la orden por el tubo secreto (STDIN).
+// 2. Comprueba que haya stock en el refrigerador.
+// 3. Si falta comida, da la alarma y rechaza la compra con un mensaje claro.
+// 4. Si todo alcanza, suma los precios, calcula el costo del viaje y entrega la cuenta final.
 int main(int argc, char* argv[]) {
     auto tStart = std::chrono::high_resolution_clock::now();
 

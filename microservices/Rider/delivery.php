@@ -1,6 +1,18 @@
 <?php
 // microservices/Rider/delivery.php
-// Microservicio de Avance y Progreso de Entrega de Pedidos - Burger 24/7
+/**
+ * ============================================================================
+ * 🚦 EXPLICACIÓN FÁCIL: EL SEMÁFORO DE LA MOTO EN VIAJE
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Controla el viaje de la comida paso a paso como un semáforo:
+ *  1. 🟡 "Asignado": La comida está guardada en la mochila de la moto.
+ *  2. 🔵 "En camino": El repartidor enciende la moto y va por la calle.
+ *  3. 🟢 "Entregado": Toca el timbre y te da tu comida.
+ *  4. 💵 Cobro en mano: Si el cliente eligió pagar en efectivo al recibir,
+ *     este archivo anota que el repartidor ya cobró los billetes.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 require_once __DIR__ . '/../Auth/security.php';

@@ -1,11 +1,16 @@
 <?php
 /**
  * ============================================================================
- * Burger 24/7 - Microservicio de Perfil de Usuario (Cliente, Rider, Admin)
+ * 👤 EXPLICACIÓN FÁCIL: LA HOJA DE VIDA Y LAS MEDALLAS DEL USUARIO (PERFIL)
  * ============================================================================
- * Retorna la información completa del perfil del usuario autenticado vía JWT,
- * incluyendo estado de C.I., expediente vehicular y métricas operativas.
- * Cumple con SPEC §4 (envelope unificado) y SPEC §5 (auditoría).
+ * ¿Para qué sirve este archivo?
+ * Es como la tarjeta de un videojuego que muestra tus logros:
+ *  - Si eres Cliente: Muestra tu nombre, cuántas hamburguesas has pedido
+ *    en tu vida y cuánto dinero has gastado.
+ *  - Si eres Rider (Moto): Muestra cuántos pedidos has entregado a tiempo,
+ *    tus documentos aprobados y cuánto dinero en efectivo tienes en el bolsillo.
+ *  - Si eres Admin (Jefe): Muestra el tablero de mando con cuántos clientes,
+ *    repartidores y pedidos tiene todo el restaurante.
  * ============================================================================
  */
 

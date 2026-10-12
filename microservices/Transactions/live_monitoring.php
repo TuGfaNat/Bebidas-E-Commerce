@@ -1,5 +1,17 @@
 <?php
 // microservices/Transactions/live_monitoring.php
+/**
+ * ============================================================================
+ * 📡 EXPLICACIÓN FÁCIL: EL RADAR EN VIVO DEL JEFE (MONITOREO DE MOTOS)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es como la pantalla de radar de una torre de control de aviones:
+ *  1. 🛵 Busca todas las motitos que están viajando por la calle en este momento.
+ *  2. 📍 Calcula por qué esquina van pasando con una animación matemática.
+ *  3. 💵 Muestra cuánto dinero en billetes tiene cada repartidor en su bolsillo
+ *     para recordarle que debe pasar por caja al terminar el turno.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 

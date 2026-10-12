@@ -1,5 +1,16 @@
 <?php
 // microservices/Auth/session.php
+/**
+ * ============================================================================
+ * 🔄 EXPLICACIÓN FÁCIL: EL DETECTOR DE PULSERA ACTIVA (VALIDAR SESIÓN)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Cuando abres la página web de nuevo, este código revisa si tu pulsera digital (JWT)
+ * sigue brillando y no ha vencido.
+ * Si la pulsera es válida, te da la bienvenida con tu nombre y foto sin pedirte
+ * la contraseña otra vez.
+ * ============================================================================
+ */
 require_once __DIR__ . '/connection.php';
 require_once __DIR__ . '/jwt.php';
 require_once __DIR__ . '/security.php';

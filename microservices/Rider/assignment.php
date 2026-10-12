@@ -1,6 +1,18 @@
 <?php
 // microservices/Rider/assignment.php
-// Microservicio de Asignación de Pedidos para Riders - Burger 24/7
+/**
+ * ============================================================================
+ * 📋 EXPLICACIÓN FÁCIL: LA PIZARRA DE PEDIDOS LISTOS PARA LOS REPARTIDORES
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Cuando las hamburguesas salen calientes de la cocina, se anotan en esta pizarra:
+ *  1. 🛵 El repartidor mira la lista y ve qué tan lejos está cada cliente.
+ *  2. 🖐️ Presiona "Aceptar Pedido": La pizarra le asigna la bolsa y no deja
+ *     que ningún otro repartidor se la quite.
+ *  3. ⚠️ Regla de oro: Un repartidor solo puede llevar 1 pedido a la vez para
+ *     que la comida nunca se enfríe.
+ * ============================================================================
+ */
 require_once __DIR__ . '/../Auth/connection.php';
 require_once __DIR__ . '/../Auth/jwt.php';
 require_once __DIR__ . '/../Auth/security.php';

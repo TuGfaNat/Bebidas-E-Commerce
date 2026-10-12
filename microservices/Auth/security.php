@@ -1,11 +1,24 @@
 <?php
 // microservices/Auth/security.php
-// Middleware de seguridad: CORS restringido, Rate-Limiting, y Helpers de Autenticación Reutilizables
+/**
+ * ============================================================================
+ * 🛡️ EXPLICACIÓN FÁCIL: LOS GUARDIAS DE SEGURIDAD Y LAS REGLAS DE LA PUERTA
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Este es el cuartel de los guardias del restaurante. Tiene 3 tareas clave:
+ * 1. 🛑 Barrera CORS: Revisa que las peticiones vengan de nuestra página y no de piratas.
+ * 2. ⏳ Castigo Anti-Trampas (Rate Limit): Si alguien prueba contraseñas al azar 5 veces,
+ *    el guardia le cierra la puerta en la cara y lo manda a esperar 5 minutos.
+ * 3. 🔎 Inspector de Roles (requireAuth): Si alguien quiere entrar a la oficina del jefe,
+ *    revisa su pulsera JWT para asegurarse de que sea Admin y no un cliente travieso.
+ * 4. 🛵 Inspector de Repartidores (requireApprovedRider): Verifica que el motociclista
+ *    tenga su licencia y seguro aprobados antes de dejarlo llevar comida.
+ * ============================================================================
+ */
 require_once __DIR__ . '/jwt.php';
 
-/**
- * Aplica políticas estrictas de CORS restringidas a orígenes permitidos.
- */
+// 🧒 EXPLICACIÓN FÁCIL:
+// La barrera de entrada: solo permite llamadas desde direcciones de confianza (ALLOWED_ORIGINS).
 function applyCorsMiddleware() {
     // Asegurar que las variables de entorno de .env estén cargadas
     if (class_exists('DatabaseConnection')) {

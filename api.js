@@ -1,7 +1,17 @@
 // api.js
-// Capa centralizada de comunicación HTTP con Microservicios REST PHP/MySQL para Burger 24/7
-// Provee funciones helper estándar: apiRequest, apiGet, apiPost, apiPut, apiDelete
-// Cumple con el estándar BMAD: { status, data, audit, error_details }
+/**
+ * ============================================================================
+ * 🏃 EXPLICACIÓN FÁCIL: EL MESERO MENSAJERO DE INTERNET (CLIENTE HTTP)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es el mensajero que corre entre la pantalla web (donde tú haces clic)
+ * y la cocina del servidor (los archivos PHP).
+ * Cuando quieres ver hamburguesas o hacer un pedido, este archivo:
+ *  1. Toma tu pulsera digital secreta (Token JWT).
+ *  2. Corre hacia el microservicio correspondiente (apiGet, apiPost).
+ *  3. Trae la respuesta calientita en un sobre digital (BMAD) y se la entrega a la pantalla.
+ * ============================================================================
+ */
 
 /**
  * Obtiene la URL base de los microservicios configurada o la autodetecta según el origen

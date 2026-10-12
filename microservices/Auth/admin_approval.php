@@ -1,5 +1,18 @@
 <?php
 // microservices/Auth/admin_approval.php
+/**
+ * ============================================================================
+ * 👨‍⚖️ EXPLICACIÓN FÁCIL: EL ESCRITORIO DEL JEFE (APROBACIONES CON SELLO VERDE)
+ * ============================================================================
+ * ¿Para qué sirve este archivo?
+ * Es la oficina del Administrador Central.
+ * Aquí el jefe revisa:
+ *  1. 📄 Los carnets pendientes de los clientes nuevos.
+ *  2. 🛵 Las licencias y seguros de los repartidores postulantes.
+ * Si la foto es clara y todo está en orden, el jefe le da al botón verde "Aprobado"
+ * y el usuario ya puede comprar hamburguesas o hacer entregas.
+ * ============================================================================
+ */
 require_once 'connection.php';
 
 header('Content-Type: application/json');

@@ -2972,7 +2972,8 @@ async function renderRiderOrderQueue() {
                             <div class="order-meta-val">${logData.tiempo_estimado || logData.etaMin || '10 min'}</div>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${p.pedido_id})"><i data-lucide="receipt"></i> Ver Recibo</button>
                         <button class="btn btn-danger btn-sm" onclick="rejectRiderAvailableOrder(${p.pedido_id})"><i data-lucide="x"></i> Rechazar</button>
                         <button class="btn btn-primary btn-sm" onclick="acceptRiderOrder(${p.pedido_id})"><i data-lucide="check"></i> Aceptar Pedido</button>
                     </div>
@@ -3057,7 +3058,9 @@ function renderRiderActiveOrderPanel() {
     });
 
     const titleEl = document.getElementById('riderActiveOrderTitle');
-    if (titleEl) titleEl.innerText = `Entrega Activa #${activeOrder.id}`;
+    if (titleEl) {
+        titleEl.innerHTML = `Entrega Activa #${activeOrder.id} <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${activeOrder.id})" style="padding: 0.2rem 0.55rem; font-size: 0.74rem; margin-left: 0.5rem; vertical-align: middle;"><i data-lucide="receipt" style="width:13px;height:13px;vertical-align:middle;"></i> Ver Recibo</button>`;
+    }
     
     const clientEl = document.getElementById('riderActiveOrderClient');
     if (clientEl) clientEl.innerHTML = `<strong>Cliente:</strong> ${escapeHtml(activeOrder.cliente_nombre || 'Cliente')}`;
@@ -3423,6 +3426,7 @@ function renderFilteredRiderHistory(filter = 'all') {
                         <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">${dateStr}</span>
                     </div>
                     <div style="display:flex; gap:0.4rem; align-items:center;">
+                        <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${o.pedido_id})" style="padding: 0.2rem 0.5rem; font-size: 0.72rem;"><i data-lucide="receipt" style="width:12px;height:12px;vertical-align:middle;"></i> Recibo</button>
                         ${payBadge}
                         ${badgeHtml}
                     </div>
@@ -4179,7 +4183,7 @@ window.openReceiptModal = async function(orderId) {
     initLucide();
 
     try {
-        const res = await apiGet('/Transactions/checkout.php', { params: { order_id: orderId } });
+        const res = await apiGet('/Transactions/checkout.php', { order_id: orderId });
         if (res.ok && res.data && res.data.recibo) {
             const r = res.data.recibo;
             if (lblNumber) lblNumber.innerText = r.nro_recibo || `REC-${String(orderId).padStart(6, '0')}`;
@@ -4236,11 +4240,12 @@ window.openReceiptModal = async function(orderId) {
             if (lblHash) lblHash.innerText = `ID Pedido: #${r.id} · C++ Motor Core Tarifa & Stock Verificado`;
 
         } else {
-            showToast('No se pudo cargar el recibo digital desde el servidor.', 'warning');
+            const msg = (res && res.error) ? res.error : 'No se pudo cargar el recibo digital desde el servidor.';
+            showToast(msg, 'warning');
         }
     } catch (err) {
         console.error('Error cargando recibo digital:', err);
-        showToast('Error al consultar el recibo en el servidor.', 'danger');
+        showToast('Error al consultar el recibo en el servidor: ' + (err.message || ''), 'danger');
     }
 };
 
@@ -4711,12 +4716,15 @@ async function renderAdminReports() {
                             </span>
                         </td>
                         <td style="padding: 0.6rem; font-size: 0.75rem; color: var(--text-muted);">${new Date(tx.created_at).toLocaleString()}</td>
-                        <td style="padding: 0.6rem; text-align: right;">
+                        <td style="padding: 0.6rem; text-align: right; white-space: nowrap;">
+                            <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; margin-right: 0.25rem;" onclick="openReceiptModal(${tx.pedido_id})">
+                                <i data-lucide="receipt" style="width:12px;height:12px;vertical-align:middle;"></i> Recibo Digital
+                            </button>
                             ${tx.qr_comprobante_url ? `
                                 <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;" onclick="openFileViewer('${tx.qr_comprobante_url}', 'Comprobante Pedido #${tx.pedido_id}', 'qr', null)">
-                                    <i data-lucide="eye" style="width:12px;height:12px;vertical-align:middle;"></i> Ver Recibo
+                                    <i data-lucide="eye" style="width:12px;height:12px;vertical-align:middle;"></i> Ver QR
                                 </button>
-                            ` : `<span style="color:var(--text-muted); font-size:0.75rem;">Sin archivo</span>`}
+                            ` : ''}
                         </td>
                     </tr>
                 `).join('');
@@ -4850,7 +4858,8 @@ function renderAdminMonitoringUI(activeOrders, settlements) {
                         <p><strong>Detalles:</strong> ${itemsText || 'Sin detalles'}</p>
                         <p><strong>Monto:</strong> ${parseFloat(p.total).toFixed(2)} Bs</p>
                     </div>
-                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${p.id})"><i data-lucide="receipt"></i> Ver Recibo</button>
                         <button class="btn btn-danger btn-sm" onclick="cancelAdminOrder(${p.id})">Cancelar Pedido</button>
                         <button class="btn btn-primary btn-sm" onclick="selectAdminOrderToTrack(${p.id})">Rastrear en Mapa</button>
                     </div>

@@ -144,9 +144,9 @@ try {
                 FROM pedidos p
                 LEFT JOIN users u ON p.cliente_id = u.id
                 LEFT JOIN users r ON p.rider_id = r.id
-                WHERE p.id = ? AND (p.cliente_id = ? OR p.rider_id = ? OR ? IN ('super_usuario', 'admin'))
+                WHERE p.id = ? AND (p.cliente_id = ? OR ? IN ('rider', 'super_usuario', 'admin'))
             ");
-            $stmtSingle->execute([$orderIdParam, $userId, $userId, $userRole]);
+            $stmtSingle->execute([$orderIdParam, $userId, $userRole]);
             $ord = $stmtSingle->fetch(PDO::FETCH_ASSOC);
 
             if (!$ord) {
@@ -174,6 +174,16 @@ try {
             // Consultar datos de tienda
             $stmtStore = $db->query("SELECT nombre_tienda, direccion, zona, latitud, longitud, telefono FROM configuracion_tienda WHERE id = 1");
             $tienda = $stmtStore ? $stmtStore->fetch(PDO::FETCH_ASSOC) : null;
+            if (!$tienda) {
+                $tienda = [
+                    'nombre_tienda' => 'Burger 24/7 - Central Sopocachi',
+                    'direccion' => 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
+                    'zona' => 'Sopocachi',
+                    'latitud' => -16.5050,
+                    'longitud' => -68.1290,
+                    'telefono' => '+591 71523481'
+                ];
+            }
 
             $recibo = [
                 'id' => (int)$ord['id'],

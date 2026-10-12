@@ -236,7 +236,6 @@ INSERT INTO configuracion_pagos (id, banco, titular, cuenta, alias_qr, modo_qr, 
 VALUES (1, 'Banco Unión', 'Burger 24/7 S.R.L. (Admin Central)', '100000482910', 'burger247@banco', 'hibrido', 'Transfiere el monto exacto del pedido y sube tu comprobante.')
 ON DUPLICATE KEY UPDATE banco = VALUES(banco);
 
-SET FOREIGN_KEY_CHECKS = 1;
 -- Tabla de Configuración de Tienda y Restaurante
 CREATE TABLE IF NOT EXISTS configuracion_tienda (
     id INT PRIMARY KEY DEFAULT 1,
@@ -247,10 +246,11 @@ CREATE TABLE IF NOT EXISTS configuracion_tienda (
     longitud DECIMAL(11, 8) NOT NULL DEFAULT -68.1290,
     telefono VARCHAR(50) NOT NULL DEFAULT '+591 71523481',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by INT,
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    updated_by INT DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO configuracion_tienda (id, nombre_tienda, direccion, zona, latitud, longitud, telefono)
 VALUES (1, 'Burger 24/7 - Central Sopocachi', 'Av. 20 de Octubre #2150, Sopocachi, La Paz', 'Sopocachi', -16.5050, -68.1290, '+591 71523481')
 ON DUPLICATE KEY UPDATE id=1;
+
+SET FOREIGN_KEY_CHECKS = 1;

@@ -61,8 +61,9 @@ async function apiRequest(endpoint, options = {}) {
 
     // Agregar query params si existen (asegurando que NO enviemos tokens por query string)
     if (params && typeof params === 'object') {
+        const effectiveParams = (params.params && typeof params.params === 'object') ? params.params : params;
         const queryParams = new URLSearchParams();
-        Object.entries(params).forEach(([k, v]) => {
+        Object.entries(effectiveParams).forEach(([k, v]) => {
             if (v !== undefined && v !== null && k !== 'token') {
                 queryParams.append(k, v);
             }
@@ -144,7 +145,8 @@ async function apiRequest(endpoint, options = {}) {
  * Helper GET
  */
 async function apiGet(endpoint, params = null, options = {}) {
-    return apiRequest(endpoint, { ...options, method: 'GET', params });
+    const effectiveParams = (params && params.params && typeof params.params === 'object') ? params.params : params;
+    return apiRequest(endpoint, { ...options, method: 'GET', params: effectiveParams });
 }
 
 /**

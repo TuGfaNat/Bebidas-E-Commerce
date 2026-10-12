@@ -48,9 +48,9 @@ $socket = @fsockopen($host, (int)$port, $errno, $errstr, 2);
 if (!$socket) {
     echo "[AVISO] No se detecta un servidor MySQL activo en $host:$port.\n";
     echo "  Detalle de red: ($errno) $errstr\n\n";
-    echo "  1. Si usa XAMPP, inicie el servicio MySQL/MariaDB desde el panel de control.\n";
-    echo "  2. Puede iniciar el sistema ejecutando 'iniciar_sistema.bat' o 'instalar_todo.bat'.\n";
-    echo "  3. El archivo SQL 'install_db.sql' se encuentra listo para importación manual vía phpMyAdmin.\n";
+    echo "  1. Si usa XAMPP o Linux/Mac, inicie el servicio MySQL/MariaDB en el puerto 3306.\n";
+    echo "  2. Puede iniciar el servidor web manualmente con: php -S localhost:8000\n";
+    echo "  3. El archivo SQL 'install_db.sql' se encuentra listo para importación manual vía CLI o phpMyAdmin.\n";
     echo "========================================================\n";
     exit(0);
 }

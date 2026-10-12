@@ -14,8 +14,12 @@
 
 ## 📑 Tabla de Contenido General
 
-1. [🎒 GUÍA RÁPIDA: INSTALACIÓN DESDE CERO (Para Escolares y Principiantes) 🚀](#-guía-rápida-instalación-desde-cero-para-escolares-y-principiantes-)
-   - [💻 ¿Cómo encender el sistema desde la Terminal de VS Code?](#-opción-b-desde-la-terminal-integrada-de-visual-studio-code-)
+1. [🚀 GUÍA DE DESPLIEGUE Y PUESTA EN MARCHA MANUAL (Para Desarrolladores / Informáticos)](#-guía-de-despliegue-y-puesta-en-marcha-manual)
+   - [📋 Requisitos del Sistema](#-1-requisitos-del-sistema-stack-de-software)
+   - [🛠️ Paso a Paso: Aprovisionamiento y Despliegue Manual](#-2-paso-a-paso-aprovisionamiento-y-despliegue-manual)
+   - [💻 Opciones de Levantamiento del Servidor Web](#-3-opciones-de-levantamiento-del-servidor-web)
+   - [🔍 Diagnóstico y Verificación de Salud](#-4-diagnóstico-y-verificación-de-salud-check_deploy)
+   - [🔑 Cuentas Semilla y Credenciales Demo](#-5-cuentas-semilla-y-credenciales-demo-para-pruebas)
 2. [¿Qué es Burger 24/7? (Visión General)](#-1-qué-es-burger-247)
 3. [🏛️ Especificación Técnica y Arquitectura de Despliegue](#-2-especificación-técnica-y-arquitectura-de-despliegue)
 4. [📐 Diagramas del Sistema y Flujos Transaccionales](#-3-diagramas-del-sistema-y-flujos-transaccionales)
@@ -23,106 +27,155 @@
 6. [📡 Catálogo Completo de APIs REST](#-5-catálogo-completo-de-apis-rest)
 7. [⚡ Módulo Crítico de Rendimiento en C++](#-6-módulo-crítico-de-rendimiento-en-c)
 8. [🗄️ Modelo Relacional de Base de Datos (Diccionario 3FN)](#-7-modelo-relacional-de-base-de-datos-diccionario-3fn)
-9. [🧪 Suite Automatizada de Pruebas de Integración E2E (PHP Nativo)](#-8-suite-automatizada-de-pruebas-de-integración-e2e-php-nativo)
-10. [⚙️ Despliegue en Servidor Web Apache y MySQL (XAMPP / Producción)](#-9-despliegue-en-servidor-web-apache-y-mysql-xampp--producción)
-11. [🔑 Cuentas de Acceso Preconfiguradas (Credenciales Demo)](#-10-cuentas-de-acceso-preconfiguradas-credenciales-demo)
-12. [🔍 Diagnóstico Automatizado del Sistema (`check_deploy`)](#-11-diagnóstico-automatizado-del-sistema-check_deploy)
-13. [📂 Estructura del Repositorio](#-12-estructura-del-repositorio)
-14. [❓ Preguntas Frecuentes y Solución de Problemas](#-13-preguntas-frecuentes-y-solución-de-problemas)
+9. [⚙️ Despliegue en Servidor Web Apache y MySQL (XAMPP / Producción)](#-9-despliegue-en-servidor-web-apache-y-mysql-xampp--producción)
+10. [🔑 Cuentas de Acceso Preconfiguradas (Credenciales Demo)](#-10-cuentas-de-acceso-preconfiguradas-credenciales-demo)
+11. [🔍 Diagnóstico Automatizado del Sistema (`check_deploy`)](#-11-diagnóstico-automatizado-del-sistema-check_deploy)
+12. [📂 Estructura del Repositorio](#-12-estructura-del-repositorio)
+13. [❓ Preguntas Frecuentes y Solución de Problemas](#-13-preguntas-frecuentes-y-solución-de-problemas)
 
 ---
 
-## 🎒 GUÍA RÁPIDA: INSTALACIÓN DESDE CERO (Para Escolares y Principiantes) 🚀
+## 🚀 GUÍA DE DESPLIEGUE Y PUESTA EN MARCHA MANUAL
 
-> **¿No sabes nada de programación ni de servidores? ¡No te preocupes!**  
-> Sigue esta pequeña guía paso a paso explicada con manzanas y tendrás tu propia tienda de hamburguesas funcionando en tu computadora en menos de 5 minutos con un par de clics.  
-> *(¡Buenas noticias: ya no necesitas instalar Python ni nada complicado! Todo corre directo en tu servidor web).*
-
----
-
-### 💡 1. ¿Qué programas usa este proyecto y para qué sirve cada uno? (Explicado fácil)
-
-Imagina que este proyecto es un restaurante de hamburguesas de la vida real:
-
-| Programa / Tecnología | ¿Qué es? | ¿Qué papel cumple en el restaurante? | ¿Dónde se descarga? |
-|---|---|---|---|
-| 🟠 **XAMPP** | Es un paquete "todo en uno" gratuito para Windows. Contiene **Apache**, **PHP** y **MySQL**. | Es el **edificio entero del restaurante**. Convierte tu computadora en un servidor web local. | 👉 [Descargar XAMPP](https://www.apachefriends.org/es/index.html) *(Elige la versión para Windows)* |
-| 🌐 **Apache (Servidor Web)** | Es un programa que viene dentro de XAMPP. | Es el **camarero o mesero**. Toma los pedidos del navegador web y te entrega la página de la tienda. | Viene incluido dentro de XAMPP. |
-| 🐘 **PHP (Lenguaje de Backend)** | Es el lenguaje de programación principal del sistema. | Es el **cocinero maestro**. Prepara las hamburguesas, calcula el carrito, crea las cuentas y revisa los pagos. | Viene incluido dentro de XAMPP. |
-| 🐬 **MySQL / MariaDB (Base de Datos)** | Es el sistema donde se guardan los datos estructurados. | Es el **cuaderno de notas o almacén**. Recuerda qué clientes existen, qué pedidos se hicieron y cuánto stock queda. | Viene incluido dentro de XAMPP. |
-| ⚡ **C++ (Lenguaje de Alto Rendimiento)** | Es un lenguaje de programación ultra veloz utilizado para cálculos críticos. | Es la **calculadora de carreras**. Calcula al milisegundo la distancia del delivery y las tarifas de envío. | Viene **precompilado y listo** en `cpp/motor_core.exe` *(no necesitas instalar nada extra)*. |
-| 🌐 **Navegador Web** | Google Chrome, Edge, Firefox, Brave u Opera. | Es la **mesa del cliente**. Donde tú ves la pantalla bonita, los botones, los mapas y las fotos. | Ya lo tienes en tu computadora. |
+> **Guía para Administradores, Desarrolladores e Informáticos**  
+> Todo el aprovisionamiento, compilación de módulos binarios, migración de esquemas SQL y encendido de servicios se realiza de forma **100% manual y reproducible** mediante herramientas estándar de línea de comandos (CLI).
 
 ---
 
-### ⏱️ 2. Instalación en 3 Pasos Rápidos (¡Solo dar clics!)
+### 📋 1. Requisitos del Sistema (Stack de Software)
 
-#### 🔹 Paso 1: Instalar y Encender XAMPP
-1. Descarga el instalador de **XAMPP para Windows** desde su página oficial: [apachefriends.org](https://www.apachefriends.org/es/index.html).
-2. Ábrelo y dale **"Next" / "Siguiente"** a todo hasta que termine la instalación.
-3. Abre la aplicación **XAMPP Control Panel** desde el menú Inicio de Windows.
-4. Presiona el botón **Start** al lado de **Apache** (se pondrá en verde ✅).
-5. Presiona el botón **Start** al lado de **MySQL** (se pondrá en verde ✅).
+Asegúrate de contar con las siguientes herramientas instaladas y accesibles en tu entorno:
 
-#### 🔹 Paso 2: Ejecutar el Instalador Automático (1 Clic)
-1. Abre la carpeta del proyecto en tu computadora.
-2. Haz **doble clic** sobre el archivo:  
-   📁 **`instalar_todo.bat`** *(o `install.bat`)*
-3. Se abrirá una ventana que configurará todo automáticamente:
-   - ✅ Detecta tu XAMPP en tu disco duro.
-   - ✅ Crea las carpetas seguras para fotos, carnets y comprobantes QR.
-   - ✅ Conecta la página web con el servidor Apache.
-   - ✅ Crea la base de datos `burger_shop` con el menú de hamburguesas y usuarios listos en español.
+| Componente | Versión Mínima | Rol en la Arquitectura | Comprobación CLI |
+| :--- | :--- | :--- | :--- |
+| **PHP** | 8.2+ | Backend de Microservicios (`pdo`, `pdo_mysql`, `curl`, `mbstring`, `fileinfo`) | `php -v` |
+| **MySQL / MariaDB** | 8.0+ / 10.4+ | Persistencia Relacional InnoDB (Puerto 3306) | `mysql --version` |
+| **GCC / G++ (MinGW-w64)** | 11.0+ (C++17) | Compilador nativo del motor algorítmico y logístico | `g++ --version` |
+| **Servidor HTTP** | Apache 2.4+ / PHP Built-in | Servidor Web de aplicaciones y estáticos | `httpd -v` o `php -S` |
 
-#### 🔹 Paso 3: Encender la Tienda y Usarla
+---
 
-Para levantar el proyecto de la forma más sencilla y directa posible, tienes dos opciones:
+### 🛠️ 2. Paso a Paso: Aprovisionamiento y Despliegue Manual
 
-##### 💻 Opción A: Desde la Terminal en VS Code (1 solo comando nativo de PHP) 🚀
-1. Abre la terminal en VS Code presionando: **`Ctrl + ~`** *(o en el menú superior: `Terminal` ➔ `New Terminal`)*.
-2. Escribe y presiona Enter:
-   ```powershell
-   php -S localhost:8000
+#### 🔹 Paso 1: Configurar Variables de Entorno (`.env`)
+Clona o copia el archivo de plantilla `.env.example` en la raíz del proyecto:
+
+```bash
+# En Windows (PowerShell / CMD)
+copy .env.example .env
+
+# En Linux / macOS
+cp .env.example .env
+```
+
+Verifica o ajusta los parámetros de base de datos y la llave criptográfica JWT en el archivo `.env`:
+```ini
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=burger_shop
+DB_USER=root
+DB_PASS=
+DB_CHARSET=utf8mb4
+JWT_SECRET=08aef182c3aad21602385a97c86a1cdb11811217df149b666ab353a1e708c2e0
+ALLOWED_ORIGINS=http://localhost,http://127.0.0.1,http://localhost:80,http://localhost:8000
+```
+
+#### 🔹 Paso 2: Crear Directorios de Almacenamiento (Uploads y KYC)
+El sistema requiere carpetas con permisos de escritura para almacenar fotos de carnet (C.I.), expedientes vehiculares y comprobantes de transferencias QR:
+
+```bash
+# Crear carpetas de almacenamiento seguras
+mkdir -p uploads/ci uploads/docs uploads/qr
+mkdir -p microservices/Auth/uploads/ci microservices/Auth/uploads/docs microservices/Auth/uploads/qr
+```
+*(Nota: Cada carpeta cuenta con directivas de blindaje `.htaccess` que bloquean la ejecución de scripts arbitrarios en Apache).*
+
+#### 🔹 Paso 3: Aprovisionar y Migrar la Base de Datos MySQL
+Asegúrate de que el daemon de MySQL esté activo en el puerto 3306.
+
+**Método A (Recomendado - Migración Automatizada en PHP):**
+```bash
+php migrate.php
+```
+*Si requieres reiniciar las tablas y volver a sembrar los datos demo desde cero:*
+```bash
+php migrate.php --fresh
+```
+
+**Método B (Importación Directa mediante CLI de MySQL):**
+```bash
+# 1. Crear base de datos
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS burger_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 2. Importar tablas, índices relacionales y usuarios semilla
+mysql --default-character-set=utf8mb4 -u root -p burger_shop < install_db.sql
+
+# 3. Normalizar codificación UTF-8 en el catálogo
+php microservices/Catalog/clean_data_charset.php
+```
+
+#### 🔹 Paso 4: Compilar Manualmente los Módulos Críticos en C++ (C++17)
+El sistema delega el cálculo de alta concurrencia (latencia $<150\,\mu\text{s}$) y el algoritmo de tarifas geodésicas Haversine al motor binario compilado.
+
+Compila el motor principal con optimización `-O3`:
+```bash
+# Compilar motor core de transacciones y cálculo de stock
+g++ -O3 -std=c++17 cpp/motor_core.cpp -o cpp/motor_core.exe
+
+# (Opcional) Compilar calculador de logística auxiliar
+g++ -O3 microservices/Logistics/calculator.cpp -o microservices/Logistics/calculator.exe
+```
+
+---
+
+### 💻 3. Opciones de Levantamiento del Servidor Web
+
+#### 🌐 Opción A: Servidor Embebido de PHP (Ideal para Desarrollo / Testing Inmediato)
+Desde la raíz del repositorio, ejecuta:
+```bash
+php -S localhost:8000
+```
+Abre tu navegador en:  
+👉 **`http://localhost:8000/`**
+
+> **Ventajas:**
+> * Cero dependencias de servidores externos.
+> * Sirve los estáticos del frontend (`index.html`, `app.js`, `style.css`) y despacha las peticiones a los microservicios PHP (`/microservices/*`).
+> * Para detener el servidor, basta con presionar `Ctrl + C`.
+
+#### 🏛️ Opción B: Despliegue en Apache / XAMPP
+1. Si usas XAMPP en Windows, crea un Directory Junction o enlace simbólico hacia `htdocs`:
+   ```cmd
+   mklink /J "C:\xampp\htdocs\Bebidas-E-Commerce" "D:\Bebidas-E-Commerce"
    ```
-3. Abre tu navegador web en:  
-   👉 **`http://localhost:8000/`**
-
-> 💡 **¿Por qué es tan sencillo?**  
-> * ✔ **El Frontend (`index.html`, `app.js`):** PHP lo sirve directamente en tu navegador.  
-> * ✔ **Los Microservicios PHP (`microservices/`):** Se ejecutan al instante para procesar compras, menú y carnets.  
-> * ✔ No requiere scripts intermediarios ni configuraciones complejas. Para apagarlo, solo presionas **`Ctrl + C`** en la terminal.
-
-##### 🖱️ Opción B: Con XAMPP (Apache y MySQL)
-1. Abre **XAMPP Control Panel** y presiona **Start** en **Apache** y **MySQL** (ambos en verde).
-2. Abre tu navegador web en:  
-   👉 **`http://localhost/Bebidas-E-Commerce/`**  
-   *(O ejecuta `.\iniciar_sistema.bat` para abrirlo automáticamente).*
+2. Inicia los módulos **Apache** y **MySQL** desde el panel de XAMPP o mediante servicios del sistema operativo:
+   ```powershell
+   net start Apache2.4
+   net start MySQL
+   ```
+3. Abre tu navegador en:  
+   👉 **`http://localhost/Bebidas-E-Commerce/`**
 
 ---
 
-### 🎮 3. ¿Cómo jugar y probar el sistema? (Cuentas Demo)
+### 🔍 4. Diagnóstico y Verificación de Salud (`check_deploy`)
+Para corroborar que todas las extensiones, conexión a MySQL, permisos de escritura y el binario C++ estén al 100%:
 
-En la pantalla de inicio, en la esquina inferior izquierda, verás un botón morado que dice **`🔑 Cuentas Demo (Abrir ▴)`**. Haz clic en él para entrar con cualquier personaje sin escribir nada:
+```bash
+# Diagnóstico por línea de comandos (CLI)
+php check_deploy.php
 
-* 👤 **Entrar como Carlos Pérez (Cliente que pide comida):**
-  - Mira el menú de hamburguesas, combos y bebidas.
-  - Agrega comida a tu carrito.
-  - Haz clic en **Ir a Pagar**, mueve el pin en el mapa GPS para elegir dónde vives en Sopocachi y confirma tu pedido.
-  - ¡El sistema calculará el costo de envío con el motor de C++ y te mostrará tu **Recibo Digital** listo para imprimir!
+# O en Windows:
+.\check_deploy.bat
+```
+También puedes auditarlo vía interfaz web visitando:  
+👉 `http://localhost:8000/check_deploy.php` *(o `http://localhost/Bebidas-E-Commerce/check_deploy.php`)*.
 
-* 🛵 **Entrar como Pedro Gómez (Repartidor / Rider con moto y GPS):**
-  - Ve a la pestaña de Repartidor.
-  - Verás el pedido que acabas de hacer con Carlos.
-  - Haz clic en **Aceptar Entrega**. Verás la ruta en el mapa en tiempo real.
-  - Cuando llegues, dale a **Entregar y Cobrar**. Verás cómo se actualiza tu caja de dinero.
+---
 
-* 👑 **Entrar como Admin Central (Dueño del Restaurante):**
-  - Ve al panel de Administrador.
-  - Mira el **Monitoreo GPS en Vivo**: verás a Pedro y a los demás repartidores en el mapa en tiempo real.
-  - Administra el menú: cambia precios, agrega hamburguesas o ajusta el stock.
-  - Aprueba o rechaza carnets de identidad (C.I.) y expedientes de choferes.
+### 🔑 5. Cuentas Semilla y Credenciales Demo para Pruebas
 
-#### 📋 Tabla Completa de Personajes y Cuentas Semilla (19 Cuentas con Foto y Documentos):
+En la pantalla de inicio, en la esquina inferior izquierda, cuentas con el botón interactivo **`🔑 Cuentas Demo (Abrir ▴)`** para alternar de sesión en un solo clic:
 
 | Rol / Tipo | Nombre del Personaje | Correo Electrónico | Contraseña | Estado Oficial | Documentación / Vehículo |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -131,33 +184,12 @@ En la pantalla de inicio, en la esquina inferior izquierda, verás un botón mor
 | **Cliente Habilitado** | Gonzalo Salinas | `gonzalo@mail.com` | `gonzalo` | ✅ Verificado | C.I. Oficial vigente (Santa Cruz) |
 | **Cliente Pendiente** | María López | `maria@mail.com` | `maria` | ⏳ Pendiente | En revisión por el administrador |
 | **Cliente Pendiente** | Diego Quiroga | `diego@mail.com` | `diego` | ⏳ Pendiente | En revisión por el administrador |
-| **Cliente Pendiente** | Camila Navarro | `camila@mail.com` | `camila` | ⏳ Pendiente | En revisión por el administrador |
 | **Cliente Rechazado** | Roberto Flores | `roberto@mail.com` | `roberto` | ❌ Denegado | Motivo: C.I. borroso e ilegible |
-| **Cliente Rechazado** | Lucía Paredes | `lucia@mail.com` | `lucia` | ❌ Denegado | Motivo: Solicitante menor de edad (17 años) |
-| **Cliente Rechazado** | Rodrigo Méndez | `rodrigo@mail.com` | `rodrigo` | ❌ Denegado | Motivo: Cédula de Identidad vencida |
 | **Rider Habilitado** | Pedro Gómez | `pedro@mail.com` | `pedro` | ✅ Aprobado | Honda Wave 110cc (Placa: 4829-ABC) |
 | **Rider Habilitado** | Alejandro Ríos | `alejandro@mail.com` | `alejandro` | ✅ Aprobado | Yamaha FZ 150cc (Placa: 5192-XYZ) |
-| **Rider Habilitado** | Valeria Mamani | `valeria@mail.com` | `valeria` | ✅ Aprobado | Suzuki GN 125cc (Placa: 3948-BKL) |
 | **Rider Pendiente** | Juan Rodríguez | `juan@mail.com` | `juan` | ⏳ Pendiente | Bajaj Pulsar 160 (Placa: 6281-MNP) |
-| **Rider Pendiente** | Fernando Blanco | `fernando@mail.com` | `fernando` | ⏳ Pendiente | Honda CG 150cc (Placa: 4729-DFA) |
-| **Rider Pendiente** | Paola Zeballos | `paola@mail.com` | `paola` | ⏳ Pendiente | Kymco Agility 125 (Placa: 5821-KJT) |
 | **Rider Rechazado** | Marcos Vargas | `marcos@mail.com` | `marcos` | ❌ Denegado | Motivo: Licencia no registrada en SEGIP |
-| **Rider Rechazado** | Gustavo Beltrán | `gustavo@mail.com` | `gustavo` | ❌ Denegado | Motivo: Póliza SOAT vencida |
-| **Rider Rechazado** | Cristian Colque | `cristian@mail.com` | `cristian` | ❌ Denegado | Motivo: Sin antecedentes ni licencia vehicular |
 | **Administrador** | Admin Central | `admin@mail.com` | `admin` | 👑 Habilitado | Acceso total a finanzas, catálogo y flota |
-
----
-
-### ❓ 4. Preguntas Frecuentes de Colegio (Solución de Problemas Frecuentes)
-
-* **¿Qué hago si Apache no inicia y se pone en rojo en XAMPP?**  
-  > Casi siempre es porque tienes abierto **Skype**, **VMware** o un programa que usa el puerto 80. Ciérralos y vuelve a presionar *Start* en XAMPP.
-* **¿Qué hago si MySQL no se pone en verde?**  
-  > Si ya tenías otro MySQL instalado antes, abre el Administrador de Tareas (Ctrl + Shift + Esc), busca `mysqld.exe`, haz clic derecho y dale "Finalizar tarea", luego dale *Start* en XAMPP.
-* **¿Cómo puedo ver la base de datos con mis propios ojos?**  
-  > Con XAMPP encendido, entra en tu navegador a: **[http://localhost/phpmyadmin/](http://localhost/phpmyadmin/)**. A la izquierda haz clic en `burger_shop` y podrás ver todas las tablas (`users`, `productos`, `pedidos`).
-* **¿Cómo imprimo mi recibo de compra?**  
-  > Cuando hagas un pedido, presiona el botón **"Recibo Digital"** y luego el botón verde **"Imprimir"**. Podrás imprimirlo en papel o guardarlo como archivo PDF en tu computadora.
 
 ---
 
@@ -447,15 +479,15 @@ Base de datos: **`burger_shop`** (Juego de caracteres: `utf8mb4_unicode_ci`, Mot
    ```
    Esto bloquea cualquier intento de inyección de scripts maliciosos (Anti-RCE).
 
-5. **Ejecución y Control desde la Terminal de VS Code (PHP Nativo):**
-   | Acción deseada | Comando en Terminal (PowerShell / CMD) | Descripción |
+5. **Comandos de Administración y Ejecución CLI:**
+   | Acción deseada | Comando en Terminal (PowerShell / Bash / CMD) | Descripción |
    |---|---|---|
-   | 🌐 **Servidor de Desarrollo PHP** (Puerto 8000) | `php -S localhost:8000` | Levanta el servidor web embebido de PHP en la terminal. |
-   | 🚀 **Encender Sistema Completo** (Apache + MySQL) | `.\iniciar_sistema.bat` *(o `.\start_services.bat`)* | Comprueba y arranca los servicios de XAMPP. |
-   | 🔍 **Diagnóstico del Entorno** (32 verificaciones) | `php check_deploy.php` *(o `.\check_deploy.bat`)* | Comprueba PHP, extensiones, MySQL, C++ y JWT. |
-   | 🗄️ **Migraciones de Base de Datos** (Crear/poblar BD) | `php migrate.php` | Conecta a MySQL e inicializa las 6 tablas y datos. |
-   | ⚡ **Compilar Motor C++** (Optimización `-O3`) | `.\cpp\build.bat` | Compila `cpp/motor_core.cpp` con g++. |
-   | ⚡ **Atajo Rápido con Tarea de VS Code** | Presiona `Ctrl + Shift + B` en VS Code | Inicia el servidor PHP automáticamente. |
+   | 🌐 **Servidor Web Embebido** (Puerto 8000) | `php -S localhost:8000` | Levanta el servidor web de PHP sirviendo estáticos y microservicios. |
+   | 🗄️ **Migraciones de Base de Datos** | `php migrate.php` | Crea la base de datos `burger_shop`, esquemas relacionales y datos semilla. |
+   | 🗄️ **Reset de Tablas y Re-sembrado** | `php migrate.php --fresh` | Limpia las tablas existentes y re-inicializa el estado inicial. |
+   | ⚡ **Compilar Motor C++ Transaccional** | `g++ -O3 -std=c++17 cpp/motor_core.cpp -o cpp/motor_core.exe` | Compilación nativa optimizada del motor crítico de cálculo. |
+   | ⚡ **Compilar Motor Logístico C++** | `g++ -O3 microservices/Logistics/calculator.cpp -o microservices/Logistics/calculator.exe` | Compilación nativa del estimador de rutas y Haversine. |
+   | 🔍 **Diagnóstico de Salud** (30 verificaciones) | `php check_deploy.php` | Verifica PHP, MySQL, extensiones, uploads, C++ y JWT. |
 
 ---
 
@@ -478,14 +510,14 @@ Base de datos: **`burger_shop`** (Juego de caracteres: `utf8mb4_unicode_ci`, Mot
 ## 🔍 11. Diagnóstico Automatizado del Sistema (`check_deploy`)
 
 Para verificar que todos los servicios y conexiones se encuentren activos:
-```powershell
-check_deploy.bat
-# o bien:
+```bash
 php check_deploy.php
 ```
-También puedes visitar desde tu navegador:  
-👉 **`http://localhost/Burger-E-Commerce/check_deploy.php`**  
-*(Deberás observar las 30 verificaciones en verde ✅ validando Apache, MySQL, motor C++, extensiones PHP y tablas)*.
+*(En entornos Windows también puedes ejecutar `.\check_deploy.bat`)*.
+
+También puedes visitar desde tu navegador web:  
+👉 **`http://localhost:8000/check_deploy.php`** *(o `http://localhost/Bebidas-E-Commerce/check_deploy.php`)*  
+*(Deberás observar las 30 verificaciones en verde ✅ validando el servidor, MySQL, motor C++, extensiones PHP, uploads y tablas)*.
 
 ---
 
@@ -494,32 +526,29 @@ También puedes visitar desde tu navegador:
 ```text
 Burger-E-Commerce/
 ├── package.json                 # Metadatos del proyecto y comandos npm
-├── install.bat                  # Instalador automatizado en 1 clic para Windows
-├── instalar_todo.bat            # Script integral de instalación
-├── start_services.bat           # Lanzador rápido de servicios
-├── iniciar_sistema.bat          # Script de apertura directa de la aplicación
-├── check_deploy.bat             # Verificador de despliegue en Windows
-├── check_deploy.php             # Dashboard visual e informe CLI de 30 puntos
+├── check_deploy.bat             # Diagnóstico de despliegue en Windows (CLI)
+├── check_deploy.php             # Dashboard visual e informe CLI de 30 verificaciones
 ├── SPEC.md                      # Especificación técnica formal del sistema
-├── README.md                    # Manual integral y documentación técnica
+├── README.md                    # Manual integral y guía técnica de despliegue
 ├── index.html                   # Interfaz de usuario Single Page Application (SPA)
 ├── style.css                    # Estilos visuales CSS3 con diseño Glassmorphism
 ├── app.js                       # Lógica reactiva de la interfaz cliente
 ├── api.js                       # Capa cliente de red desacoplada con Bearer JWT
 ├── install_db.sql               # Script SQL idempotente (Crea BD, tablas y semillas)
 ├── init_schema.sql              # Esquema DDL normalizado en 3FN
-├── migrate.php                  # Asistente interactivo de migración de datos
+├── migrate.php                  # Asistente de migración y aprovisionamiento de datos
 ├── .env.example                 # Plantilla de variables de entorno de desarrollo
 ├── .env.production.example      # Plantilla de variables de entorno de producción
 ├── cpp/                         # Módulo Crítico de Rendimiento en C++ (SPEC §2)
 │   ├── motor_core.cpp           # Código fuente del motor de tarifas y stock (C++17)
 │   ├── motor_core.exe           # Binario nativo compilado de latencia ultra-baja (<150 µs)
-│   └── build.bat                # Script de compilación nativa automatizada (MinGW / GCC)
+│   └── build.bat                # Script de compilación de conveniencia en Windows
 ├── microservices/               # Microservicios modulares en PHP (8.2+)
 │   ├── Auth/                    # Autenticación, registro, JWT y perfil de usuario
 │   ├── Catalog/                 # Catálogo de menú, saneamiento y control de existencias
 │   ├── Transactions/            # Checkout atómico, cancelaciones y reportes
-│   └── Rider/                   # Asignación de despachos y liquidación de caja
+│   ├── Rider/                   # Asignación de despachos y liquidación de caja
+│   └── Logistics/               # Calculador geodésico y de despacho
 └── uploads/                     # Almacenamiento seguro con directivas .htaccess
     ├── ci/                      # Fotografías de carnets de identidad (KYC)
     ├── docs/                    # Expedientes vehiculares de repartidores

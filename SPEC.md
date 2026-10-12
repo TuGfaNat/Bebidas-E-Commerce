@@ -15,7 +15,7 @@ El sistema implementa una arquitectura orientada a despliegue en servidor web Ap
      - `Transactions`: Procesamiento transaccional de órdenes (`checkout.php`), liquidación financiera, generación de recibos digitales y control de pagos (QR y efectivo).
      - `Rider`: Gestión de expedientes, asignación logística de pedidos, confirmación de entregas y arqueo de caja.
    - Persistencia relacional mediante PDO con sentencias preparadas y transacciones ACID.
-   - Suite de pruebas de integración E2E nativa (`tests/test_e2e_suite.php`) y script de diagnóstico de despliegue (`check_deploy.php`).
+   - Script de diagnóstico y verificación de despliegue (`check_deploy.php`).
 
 2. **Módulo Crítico de Rendimiento — C++ (C++17):**
    - Motor nativo compilado de alto rendimiento (`cpp/motor_core.exe`, código fuente en `cpp/motor_core.cpp`).

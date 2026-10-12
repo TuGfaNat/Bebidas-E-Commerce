@@ -56,3 +56,7 @@ microservices/Auth/uploads/qr/*
 !microservices/Auth/uploads/qr/.gitkeep
 !microservices/Auth/uploads/qr/.htaccess
 !microservices/Auth/uploads/qr/*.svg
+
+# Test scripts and temporary artifacts
+tests/
+test_*.php

@@ -418,21 +418,6 @@ Base de datos: **`burger_shop`** (Juego de caracteres: `utf8mb4_unicode_ci`, Mot
 ```
 
 ---
-
-## 🧪 8. Suite Automatizada de Pruebas de Integración E2E (PHP Nativo)
-
-El sistema incluye un arnés de pruebas automatizadas nativo en PHP ([`tests/test_e2e_suite.php`](tests/test_e2e_suite.php)) que valida el ciclo completo contra Apache y MySQL real en XAMPP sin necesidad de intérpretes adicionales.
-
-### Ejecución de Pruebas:
-```powershell
-php tests/test_e2e_suite.php
-```
-
-### Cobertura de las 23 Pruebas (23/23 PASS - 100%):
-* **Happy Path (16 casos):** Registro de clientes, carga de C.I., autenticación JWT, visualización de menú con existencias, checkout atómico con cálculo C++, asignación y aceptación de repartidor, cambio de estados en tiempo real, cobro contraentrega, liquidación de caja, cancelación legal con reembolso de existencias y consulta de reportes administrativos.
-* **Casos Negativos y Resiliencia (7 casos):** Rechazo de clientes menores de 18 años, prevención de checkout con documento sin aprobar, bloqueo por stock insuficiente, rechazo de contraseñas inválidas, intento de acceso a endpoints protegidos sin token Bearer, prevención de cancelación de pedidos ya despachados e interceptación de transiciones ilegales.
-* **Evidencias Estructuradas:** Cada ejecución genera automáticamente el archivo [`tests/evidencias_e2e.json`](tests/evidencias_e2e.json) con los tiempos de respuesta y payloads de validación.
-
 ---
 
 ## ⚙️ 9. Despliegue en Servidor Web Apache y MySQL (XAMPP / Producción)
@@ -535,9 +520,6 @@ Burger-E-Commerce/
 │   ├── Catalog/                 # Catálogo de menú, saneamiento y control de existencias
 │   ├── Transactions/            # Checkout atómico, cancelaciones y reportes
 │   └── Rider/                   # Asignación de despachos y liquidación de caja
-├── tests/                       # Suite automatizada de pruebas de integración E2E
-│   ├── test_e2e_suite.php       # Arnés de pruebas nativo PHP contra XAMPP (23/23 PASS)
-│   └── evidencias_e2e.json      # Reporte estructurado en JSON de las pruebas
 └── uploads/                     # Almacenamiento seguro con directivas .htaccess
     ├── ci/                      # Fotografías de carnets de identidad (KYC)
     ├── docs/                    # Expedientes vehiculares de repartidores

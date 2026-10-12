@@ -5,7 +5,6 @@
   "main": "index.html",
   "scripts": {
     "migrate": "php migrate.php",
-    "test:e2e": "php tests/test_e2e_suite.php",
     "check:deploy": "php check_deploy.php"
   },
   "keywords": ["ecommerce", "microservices", "php", "cpp", "javascript", "leaflet", "mysql", "apache"],

@@ -24,7 +24,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# User uploads (preserve .gitkeep, .htaccess and seed SVG assets)
+# User uploads (preserve .gitkeep, .htaccess, seed SVG assets and seed files)
 uploads/*
 !uploads/.gitkeep
 !uploads/.htaccess
@@ -33,29 +33,40 @@ uploads/ci/*
 !uploads/ci/.gitkeep
 !uploads/ci/.htaccess
 !uploads/ci/*.svg
+!uploads/ci/carnet*
 !uploads/docs/
 uploads/docs/*
 !uploads/docs/.gitkeep
 !uploads/docs/.htaccess
 !uploads/docs/*.svg
+!uploads/docs/carnet*
+!uploads/docs/cv*
+!uploads/docs/licencia*
+!uploads/docs/Nueva-Licencia*
 !uploads/qr/
 uploads/qr/*
 !uploads/qr/.gitkeep
 !uploads/qr/.htaccess
 !uploads/qr/*.svg
+!uploads/qr/qr_admin_oficial*
 
 microservices/Auth/uploads/ci/*
 !microservices/Auth/uploads/ci/.gitkeep
 !microservices/Auth/uploads/ci/.htaccess
 !microservices/Auth/uploads/ci/*.svg
+!microservices/Auth/uploads/ci/carnet*
 microservices/Auth/uploads/docs/*
 !microservices/Auth/uploads/docs/.gitkeep
 !microservices/Auth/uploads/docs/.htaccess
 !microservices/Auth/uploads/docs/*.svg
-microservices/Auth/uploads/qr/*
+!microservices/Auth/uploads/docs/cv*
+!microservices/Auth/uploads/docs/licencia*
+!microservices/Auth/uploads/docs/Nueva-Licencia*
+!microservices/Auth/uploads/qr/*
 !microservices/Auth/uploads/qr/.gitkeep
 !microservices/Auth/uploads/qr/.htaccess
 !microservices/Auth/uploads/qr/*.svg
+!microservices/Auth/uploads/qr/qr_admin_oficial*
 
 # Test scripts and temporary artifacts
 tests/

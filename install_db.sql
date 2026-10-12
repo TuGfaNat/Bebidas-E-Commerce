@@ -137,31 +137,34 @@ CREATE TABLE IF NOT EXISTS auditoria_logs (
 -- SEED DATA COMPLETO (19 USUARIOS REALES BCRYPT CON FOTOS Y DOCUMENTOS)
 -- ============================================================================
 
-INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, ci_url, foto_url, ci_status, created_by, updated_by) VALUES(1, 'cliente', 'Carlos Pérez Mendoza', 'carlos@mail.com', '$2y$12$oBrJVxe/.0RYwzHKH5.zo.c8Wdzt4cLP9wyYfbgQAfAxebAArj7/O', '1995-04-12', '/uploads/ci/ci_carlos.svg', '/uploads/ci/foto_carlos.svg', 'verified', 3, 3),
-(2, 'rider', 'Pedro Gómez Alarcón', 'pedro@mail.com', '$2y$12$kwaN4pWuH0ADm/j14Sx5UOY0exD2qoDG23WO/mWHkHz.6jXTTw5t2', '1992-08-25', '/uploads/ci/ci_pedro.svg', '/uploads/ci/foto_pedro.svg', 'verified', 3, 3),
-(3, 'super_usuario', 'Admin Central (Gerencia)', 'admin@mail.com', '$2y$12$OVN/UBcNDnmSSfTLofnU6evA8C94ZP51xwHBNnkffR32/B.GigQsy', '1988-11-03', '/uploads/ci/ci_admin.svg', '/uploads/ci/foto_admin.svg', 'verified', 3, 3),
-(4, 'cliente', 'María López Guzmán', 'maria@mail.com', '$2y$12$utDBlLZhtTPMP4HdEDfMIuRsfz2/RdpioV1xq7BCc7VGcJq.1NnfC', '2001-02-14', '/uploads/ci/ci_maria.svg', '/uploads/ci/foto_maria.svg', 'pending', 3, 3),
-(5, 'rider', 'Juan Rodríguez Ticona', 'juan@mail.com', '$2y$12$DBACYNEPH.B6bfAP5rWonebq2K/b/k4XIYCySAVQm8OC/eJcksd/C', '1999-07-19', '/uploads/ci/ci_juan.svg', '/uploads/ci/foto_juan.svg', 'pending', 3, 3),
-(6, 'cliente', 'Roberto Flores Arze', 'roberto@mail.com', '$2y$12$rvtYrne0C1twsJXm8sdV4e7q/UFmuax2l8QLaC4MHdqaW88smgbh2', '1996-05-20', '/uploads/ci/ci_roberto.svg', '/uploads/ci/foto_roberto.svg', 'rejected', 3, 3),
-(7, 'rider', 'Marcos Vargas Huanca', 'marcos@mail.com', '$2y$12$AJ4nPCvRsjdatgrFECtYpOLUKW9BIVJlR/XUesZVlY9bTSF4D4wLe', '1994-09-10', '/uploads/ci/ci_marcos.svg', '/uploads/ci/foto_marcos.svg', 'rejected', 3, 3),
-(8, 'cliente', 'Andrea Morales Ramos', 'andrea@mail.com', '$2y$12$2Jsvn3tAFrrLTAleVB33wuT20znjf172KrwtmlK0ZNGh9jMmDy7Nm', '1998-09-18', '/uploads/ci/ci_andrea.svg', '/uploads/ci/foto_andrea.svg', 'verified', 3, 3),
-(9, 'cliente', 'Gonzalo Salinas Castro', 'gonzalo@mail.com', '$2y$12$.tQkS5VoaBsMbYyjbNRMUuv5c/lLiCqUMH4.nm/mxsWcjEZH63Oo.', '1991-12-05', '/uploads/ci/ci_gonzalo.svg', '/uploads/ci/foto_gonzalo.svg', 'verified', 3, 3),
-(10, 'cliente', 'Diego Quiroga Flores', 'diego@mail.com', '$2y$12$lcUy.pf72uRvgTaEFt/ebeWC3fcWkliznJcN/ObIol55L7kj2u9gS', '2003-06-22', '/uploads/ci/ci_diego.svg', '/uploads/ci/foto_diego.svg', 'pending', 3, 3),
-(11, 'cliente', 'Camila Navarro Torrez', 'camila@mail.com', '$2y$12$1tiueWslGF863S79C6Sd3OVWljktMi5Xo6MJXvNZo/EKRM50Hs7wy', '2000-11-30', '/uploads/ci/ci_camila.svg', '/uploads/ci/foto_camila.svg', 'pending', 3, 3),
-(12, 'cliente', 'Lucía Paredes Vega', 'lucia@mail.com', '$2y$12$xODp/G2wwRJ59RwZ.6ibb.gho6pAMC5U3s.Y6YWrPwVE7r/s1cr86', '2009-08-14', '/uploads/ci/ci_lucia.svg', '/uploads/ci/foto_lucia.svg', 'rejected', 3, 3),
-(13, 'cliente', 'Rodrigo Méndez Balderrama', 'rodrigo@mail.com', '$2y$12$c54SUJEWfSUCsou.nw79EOtX21ZZzCfaYvo1Z3Js.dTE2vQUyWU6.', '1993-01-10', '/uploads/ci/ci_rodrigo.svg', '/uploads/ci/foto_rodrigo.svg', 'rejected', 3, 3),
-(14, 'rider', 'Alejandro Ríos Choque', 'alejandro@mail.com', '$2y$12$SU8Kk73j13XUTerxr3dvKe1G4AgP6qSALo0Hcs4mLIWMoKlgSTFYa', '1994-03-15', '/uploads/ci/ci_alejandro.svg', '/uploads/ci/foto_alejandro.svg', 'verified', 3, 3),
-(15, 'rider', 'Valeria Mamani Gutiérrez', 'valeria@mail.com', '$2y$12$9mdRjjqt./3au7wKmBCugu4M.x1KQLk9OoiuzQJd6CrSp8J0/dnua', '1997-10-08', '/uploads/ci/ci_valeria.svg', '/uploads/ci/foto_valeria.svg', 'verified', 3, 3),
-(16, 'rider', 'Fernando Blanco Heredia', 'fernando@mail.com', '$2y$12$dacn.eh4b6IJgkbZ1tNQj.UqhYlA7WZ8WQwB7SBWNGKuKRtw1HHkW', '2000-04-03', '/uploads/ci/ci_fernando.svg', '/uploads/ci/foto_fernando.svg', 'pending', 3, 3),
-(17, 'rider', 'Paola Zeballos Cruz', 'paola@mail.com', '$2y$12$p9p676AErhqHgfT4p/yPuuEiBT/8526ItYPx2AO.oyzERGbVZ4ehq', '2002-09-12', '/uploads/ci/ci_paola.svg', '/uploads/ci/foto_paola.svg', 'pending', 3, 3),
-(18, 'rider', 'Gustavo Beltrán Soto', 'gustavo@mail.com', '$2y$12$rSiCmv4sRlPq2GkYt30gOOu0tMxsF5Uf5AI4hqmywdSqUlVJbMCne', '1990-12-01', '/uploads/ci/ci_gustavo.svg', '/uploads/ci/foto_gustavo.svg', 'rejected', 3, 3),
-(19, 'rider', 'Cristian Colque Poma', 'cristian@mail.com', '$2y$12$UoB52EGEGABMB.kKveKocetQ6W0b1Slyxn7CEUJbmFvzHzaOK216q', '2004-05-18', '/uploads/ci/ci_cristian.svg', '/uploads/ci/foto_cristian.svg', 'rejected', 3, 3)
+INSERT INTO users (id, `role`, nombre, email, password_hash, fecha_nacimiento, ci_url, ci_reverso_url, foto_url, ci_status, motivo_rechazo, created_by, updated_by) VALUES
+(1, 'cliente', 'Carlos Pérez Mendoza', 'carlos@mail.com', '$2y$12$oBrJVxe/.0RYwzHKH5.zo.c8Wdzt4cLP9wyYfbgQAfAxebAArj7/O', '1995-04-12', '/uploads/ci/carnet_bueno_1.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_carlos.svg', 'verified', NULL, 3, 3),
+(2, 'rider', 'Pedro Gómez Alarcón', 'pedro@mail.com', '$2y$12$kwaN4pWuH0ADm/j14Sx5UOY0exD2qoDG23WO/mWHkHz.6jXTTw5t2', '1992-08-25', '/uploads/ci/carnet_bueno_1.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_pedro.svg', 'verified', NULL, 3, 3),
+(3, 'super_usuario', 'Admin Central (Gerencia)', 'admin@mail.com', '$2y$12$OVN/UBcNDnmSSfTLofnU6evA8C94ZP51xwHBNnkffR32/B.GigQsy', '1988-11-03', '/uploads/ci/carnet_bueno_1.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_admin.svg', 'verified', NULL, 3, 3),
+(4, 'cliente', 'María López Guzmán', 'maria@mail.com', '$2y$12$utDBlLZhtTPMP4HdEDfMIuRsfz2/RdpioV1xq7BCc7VGcJq.1NnfC', '2001-02-14', '/uploads/ci/carnet_revision.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_maria.svg', 'pending', NULL, 3, 3),
+(5, 'rider', 'Juan Rodríguez Ticona', 'juan@mail.com', '$2y$12$DBACYNEPH.B6bfAP5rWonebq2K/b/k4XIYCySAVQm8OC/eJcksd/C', '1999-07-19', '/uploads/ci/carnet_revision.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_juan.svg', 'pending', NULL, 3, 3),
+(6, 'cliente', 'Roberto Flores Arze', 'roberto@mail.com', '$2y$12$rvtYrne0C1twsJXm8sdV4e7q/UFmuax2l8QLaC4MHdqaW88smgbh2', '1996-05-20', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/foto_roberto.svg', 'rejected', 'Fotografía de documento ilegible o con reflejos que impiden la verificación.', 3, 3),
+(7, 'rider', 'Marcos Vargas Huanca', 'marcos@mail.com', '$2y$12$AJ4nPCvRsjdatgrFECtYpOLUKW9BIVJlR/XUesZVlY9bTSF4D4wLe', '1994-09-10', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/foto_marcos.svg', 'rejected', 'Fotografía de documento ilegible o con reflejos que impiden la verificación.', 3, 3),
+(8, 'cliente', 'Andrea Morales Ramos', 'andrea@mail.com', '$2y$12$2Jsvn3tAFrrLTAleVB33wuT20znjf172KrwtmlK0ZNGh9jMmDy7Nm', '1998-09-18', '/uploads/ci/carnet_bueno_1.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_andrea.svg', 'verified', NULL, 3, 3),
+(9, 'cliente', 'Gonzalo Salinas Castro', 'gonzalo@mail.com', '$2y$12$.tQkS5VoaBsMbYyjbNRMUuv5c/lLiCqUMH4.nm/mxsWcjEZH63Oo.', '1991-12-05', '/uploads/ci/carnet_bueno_1.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_gonzalo.svg', 'verified', NULL, 3, 3),
+(10, 'cliente', 'Diego Quiroga Flores', 'diego@mail.com', '$2y$12$lcUy.pf72uRvgTaEFt/ebeWC3fcWkliznJcN/ObIol55L7kj2u9gS', '2003-06-22', '/uploads/ci/carnet_revision.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_diego.svg', 'pending', NULL, 3, 3),
+(11, 'cliente', 'Camila Navarro Torrez', 'camila@mail.com', '$2y$12$1tiueWslGF863S79C6Sd3OVWljktMi5Xo6MJXvNZo/EKRM50Hs7wy', '2000-11-30', '/uploads/ci/carnet_revision.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_camila.svg', 'pending', NULL, 3, 3),
+(12, 'cliente', 'Lucía Paredes Vega', 'lucia@mail.com', '$2y$12$xODp/G2wwRJ59RwZ.6ibb.gho6pAMC5U3s.Y6YWrPwVE7r/s1cr86', '2009-08-14', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/foto_lucia.svg', 'rejected', 'Fotografía de documento ilegible o con reflejos que impiden la verificación.', 3, 3),
+(13, 'cliente', 'Rodrigo Méndez Balderrama', 'rodrigo@mail.com', '$2y$12$c54SUJEWfSUCsou.nw79EOtX21ZZzCfaYvo1Z3Js.dTE2vQUyWU6.', '1993-01-10', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/foto_rodrigo.svg', 'rejected', 'Fotografía de documento ilegible o con reflejos que impiden la verificación.', 3, 3),
+(14, 'rider', 'Alejandro Ríos Choque', 'alejandro@mail.com', '$2y$12$SU8Kk73j13XUTerxr3dvKe1G4AgP6qSALo0Hcs4mLIWMoKlgSTFYa', '1994-03-15', '/uploads/ci/carnet_bueno_1.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_alejandro.svg', 'verified', NULL, 3, 3),
+(15, 'rider', 'Valeria Mamani Gutiérrez', 'valeria@mail.com', '$2y$12$9mdRjjqt./3au7wKmBCugu4M.x1KQLk9OoiuzQJd6CrSp8J0/dnua', '1997-10-08', '/uploads/ci/carnet_bueno_1.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_valeria.svg', 'verified', NULL, 3, 3),
+(16, 'rider', 'Fernando Blanco Heredia', 'fernando@mail.com', '$2y$12$dacn.eh4b6IJgkbZ1tNQj.UqhYlA7WZ8WQwB7SBWNGKuKRtw1HHkW', '2000-04-03', '/uploads/ci/carnet_revision.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_fernando.svg', 'pending', NULL, 3, 3),
+(17, 'rider', 'Paola Zeballos Cruz', 'paola@mail.com', '$2y$12$p9p676AErhqHgfT4p/yPuuEiBT/8526ItYPx2AO.oyzERGbVZ4ehq', '2002-09-12', '/uploads/ci/carnet_revision.jpg', '/uploads/ci/carnet_bueno_2.jpg', '/uploads/ci/foto_paola.svg', 'pending', NULL, 3, 3),
+(18, 'rider', 'Gustavo Beltrán Soto', 'gustavo@mail.com', '$2y$12$rSiCmv4sRlPq2GkYt30gOOu0tMxsF5Uf5AI4hqmywdSqUlVJbMCne', '1990-12-01', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/foto_gustavo.svg', 'rejected', 'Fotografía de documento ilegible o con reflejos que impiden la verificación.', 3, 3),
+(19, 'rider', 'Cristian Colque Poma', 'cristian@mail.com', '$2y$12$UoB52EGEGABMB.kKveKocetQ6W0b1Slyxn7CEUJbmFvzHzaOK216q', '2004-05-18', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/carnet_malo.jpg', '/uploads/ci/foto_cristian.svg', 'rejected', 'Fotografía de documento ilegible o con reflejos que impiden la verificación.', 3, 3)
 ON DUPLICATE KEY UPDATE 
     email = VALUES(email),
     password_hash = VALUES(password_hash),
     ci_status = VALUES(ci_status),
     foto_url = VALUES(foto_url),
     ci_url = VALUES(ci_url),
+    ci_reverso_url = VALUES(ci_reverso_url),
+    motivo_rechazo = VALUES(motivo_rechazo),
     `role` = VALUES(`role`),
     nombre = VALUES(nombre);
 
@@ -186,20 +189,23 @@ ON DUPLICATE KEY UPDATE
     stock = VALUES(stock);
 
 -- Documentación de Riders (9 expedientes vehiculares)
-INSERT INTO documentacion_rider (id, rider_id, licencia_url, seguro_url, cv_url, estado_aprobacion, created_by, updated_by) VALUES(1, 2, '/uploads/docs/licencia_pedro.svg', '/uploads/docs/soat_pedro.svg', '/uploads/docs/cv_pedro.svg', 'aprobado', 3, 3),
-(2, 5, '/uploads/docs/licencia_juan.svg', '/uploads/docs/soat_juan.svg', '/uploads/docs/cv_juan.svg', 'pendiente', 3, 3),
-(3, 7, '/uploads/docs/licencia_marcos.svg', '/uploads/docs/soat_marcos.svg', '/uploads/docs/cv_marcos.svg', 'rechazado', 3, 3),
-(4, 14, '/uploads/docs/licencia_alejandro.svg', '/uploads/docs/soat_alejandro.svg', '/uploads/docs/cv_alejandro.svg', 'aprobado', 3, 3),
-(5, 15, '/uploads/docs/licencia_valeria.svg', '/uploads/docs/soat_valeria.svg', '/uploads/docs/cv_valeria.svg', 'aprobado', 3, 3),
-(6, 16, '/uploads/docs/licencia_fernando.svg', '/uploads/docs/soat_fernando.svg', '/uploads/docs/cv_fernando.svg', 'pendiente', 3, 3),
-(7, 17, '/uploads/docs/licencia_paola.svg', '/uploads/docs/soat_paola.svg', '/uploads/docs/cv_paola.svg', 'pendiente', 3, 3),
-(8, 18, '/uploads/docs/licencia_gustavo.svg', '/uploads/docs/soat_gustavo.svg', '/uploads/docs/cv_gustavo.svg', 'rechazado', 3, 3),
-(9, 19, '/uploads/docs/licencia_cristian.svg', '/uploads/docs/soat_cristian.svg', '/uploads/docs/cv_cristian.svg', 'rechazado', 3, 3)
+INSERT INTO documentacion_rider (id, rider_id, licencia_url, licencia_reverso_url, seguro_url, cv_url, estado_aprobacion, motivo_rechazo, created_by, updated_by) VALUES
+(1, 2, '/uploads/docs/licencia_buena.png', '/uploads/docs/Nueva-Licencia-de-Conducir-12.08.2016.png', '/uploads/docs/soat_pedro.svg', '/uploads/docs/cv_bueno.jpg', 'aprobado', NULL, 3, 3),
+(2, 5, '/uploads/docs/licencia_buena.png', '/uploads/docs/Nueva-Licencia-de-Conducir-12.08.2016.png', '/uploads/docs/soat_juan.svg', '/uploads/docs/cv_bueno.jpg', 'pendiente', NULL, 3, 3),
+(3, 7, '/uploads/docs/licencia_mala.jpg', '/uploads/docs/licencia_mala.jpg', '/uploads/docs/soat_marcos.svg', '/uploads/docs/cv_malo.jpg', 'rechazado', 'Licencia de conducir no vigente / Curriculum vitae ilegible.', 3, 3),
+(4, 14, '/uploads/docs/licencia_buena.png', '/uploads/docs/Nueva-Licencia-de-Conducir-12.08.2016.png', '/uploads/docs/soat_alejandro.svg', '/uploads/docs/cv_bueno.jpg', 'aprobado', NULL, 3, 3),
+(5, 15, '/uploads/docs/licencia_buena.png', '/uploads/docs/Nueva-Licencia-de-Conducir-12.08.2016.png', '/uploads/docs/soat_valeria.svg', '/uploads/docs/cv_bueno.jpg', 'aprobado', NULL, 3, 3),
+(6, 16, '/uploads/docs/licencia_buena.png', '/uploads/docs/Nueva-Licencia-de-Conducir-12.08.2016.png', '/uploads/docs/soat_fernando.svg', '/uploads/docs/cv_bueno.jpg', 'pendiente', NULL, 3, 3),
+(7, 17, '/uploads/docs/licencia_buena.png', '/uploads/docs/Nueva-Licencia-de-Conducir-12.08.2016.png', '/uploads/docs/soat_paola.svg', '/uploads/docs/cv_bueno.jpg', 'pendiente', NULL, 3, 3),
+(8, 18, '/uploads/docs/licencia_mala.jpg', '/uploads/docs/licencia_mala.jpg', '/uploads/docs/soat_gustavo.svg', '/uploads/docs/cv_malo.jpg', 'rechazado', 'Licencia de conducir no vigente / Curriculum vitae ilegible.', 3, 3),
+(9, 19, '/uploads/docs/licencia_mala.jpg', '/uploads/docs/licencia_mala.jpg', '/uploads/docs/soat_cristian.svg', '/uploads/docs/cv_malo.jpg', 'rechazado', 'Licencia de conducir no vigente / Curriculum vitae ilegible.', 3, 3)
 ON DUPLICATE KEY UPDATE 
     licencia_url = VALUES(licencia_url),
+    licencia_reverso_url = VALUES(licencia_reverso_url),
     seguro_url = VALUES(seguro_url),
     cv_url = VALUES(cv_url),
-    estado_aprobacion = VALUES(estado_aprobacion);
+    estado_aprobacion = VALUES(estado_aprobacion),
+    motivo_rechazo = VALUES(motivo_rechazo);
 
 -- Pedidos Iniciales de Demostración
 INSERT INTO pedidos (id, cliente_id, rider_id, estado_pago, estado_pedido, total, latitud, longitud, qr_comprobante_url, created_by, updated_by) VALUES(1, 1, 2, 'liquidado', 'entregado', 45.00, -16.50200000, -68.13100000, NULL, 1, 3),

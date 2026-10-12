@@ -4337,24 +4337,16 @@ window.handleSaveAdminQrConfig = async function(event) {
             initLucide();
         }
 
-        const baseUrl = config.apiBaseUrl || '';
-        const res = await fetch(`${baseUrl}/Transactions/qr_config.php`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData
-        });
+        const res = await apiPost('/Transactions/qr_config.php', formData);
 
-        const json = await res.json();
-        if (!res.ok || json.status !== 'success') {
-            showToast(`Error al guardar QR: ${json.error_details || 'Operación rechazada'}`, 'danger');
+        if (!res.ok) {
+            showToast(`Error al guardar QR: ${res.error || 'Operación rechazada'}`, 'danger');
             return;
         }
 
         showToast('¡Configuración de Código QR actualizada con éxito!', 'success');
-        if (json.data && json.data.config) {
-            paymentQrConfig = Object.assign(paymentQrConfig, json.data.config);
+        if (res.data && res.data.config) {
+            paymentQrConfig = Object.assign(paymentQrConfig, res.data.config);
             updateAdminQrPreview();
         }
     } catch (err) {

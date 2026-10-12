@@ -102,22 +102,6 @@ CREATE TABLE IF NOT EXISTS documentacion_rider (
     FOREIGN KEY (updated_by) REFERENCES users(id)
 );
 
-CREATE TABLE IF NOT EXISTS auditoria_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tabla_afectada VARCHAR(255) NOT NULL,
-    registro_id INT NOT NULL,
-    accion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-    datos_anteriores JSON,
-    datos_nuevos JSON,
-    ip_address VARCHAR(45),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT,
-    updated_by INT,
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
-);
-
 CREATE TABLE IF NOT EXISTS configuracion_pagos (
     id INT PRIMARY KEY DEFAULT 1,
     banco VARCHAR(100) NOT NULL DEFAULT 'Banco Unión',

@@ -126,22 +126,6 @@ CREATE TABLE IF NOT EXISTS documentacion_rider (
     FOREIGN KEY (updated_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. Tabla de Auditoría Inmutable (auditoria_logs)
-CREATE TABLE IF NOT EXISTS auditoria_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tabla_afectada VARCHAR(255) NOT NULL,
-    registro_id INT NOT NULL,
-    accion ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-    datos_anteriores JSON,
-    datos_nuevos JSON,
-    ip_address VARCHAR(45),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT,
-    updated_by INT,
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- SEED DATA COMPLETO (19 USUARIOS REALES BCRYPT CON FOTOS Y DOCUMENTOS)
@@ -243,12 +227,7 @@ ON DUPLICATE KEY UPDATE
     cantidad = VALUES(cantidad),
     precio_unitario = VALUES(precio_unitario);
 
--- Auditoría Inicial
-INSERT INTO auditoria_logs (id, tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, ip_address, created_by, updated_by) VALUES
-(1, 'users', 3, 'INSERT', NULL, '{"nombre":"Admin Central (Gerencia)","role":"super_usuario"}', '127.0.0.1', 3, 3)
-ON DUPLICATE KEY UPDATE accion = VALUES(accion);
-
--- 7. Tabla de Configuración de Pagos y Código QR Oficial
+-- 6. Tabla de Configuración de Pagos y Código QR Oficial
 CREATE TABLE IF NOT EXISTS configuracion_pagos (
     id INT PRIMARY KEY DEFAULT 1,
     banco VARCHAR(100) NOT NULL DEFAULT 'Banco Unión',

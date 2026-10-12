@@ -41,7 +41,7 @@ try {
 
     if ($method === 'GET') {
         $stmtUsers = $db->query("
-            SELECT id, nombre, email, fecha_nacimiento, ci_url, ci_reverso_url, ci_status, 
+            SELECT id, nombre, email, direccion, telefono, fecha_nacimiento, ci_url, ci_reverso_url, ci_status, 
                    motivo_rechazo, apelacion_motivo, apelacion_estado, created_at 
             FROM users 
             WHERE role = 'cliente' 
@@ -54,7 +54,7 @@ try {
         unset($u);
 
         $stmtRiders = $db->query("
-            SELECT u.id as rider_id, d.id as doc_id, u.nombre, u.email, u.fecha_nacimiento, u.ci_status,
+            SELECT u.id as rider_id, d.id as doc_id, u.nombre, u.email, u.direccion, u.telefono, u.fecha_nacimiento, u.ci_status,
                    u.ci_url, u.ci_reverso_url,
                    COALESCE(d.estado_aprobacion, 'pendiente') as estado_aprobacion,
                    COALESCE(d.licencia_url, '') as licencia_url,

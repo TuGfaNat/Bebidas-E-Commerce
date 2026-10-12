@@ -217,6 +217,284 @@ const LA_PAZ_BOUNDS = [
     [-16.4400, -68.0300]  // Noreste (Norte / Achumani / Casco Central)
 ];
 
+// ============================================================================
+// 🗺️ CATÁLOGO DE HITOS, AVENIDAS Y PLAZAS DE LA PAZ (BÚSQUEDA TIPO GOOGLE MAPS)
+// ============================================================================
+const LA_PAZ_LANDMARKS = [
+    { name: "Plaza Abaroa", street: "Av. 20 de Octubre y Pedro Salazar", zone: "Sopocachi", lat: -16.5090, lon: -68.1340, keywords: ["abaroa", "sopocachi", "octubre", "pedro salazar", "belisario salinas"] },
+    { name: "Av. 20 de Octubre", street: "Av. 20 de Octubre #2150", zone: "Sopocachi", lat: -16.5050, lon: -68.1290, keywords: ["octubre", "20 de octubre", "sopocachi", "avenida", "guachalla"] },
+    { name: "Plaza España", street: "Calle Víctor Sanjinés y Presbítero Medina", zone: "Sopocachi", lat: -16.5135, lon: -68.1325, keywords: ["españa", "sopocachi", "sanjines", "teleferico amarillo", "monticulo"] },
+    { name: "El Montículo", street: "Paseo de El Montículo, Calle Presley", zone: "Sopocachi", lat: -16.5140, lon: -68.1295, keywords: ["monticulo", "parque", "sopocachi", "mirador"] },
+    { name: "Av. 6 de Agosto", street: "Av. 6 de Agosto #2430", zone: "Sopocachi", lat: -16.5085, lon: -68.1280, keywords: ["6 de agosto", "agosto", "sopocachi", "san jorge", "campos"] },
+    { name: "El Prado (Paseo del Prado)", street: "Av. 16 de Julio #1440", zone: "Centro", lat: -16.4985, lon: -68.1335, keywords: ["prado", "16 de julio", "centro", "estudiante", "monje campero", "colombia"] },
+    { name: "Plaza del Estudiante", street: "Av. Villazón y Av. 16 de Julio", zone: "Centro", lat: -16.5040, lon: -68.1310, keywords: ["estudiante", "monolito", "villazon", "umsa", "centro", "universidad"] },
+    { name: "Plaza Murillo", street: "Calle Comercio y Socabaya", zone: "Casco Urbano Central", lat: -16.4955, lon: -68.1330, keywords: ["murillo", "palacio quemado", "congreso", "comercio", "catedral", "gobierno"] },
+    { name: "Basílica de San Francisco", street: "Plaza Mayor San Francisco / Av. Mariscal Santa Cruz", zone: "Centro Histórico", lat: -16.4965, lon: -68.1370, keywords: ["san francisco", "sagarnaga", "santa cruz", "iglesia", "perez velasco"] },
+    { name: "Calle Sagárnaga", street: "Calle Sagárnaga #220", zone: "San Francisco", lat: -16.4975, lon: -68.1385, keywords: ["sagarnaga", "brujas", "artesanias", "linares", "san francisco"] },
+    { name: "Plaza Sucre (San Pedro)", street: "Calle Colombia y Nicolás Acosta", zone: "San Pedro", lat: -16.5015, lon: -68.1375, keywords: ["san pedro", "sucre", "colombia", "nicolas acosta", "mercado san pedro"] },
+    { name: "Plaza Triangular", street: "Av. Saavedra y Calle Díaz Romero", zone: "Miraflores", lat: -16.5045, lon: -68.1205, keywords: ["triangular", "miraflores", "saavedra", "teleferico blanco", "diaz romero"] },
+    { name: "Estadio Hernando Siles", street: "Av. Simón Bolívar y Av. Saavedra", zone: "Miraflores", lat: -16.4990, lon: -68.1225, keywords: ["siles", "estadio", "miraflores", "bolivar", "curva sur", "curva norte"] },
+    { name: "Av. Busch", street: "Av. Busch #1320", zone: "Miraflores", lat: -16.5020, lon: -68.1190, keywords: ["busch", "avenida busch", "miraflores", "monumento busch", "villalobos"] },
+    { name: "Hospital de Clínicas", street: "Av. Saavedra #2240", zone: "Miraflores", lat: -16.5065, lon: -68.1200, keywords: ["hospital", "clinicas", "complejo hospitalario", "saavedra", "miraflores"] },
+    { name: "Av. Arce (Multicine)", street: "Av. Arce #2631", zone: "San Jorge", lat: -16.5125, lon: -68.1245, keywords: ["arce", "multicine", "san jorge", "embajada", "plaza isabel", "goitia"] },
+    { name: "Plaza Isabel La Católica", street: "Av. Arce y Calle Pedro Salazar", zone: "San Jorge", lat: -16.5110, lon: -68.1265, keywords: ["isabel", "catolica", "san jorge", "puente gemelo", "arce"] },
+    { name: "Teleférico Celeste San Jorge", street: "Av. del Poeta", zone: "San Jorge", lat: -16.5105, lon: -68.1250, keywords: ["celeste", "teleferico", "del poeta", "san jorge", "curva holguin"] },
+    { name: "Obrajes Calle 17", street: "Av. Hernando Siles #5420, Calle 17", zone: "Obrajes", lat: -16.5280, lon: -68.1120, keywords: ["obrajes", "calle 17", "hernando siles", "zona sur", "puente calacoto"] },
+    { name: "Obrajes Calle 6 (Plaza 16 de Julio)", street: "Av. Hernando Siles y Calle 6", zone: "Obrajes", lat: -16.5210, lon: -68.1180, keywords: ["obrajes", "calle 6", "16 de julio", "plaza obrajes", "siles"] },
+    { name: "Calacoto San Miguel", street: "Av. Montenegro y Calle 21 de Calacoto", zone: "Calacoto", lat: -16.5410, lon: -68.0860, keywords: ["san miguel", "calacoto", "montenegro", "calle 21", "comercio sur", "pancara"] },
+    { name: "Calacoto Calle 21", street: "Av. Ballivián #1580, Calle 21", zone: "Calacoto", lat: -16.5390, lon: -68.0875, keywords: ["calle 21", "ballivian", "calacoto", "iglesia san miguel"] },
+    { name: "Calacoto Calle 8", street: "Av. Ballivián y Calle 8", zone: "Calacoto", lat: -16.5330, lon: -68.0930, keywords: ["calle 8", "ballivian", "calacoto", "zona sur", "teleferico verde"] },
+    { name: "Achumani (Av. Alexander)", street: "Av. García Lanza y Av. Alexander #320", zone: "Achumani", lat: -16.5385, lon: -68.0670, keywords: ["achumani", "alexander", "garcia lanza", "the strongest", "calle 11"] },
+    { name: "Irpavi Megacenter", street: "Av. Rafael Pabón #100", zone: "Irpavi", lat: -16.5315, lon: -68.0815, keywords: ["megacenter", "irpavi", "cine", "pabon", "colegio militar", "teleferico verde"] },
+    { name: "Cota Cota Calle 30 (UMSA)", street: "Av. Muñoz Reyes y Calle 30", zone: "Cota Cota", lat: -16.5440, lon: -68.0665, keywords: ["cota cota", "calle 30", "umsa", "campus", "muñoz reyes", "laguna"] },
+    { name: "Los Pinos", street: "Av. José María Aguirre Acha", zone: "Los Pinos", lat: -16.5360, lon: -68.0770, keywords: ["los pinos", "plaza pinos", "aguirre acha", "zona sur"] },
+    { name: "Chasquipampa Calle 50", street: "Av. Principal #450, Calle 50", zone: "Chasquipampa", lat: -16.5480, lon: -68.0580, keywords: ["chasquipampa", "calle 50", "principal", "sur", "pedregal"] },
+    { name: "Villa Fátima (Plaza del Maestro)", street: "Av. Las Américas #840", zone: "Villa Fátima", lat: -16.4810, lon: -68.1170, keywords: ["villa fatima", "maestro", "americas", "yungas", "terminal minasa"] },
+    { name: "Tembladerani", street: "Calle Castrillo y Av. Buenos Aires", zone: "Tembladerani", lat: -16.5110, lon: -68.1450, keywords: ["tembladerani", "bolivar", "cancha", "castrillo", "mercado"] },
+    { name: "Cementerio General", street: "Av. Baptista y Av. Entre Ríos", zone: "Cementerio", lat: -16.4920, lon: -68.1475, keywords: ["cementerio", "baptista", "entre rios", "teleferico rojo"] },
+    { name: "Alto Obrajes", street: "Av. Del Maestro, Sector A", zone: "Alto Obrajes", lat: -16.5180, lon: -68.1090, keywords: ["alto obrajes", "piscina olimpica", "del maestro", "sector a", "escuela militar"] },
+    { name: "Mallasa (Valle de la Luna)", street: "Av. Hernando Siles / Carretera a Mallasa", zone: "Mallasa", lat: -16.5680, lon: -68.0920, keywords: ["mallasa", "valle de la luna", "zoologico", "rio abajo", "golf"] },
+    { name: "La Florida (Plaza Humboldt)", street: "Calle 8 de Calacoto y Av. Arequipa", zone: "La Florida", lat: -16.5335, lon: -68.0910, keywords: ["florida", "humboldt", "arequipa", "sur"] },
+    { name: "Següencoma", street: "Av. Costanera y Calle Las Palmeras", zone: "Bajo Següencoma", lat: -16.5260, lon: -68.1030, keywords: ["seguencoma", "costanera", "palmeras", "sur", "gramadal"] },
+    { name: "Pampahasi", street: "Av. Circunvalación #1020", zone: "Pampahasi", lat: -16.4980, lon: -68.0980, keywords: ["pampahasi", "circunvalacion", "este", "samapa"] },
+    { name: "Villa Copacabana", street: "Av. Tito Yupanqui #450", zone: "Villa Copacabana", lat: -16.4910, lon: -68.1060, keywords: ["copacabana", "yupanqui", "plaza mercado", "este"] },
+    { name: "Av. Buenos Aires", street: "Av. Buenos Aires #720", zone: "Max Paredes", lat: -16.4990, lon: -68.1460, keywords: ["buenos aires", "max paredes", "uyustus", "tumusla", "garita de lima"] }
+];
+
+/**
+ * Motor de búsqueda híbrido estilo Google Maps para La Paz:
+ * 1. Matching instantáneo (0ms) en catálogo local de 38+ zonas e hitos paceños.
+ * 2. Consulta asíncrona a OpenStreetMap Nominatim para números de puerta y calles no catalogadas.
+ */
+async function searchLaPazAddresses(query) {
+    if (!query || typeof query !== 'string') return [];
+    const q = query.trim().toLowerCase();
+    if (q.length === 0) return [];
+
+    const results = [];
+    const seen = new Set();
+    const qTokens = q.split(/\s+/).filter(t => t.length > 1);
+
+    // 1. Filtrado local inmediato
+    for (const lm of LA_PAZ_LANDMARKS) {
+        const fullSearchText = `${lm.name} ${lm.street} ${lm.zone} ${lm.keywords.join(' ')}`.toLowerCase();
+        let matches = false;
+        if (qTokens.length > 0) {
+            matches = qTokens.every(token => fullSearchText.includes(token));
+        } else {
+            matches = fullSearchText.includes(q);
+        }
+
+        if (matches) {
+            const dist = haversine(STORE_COORDS.lat, STORE_COORDS.lon, lm.lat, lm.lon);
+            const key = `${lm.lat.toFixed(4)},${lm.lon.toFixed(4)}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                results.push({
+                    title: lm.name,
+                    subtitle: `${lm.street}, ${lm.zone} (La Paz)`,
+                    display_name: `${lm.street}, ${lm.zone}, La Paz`,
+                    zone: lm.zone,
+                    lat: lm.lat,
+                    lon: lm.lon,
+                    distanceKm: dist.toFixed(1),
+                    isLocal: true
+                });
+            }
+        }
+    }
+
+    // 2. Consulta en vivo a OpenStreetMap Nominatim con límite metropolitano si q >= 3
+    if (q.length >= 3) {
+        try {
+            const ctrl = new AbortController();
+            const timeout = setTimeout(() => ctrl.abort(), 1800);
+            const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' La Paz Bolivia')}&viewbox=-68.25,-16.42,-68.02,-16.60&bounded=0&limit=5`;
+            const resp = await fetch(searchUrl, {
+                headers: { 'Accept': 'application/json' },
+                signal: ctrl.signal
+            });
+            clearTimeout(timeout);
+            if (resp.ok) {
+                const osmList = await resp.json();
+                if (Array.isArray(osmList)) {
+                    for (const item of osmList) {
+                        const lat = parseFloat(item.lat);
+                        const lon = parseFloat(item.lon);
+                        if (isNaN(lat) || isNaN(lon)) continue;
+                        if (lat < -16.65 || lat > -16.40 || lon < -68.28 || lon > -68.00) continue;
+
+                        const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            const dist = haversine(STORE_COORDS.lat, STORE_COORDS.lon, lat, lon);
+                            const parts = (item.display_name || '').split(',').map(s => s.trim());
+                            const mainTitle = parts[0] || 'Ubicación en La Paz';
+                            const subTitle = parts.slice(1, 4).join(', ') || 'La Paz, Bolivia';
+
+                            results.push({
+                                title: mainTitle,
+                                subtitle: subTitle,
+                                display_name: `${mainTitle}, ${subTitle}`,
+                                zone: parts[1] || 'La Paz',
+                                lat: lat,
+                                lon: lon,
+                                distanceKm: dist.toFixed(1),
+                                isLocal: false
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Continúa fluidamente con catálogo local ante problemas de red
+        }
+    }
+
+    results.sort((a, b) => parseFloat(a.distanceKm) - parseFloat(b.distanceKm));
+    return results.slice(0, 7);
+}
+
+/**
+ * Geocodificación inversa: Convierte coordenadas GPS en una dirección humana en La Paz.
+ */
+async function reverseGeocodeLaPaz(lat, lon) {
+    let closest = LA_PAZ_LANDMARKS[0];
+    let minD = Infinity;
+    for (const lm of LA_PAZ_LANDMARKS) {
+        const d = haversine(lat, lon, lm.lat, lm.lon);
+        if (d < minD) {
+            minD = d;
+            closest = lm;
+        }
+    }
+
+    let bestName = minD <= 0.35 ? `${closest.street}, ${closest.zone}, La Paz` : `Cerca de ${closest.name}, ${closest.zone}, La Paz`;
+
+    try {
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 1400);
+        const revUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+        const resp = await fetch(revUrl, {
+            headers: { 'Accept': 'application/json' },
+            signal: ctrl.signal
+        });
+        clearTimeout(timeout);
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.address) {
+                const road = data.address.road || data.address.pedestrian || data.address.path || data.address.suburb;
+                const suburb = data.address.suburb || data.address.neighbourhood || closest.zone;
+                const house = data.address.house_number ? ` #${data.address.house_number}` : '';
+                if (road) {
+                    bestName = `${road}${house}, ${suburb}, La Paz`;
+                }
+            }
+        }
+    } catch (e) {}
+
+    return bestName;
+}
+
+/**
+ * Vinculador de UI para autocompletado interactivo estilo Google Maps.
+ */
+function setupPlacesAutocomplete(inputId, clearBtnId, dropdownId, onSelectCallback) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const clearBtn = clearBtnId ? document.getElementById(clearBtnId) : null;
+    if (!input || !dropdown) return;
+
+    let debounceTimer = null;
+
+    const hideDropdown = () => {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+    };
+
+    const doSearch = async (val) => {
+        const query = (val || '').trim();
+        if (query.length < 2) {
+            hideDropdown();
+            return;
+        }
+
+        dropdown.innerHTML = `
+            <div style="padding: 0.6rem 0.8rem; font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 0.4rem;">
+                <span class="spin" style="display:inline-block;">⏳</span> Buscando en La Paz...
+            </div>
+        `;
+        dropdown.style.display = 'block';
+
+        const results = await searchLaPazAddresses(query);
+        if (results.length === 0) {
+            dropdown.innerHTML = `
+                <div style="padding: 0.65rem 0.8rem; font-size: 0.78rem; color: #94a3b8; text-align: center;">
+                    No se encontraron resultados para "<strong>${escapeHtml(query)}</strong>".<br>
+                    <span style="font-size:0.72rem; color:#64748b;">Haz clic directo en el mapa para marcar tu puerta.</span>
+                </div>
+            `;
+            return;
+        }
+
+        dropdown.innerHTML = results.map((item, idx) => `
+            <div class="places-suggestion-item" data-index="${idx}">
+                <div class="places-suggestion-icon">${item.isLocal ? '📍' : '🗺️'}</div>
+                <div style="overflow: hidden; flex: 1;">
+                    <div class="places-suggestion-title">${escapeHtml(item.title)}</div>
+                    <div class="places-suggestion-subtitle">${escapeHtml(item.subtitle)}</div>
+                </div>
+                <div class="places-suggestion-dist">${item.distanceKm} Km</div>
+            </div>
+        `).join('');
+
+        dropdown.querySelectorAll('.places-suggestion-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const idx = parseInt(el.dataset.index, 10);
+                const chosen = results[idx];
+                if (chosen) {
+                    input.value = chosen.display_name;
+                    if (clearBtn) clearBtn.style.display = 'block';
+                    hideDropdown();
+                    if (typeof onSelectCallback === 'function') {
+                        onSelectCallback(chosen);
+                    }
+                }
+            });
+        });
+    };
+
+    input.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (clearBtn) {
+            clearBtn.style.display = val.length > 0 ? 'block' : 'none';
+        }
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => doSearch(val), 260);
+    });
+
+    input.addEventListener('focus', () => {
+        if (input.value.trim().length >= 2) {
+            doSearch(input.value);
+        }
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            clearBtn.style.display = 'none';
+            hideDropdown();
+            input.focus();
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+}
+
 // Capa de mapas estándar OpenStreetMap con visualización nítida de calles paceñas
 const MAP_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const MAP_TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
@@ -630,31 +908,151 @@ function setupEventListeners() {
     const btnSidebarCart = document.getElementById('btnSidebarCart');
     if (btnSidebarCart) btnSidebarCart.addEventListener('click', openCartDrawer);
 
-    const btnUseDefaultLoc = document.getElementById('btnUseDefaultLocation');
-    if (btnUseDefaultLoc) btnUseDefaultLoc.addEventListener('click', () => {
-        setCheckoutDeliveryCoords(-16.5090, -68.1340);
-        const zoneSelect = document.getElementById('selectLaPazZone');
-        if (zoneSelect) zoneSelect.value = "-16.5090,-68.1340";
-        if (checkoutMapInstance) checkoutMapInstance.flyTo([-16.5090, -68.1340], 15);
-        showToast('Ubicación fijada en Sopocachi Central (Sede Cocina).', 'info');
-    });
-
-    const selectLaPazZone = document.getElementById('selectLaPazZone');
-    if (selectLaPazZone) {
-        selectLaPazZone.addEventListener('change', (e) => {
-            const parts = e.target.value.split(',');
-            if (parts.length === 2) {
-                const lat = parseFloat(parts[0]);
-                const lon = parseFloat(parts[1]);
-                setCheckoutDeliveryCoords(lat, lon);
-                if (checkoutMapInstance) {
-                    checkoutMapInstance.flyTo([lat, lon], 15);
-                }
-                const selectedText = e.target.options[e.target.selectedIndex].text;
-                showToast(`Punto de entrega en La Paz: ${selectedText}`, 'info');
+    // ----------------------------------------------------
+    // BUSCADOR GOOGLE MAPS INTERACTIVO & GPS (CHECKOUT)
+    // ----------------------------------------------------
+    setupPlacesAutocomplete('inputSearchCheckoutAddress', 'btnClearCheckoutSearch', 'checkoutSearchSuggestions', (item) => {
+        setCheckoutDeliveryCoords(item.lat, item.lon);
+        if (checkoutMapInstance) {
+            checkoutMapInstance.flyTo([item.lat, item.lon], 16, { duration: 1 });
+        }
+        const txtDir = document.getElementById('txtCheckoutDireccion');
+        if (txtDir) txtDir.value = item.display_name;
+        
+        // Sincronizar chips visuales
+        document.querySelectorAll('.zone-chip').forEach(c => {
+            const cName = (c.dataset.name || '').toLowerCase();
+            if (cName.includes((item.zone || '').toLowerCase()) || cName.includes((item.title || '').toLowerCase())) {
+                c.classList.add('active');
+            } else {
+                c.classList.remove('active');
             }
         });
+
+        showToast(`📍 Entrega fijada en: ${item.title}`, 'info');
+        validateCheckoutForm();
+    });
+
+    // Chips de Zonas Populares en La Paz (1 solo toque)
+    document.querySelectorAll('.zone-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.zone-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+
+            const coordsStr = chip.dataset.coords;
+            const name = chip.dataset.name || 'La Paz';
+            if (coordsStr) {
+                const [latStr, lonStr] = coordsStr.split(',');
+                const lat = parseFloat(latStr);
+                const lon = parseFloat(lonStr);
+                setCheckoutDeliveryCoords(lat, lon);
+                if (checkoutMapInstance) {
+                    checkoutMapInstance.flyTo([lat, lon], 16, { duration: 1 });
+                }
+                const inputSearch = document.getElementById('inputSearchCheckoutAddress');
+                if (inputSearch) inputSearch.value = name;
+                const txtDir = document.getElementById('txtCheckoutDireccion');
+                if (txtDir && (!txtDir.value || txtDir.value.includes('Plaza') || txtDir.value.includes('Av.'))) {
+                    txtDir.value = `${name}, La Paz`;
+                }
+                showToast(`📍 Zona seleccionada: ${name}`, 'info');
+                validateCheckoutForm();
+            }
+        });
+    });
+
+    // Botón GPS en Vivo (Geolocalización del navegador)
+    const btnGpsCheckout = document.getElementById('btnGeolocateCheckout');
+    if (btnGpsCheckout) {
+        btnGpsCheckout.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                showToast('Tu navegador no soporta geolocalización GPS.', 'warning');
+                return;
+            }
+            showToast('📡 Obteniendo señal GPS de tu dispositivo...', 'info');
+            btnGpsCheckout.innerHTML = '<span class="spin">⏳</span> Buscando...';
+
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    btnGpsCheckout.innerHTML = '<i data-lucide="crosshair" style="width: 12px; height: 12px;"></i> Mi GPS en Vivo';
+                    initLucide();
+                    let lat = pos.coords.latitude;
+                    let lon = pos.coords.longitude;
+
+                    // Si las coordenadas están dentro del radio metropolitano de La Paz, usarlas
+                    const isWithinLaPaz = (lat >= -16.65 && lat <= -16.40 && lon >= -68.28 && lon <= -68.00);
+                    if (!isWithinLaPaz) {
+                        showToast('📡 GPS obtenido. Ajustando al área de cobertura oficial de La Paz.', 'info');
+                        lat = -16.5090;
+                        lon = -68.1340;
+                    }
+
+                    setCheckoutDeliveryCoords(lat, lon);
+                    if (checkoutMapInstance) {
+                        checkoutMapInstance.flyTo([lat, lon], 16, { duration: 1.2 });
+                    }
+
+                    const readableAddress = await reverseGeocodeLaPaz(lat, lon);
+                    const txtDir = document.getElementById('txtCheckoutDireccion');
+                    if (txtDir) txtDir.value = readableAddress;
+                    const inputSearch = document.getElementById('inputSearchCheckoutAddress');
+                    if (inputSearch) inputSearch.value = readableAddress;
+
+                    showToast(`🎯 ¡Ubicación GPS fijada! ${readableAddress}`, 'success');
+                    validateCheckoutForm();
+                },
+                (err) => {
+                    btnGpsCheckout.innerHTML = '<i data-lucide="crosshair" style="width: 12px; height: 12px;"></i> Mi GPS en Vivo';
+                    initLucide();
+                    console.warn('Fallo GPS:', err);
+                    showToast('No se pudo acceder a tu GPS. Por favor escribe tu calle o toca el mapa.', 'warning');
+                },
+                { enableHighAccuracy: true, timeout: 6000 }
+            );
+        });
     }
+
+    const btnUseDefaultLoc = document.getElementById('btnUseDefaultLocation');
+    if (btnUseDefaultLoc) btnUseDefaultLoc.addEventListener('click', () => {
+        setCheckoutDeliveryCoords(STORE_COORDS.lat, STORE_COORDS.lon);
+        if (checkoutMapInstance) checkoutMapInstance.flyTo([STORE_COORDS.lat, STORE_COORDS.lon], 16);
+        const txtDir = document.getElementById('txtCheckoutDireccion');
+        if (txtDir) txtDir.value = STORE_COORDS.direccion;
+        const inputSearch = document.getElementById('inputSearchCheckoutAddress');
+        if (inputSearch) inputSearch.value = STORE_COORDS.direccion;
+        showToast('Ubicación centrada en la Sede Central del Restaurante.', 'info');
+        validateCheckoutForm();
+    });
+
+    // ----------------------------------------------------
+    // BUSCADOR GOOGLE MAPS PARA SEDE DEL RESTAURANTE (ADMIN)
+    // ----------------------------------------------------
+    setupPlacesAutocomplete('inputSearchStoreAddress', 'btnClearStoreSearch', 'storeSearchSuggestions', (item) => {
+        const inDir = document.getElementById('adminStoreDireccion');
+        const inLat = document.getElementById('adminStoreLat');
+        const inLon = document.getElementById('adminStoreLon');
+        const pDir = document.getElementById('previewAdminStoreDireccion');
+        const pCoo = document.getElementById('previewAdminStoreCoords');
+        const pZon = document.getElementById('previewAdminStoreZona');
+
+        if (inDir) inDir.value = item.display_name;
+        if (inLat) inLat.value = item.lat.toFixed(6);
+        if (inLon) inLon.value = item.lon.toFixed(6);
+        if (pDir) pDir.innerText = item.display_name;
+        if (pCoo) pCoo.innerText = `${item.lat.toFixed(4)}, ${item.lon.toFixed(4)}`;
+        if (pZon && item.zone) pZon.innerText = item.zone;
+
+        showToast(`📍 Sede del restaurante posicionada en: ${item.title}`, 'info');
+    });
+
+    // ----------------------------------------------------
+    // BUSCADOR GOOGLE MAPS PARA DIRECCIÓN DE PERFIL
+    // ----------------------------------------------------
+    setupPlacesAutocomplete('profileInputDireccion', null, 'profileSearchSuggestions', (item) => {
+        const pDir = document.getElementById('profileInputDireccion');
+        if (pDir) pDir.value = item.display_name;
+        showToast(`🏠 Dirección seleccionada: ${item.title}`, 'info');
+    });
 
 
 
@@ -1814,8 +2212,12 @@ function openCheckoutModal() {
     const curUser = currentSession.cliente || currentSession.currentUser;
     const txtDir = document.getElementById('txtCheckoutDireccion');
     const txtTel = document.getElementById('txtCheckoutTelefono');
+    const searchInput = document.getElementById('inputSearchCheckoutAddress');
     if (txtDir && !txtDir.value && curUser && curUser.direccion) {
         txtDir.value = curUser.direccion;
+    }
+    if (searchInput && !searchInput.value && curUser && curUser.direccion) {
+        searchInput.value = curUser.direccion;
     }
     if (txtTel && !txtTel.value && curUser && curUser.telefono) {
         txtTel.value = curUser.telefono;
@@ -1860,8 +2262,17 @@ function initCheckoutMap() {
                 icon: createStorePinIcon()
             }).addTo(checkoutMapInstance).bindPopup(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (La Paz)`).openPopup();
 
-            checkoutMapInstance.on('click', (e) => {
-                setCheckoutDeliveryCoords(e.latlng.lat, e.latlng.lng);
+            checkoutMapInstance.on('click', async (e) => {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+                setCheckoutDeliveryCoords(lat, lng);
+                const readable = await reverseGeocodeLaPaz(lat, lng);
+                const txtDir = document.getElementById('txtCheckoutDireccion');
+                if (txtDir) txtDir.value = readable;
+                const inSearch = document.getElementById('inputSearchCheckoutAddress');
+                if (inSearch) inSearch.value = readable;
+                showToast(`📍 Ubicación seleccionada en mapa: ${readable}`, 'info');
+                validateCheckoutForm();
             });
         } else {
             checkoutMapInstance.invalidateSize();
@@ -1998,6 +2409,20 @@ async function submitOrderCheckout() {
         closeCheckoutModal();
         cart = [];
         updateCartBadge();
+
+        if (currentSession.currentUser) {
+            currentSession.currentUser.direccion = direccionEntrega;
+            currentSession.currentUser.telefono = telefonoContacto;
+        }
+        if (currentSession.cliente) {
+            currentSession.cliente.direccion = direccionEntrega;
+            currentSession.cliente.telefono = telefonoContacto;
+        }
+        const pDirIn = document.getElementById('profileInputDireccion');
+        if (pDirIn) pDirIn.value = direccionEntrega;
+        const pTelIn = document.getElementById('profileInputTelefono');
+        if (pTelIn) pTelIn.value = telefonoContacto;
+
         showToast('¡Pedido registrado en MySQL exitosamente! Inventario descontado.', 'success');
         await renderClienteActiveOrderTracker();
         await renderProducts();
@@ -3775,6 +4200,8 @@ function renderCompradoresList(filter) {
                 <span>Nacimiento: ${u.fecha_nacimiento || 'N/A'}</span>
                 <span>ID #${u.id}</span>
             </div>
+            ${u.direccion ? `<div style="font-size:0.78rem; color:#38bdf8; margin-top:0.35rem; display:flex; align-items:flex-start; gap:0.3rem;"><span>🏠</span> <span><strong>Dirección:</strong> ${escapeHtml(u.direccion)}</span></div>` : ''}
+            ${u.telefono ? `<div style="font-size:0.78rem; color:#94a3b8; margin-top:0.2rem; display:flex; align-items:center; gap:0.3rem;"><span>📞</span> <span><strong>Teléfono:</strong> <a href="tel:${escapeHtml(u.telefono)}" style="color:var(--accent-green); font-weight:700;">${escapeHtml(u.telefono)}</a></span></div>` : ''}
             ${u.motivo_rechazo ? `<div style="font-size:0.8rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo rechazo:</strong> ${escapeHtml(u.motivo_rechazo)}</div>` : ''}
             ${u.apelacion_motivo ? `<div style="font-size:0.8rem; color:#eab308; background:rgba(234,179,8,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo apelación:</strong> ${escapeHtml(u.apelacion_motivo)}</div>` : ''}
             <div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.5rem; flex-wrap:wrap; gap:0.5rem;">
@@ -3826,6 +4253,8 @@ function renderRidersList(filter) {
                 <span>Nacimiento: ${r.fecha_nacimiento || 'N/A'}</span>
                 <span>Rider ID #${r.rider_id}</span>
             </div>
+            ${r.direccion ? `<div style="font-size:0.78rem; color:#38bdf8; margin-top:0.35rem; display:flex; align-items:flex-start; gap:0.3rem;"><span>🏠</span> <span><strong>Dirección:</strong> ${escapeHtml(r.direccion)}</span></div>` : ''}
+            ${r.telefono ? `<div style="font-size:0.78rem; color:#94a3b8; margin-top:0.2rem; display:flex; align-items:center; gap:0.3rem;"><span>📞</span> <span><strong>Teléfono:</strong> <a href="tel:${escapeHtml(r.telefono)}" style="color:var(--accent-green); font-weight:700;">${escapeHtml(r.telefono)}</a></span></div>` : ''}
             ${r.motivo_rechazo ? `<div style="font-size:0.8rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo rechazo:</strong> ${escapeHtml(r.motivo_rechazo)}</div>` : ''}
             ${r.apelacion_motivo ? `<div style="font-size:0.8rem; color:#eab308; background:rgba(234,179,8,0.1); padding:0.4rem 0.6rem; border-radius:var(--radius-sm); margin-top:0.4rem;"><strong>Motivo apelación:</strong> ${escapeHtml(r.apelacion_motivo)}</div>` : ''}
             <div style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; border:1px solid var(--border-color); padding:0.5rem; border-radius:var(--radius-md); background:rgba(0,0,0,0.1); margin-top:0.5rem;">
@@ -4276,6 +4705,9 @@ function renderAdminMonitoringUI(activeOrders, settlements) {
                     </div>
                     <div style="font-size:0.85rem; margin-bottom: 0.75rem;">
                         <p><strong>Cliente:</strong> ${clientName}</p>
+                        ${p.direccion_entrega ? `<p style="color:#38bdf8; font-size:0.82rem; margin:0.2rem 0;"><strong>🏠 Entrega:</strong> ${escapeHtml(p.direccion_entrega)}${p.referencia_entrega ? ` <em>(${escapeHtml(p.referencia_entrega)})</em>` : ''}</p>` : ''}
+                        ${p.telefono_contacto ? `<p style="color:#94a3b8; font-size:0.8rem; margin:0.2rem 0;"><strong>📞 Teléfono:</strong> <a href="tel:${escapeHtml(p.telefono_contacto)}" style="color:var(--accent-green); font-weight:700;">${escapeHtml(p.telefono_contacto)}</a></p>` : ''}
+                        <p style="color:#fdba74; font-size:0.8rem; margin:0.2rem 0;"><strong>🏪 Recogida (Tienda):</strong> ${escapeHtml(p.tienda_direccion || STORE_COORDS.direccion)}</p>
                         <p><strong>Repartidor:</strong> ${riderName}</p>
                         <p><strong>Detalles:</strong> ${itemsText || 'Sin detalles'}</p>
                         <p><strong>Monto:</strong> ${parseFloat(p.total).toFixed(2)} Bs</p>
@@ -4435,7 +4867,8 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
         adminMonitoringMarkerClient = L.marker([latCliente, lonCliente], {
             icon: createClientPinIcon(`Cliente: ${clientName}`)
         }).addTo(adminMonitoringMapInstance);
-        adminMonitoringMarkerClient.bindPopup(`<b>Cliente: ${clientName}</b><br>Pedido #${order.id}`);
+        const clientPopupContent = `<b>Cliente: ${escapeHtml(clientName)}</b><br>Pedido #${order.id}${order.direccion_entrega ? `<br>🏠 <strong>Entrega:</strong> ${escapeHtml(order.direccion_entrega)}` : ''}${order.telefono_contacto ? `<br>📞 <strong>Tel:</strong> ${escapeHtml(order.telefono_contacto)}` : ''}`;
+        adminMonitoringMarkerClient.bindPopup(clientPopupContent);
 
         renderDeliveryRoute(
             adminMonitoringMapInstance,

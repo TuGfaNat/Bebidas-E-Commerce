@@ -1775,4 +1775,155 @@ footer {
     animation: mapPulse 1.8s infinite ease-in-out;
 }
 
+/* ========================================================
+   ESTILOS BUSCADOR INTERACTIVO GOOGLE MAPS & SUGERENCIAS
+   ======================================================== */
+.places-search-box-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.places-search-input {
+    transition: all 0.2s ease-in-out;
+}
+
+.places-search-input:focus {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
+    outline: none !important;
+}
+
+.places-suggestions-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    background: #0f172a;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.7);
+    z-index: 2500;
+    backdrop-filter: blur(8px);
+}
+
+.places-suggestion-item {
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.15s ease;
+}
+
+.places-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.places-suggestion-item:hover,
+.places-suggestion-item.active {
+    background: rgba(56, 189, 248, 0.15);
+}
+
+.places-suggestion-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+}
+
+.places-suggestion-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.25;
+}
+
+.places-suggestion-subtitle {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.places-suggestion-dist {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    padding: 0.15rem 0.4rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+.btn-gps-pill {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s;
+}
+
+.btn-gps-pill:hover {
+    background: #38bdf8;
+    color: #0f172a;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.quick-zone-chips {
+    scrollbar-width: thin;
+}
+
+.quick-zone-chips::-webkit-scrollbar {
+    height: 4px;
+}
+
+.quick-zone-chips::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+}
+
+.zone-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.zone-chip:hover {
+    background: rgba(56, 189, 248, 0.18);
+    border-color: #38bdf8;
+    color: #fff;
+}
+
+.zone-chip.active {
+    background: #0284c7;
+    border-color: #38bdf8;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 0 8px rgba(2, 132, 199, 0.4);
+}
+
+
 

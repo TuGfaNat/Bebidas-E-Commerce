@@ -82,10 +82,15 @@ try {
             p.total,
             p.latitud,
             p.longitud,
+            p.direccion_entrega,
+            p.referencia_entrega,
+            p.telefono_contacto,
             p.created_at,
             p.updated_at,
             u_c.nombre as cliente_nombre,
             u_c.email as cliente_email,
+            u_c.direccion as cliente_direccion_habitual,
+            u_c.telefono as cliente_telefono_user,
             u_r.nombre as rider_nombre,
             u_r.email as rider_email
         FROM pedidos p
@@ -96,9 +101,13 @@ try {
     ");
     $activeOrders = $stmt->fetchAll();
 
+    // Consultar configuración dinámica de la sede / tienda desde MySQL
+    $stmtStore = $db->query("SELECT nombre_tienda, direccion, zona, latitud, longitud, telefono FROM configuracion_tienda WHERE id = 1");
+    $storeConfig = $stmtStore ? $stmtStore->fetch(PDO::FETCH_ASSOC) : null;
+    $latTienda = $storeConfig ? floatval($storeConfig['latitud']) : -16.5050;
+    $lonTienda = $storeConfig ? floatval($storeConfig['longitud']) : -68.1290;
+
     $monitoreoData = [];
-    $latTienda = -16.5050;
-    $lonTienda = -68.1290;
 
     foreach ($activeOrders as $order) {
         $latCliente = isset($order['latitud']) ? floatval($order['latitud']) : -16.5090;
@@ -156,6 +165,10 @@ try {
             "rider_nombre" => $order['rider_nombre'],
             "latitud" => $latCliente,
             "longitud" => $lonCliente,
+            "direccion_entrega" => $order['direccion_entrega'] ?: ($order['cliente_direccion_habitual'] ?? ''),
+            "referencia_entrega" => $order['referencia_entrega'] ?? '',
+            "telefono_contacto" => $order['telefono_contacto'] ?: ($order['cliente_telefono_user'] ?? ''),
+            "tienda" => $storeConfig,
             "distancia_km" => round($distancia, 2),
             "eta_minutos" => round($etaMin),
             "posicion_rider" => [
@@ -167,6 +180,8 @@ try {
                 "id" => intval($order['cliente_id']),
                 "nombre" => $order['cliente_nombre'],
                 "email" => $order['cliente_email'],
+                "direccion" => $order['direccion_entrega'] ?: ($order['cliente_direccion_habitual'] ?? ''),
+                "telefono" => $order['telefono_contacto'] ?: ($order['cliente_telefono_user'] ?? ''),
                 "latitud" => $latCliente,
                 "longitud" => $lonCliente
             ],

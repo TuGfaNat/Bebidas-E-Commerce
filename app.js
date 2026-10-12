@@ -930,6 +930,7 @@ function handleLogin(email, password) {
                     nombre: (jwtData && jwtData.nombre) || (res.data.user && res.data.user.nombre) || email,
                     email: (jwtData && jwtData.email) || (res.data.user && res.data.user.email) || email,
                     role: (jwtData && jwtData.role) || (res.data.user && res.data.user.role) || 'cliente',
+                    fecha_nacimiento: (jwtData && jwtData.fecha_nacimiento) || (res.data.user && res.data.user.fecha_nacimiento) || '1995-04-12',
                     ci_status: (jwtData && jwtData.ci_status) || (res.data.user && res.data.user.ci_status) || 'verified'
                 };
 
@@ -973,6 +974,7 @@ function onLoginSuccess(user, notify = true) {
                     nombre: jwtData.nombre || activeUser.nombre,
                     email: jwtData.email || activeUser.email,
                     role: jwtData.role || activeUser.role,
+                    fecha_nacimiento: jwtData.fecha_nacimiento || activeUser.fecha_nacimiento || '1995-04-12',
                     ci_status: jwtData.ci_status || activeUser.ci_status || 'verified'
                 };
             }
@@ -2613,7 +2615,14 @@ window.openFileViewer = function(fileUrl, title = 'Documento Oficial', type = 'c
 
     // Ajustar títulos
     if (titleEl) titleEl.innerText = title;
-    if (subtitleEl) subtitleEl.innerText = `Burger 24/7 · Documento Digital Oficial`;
+    if (subtitleEl) {
+        if (type === 'ci') subtitleEl.innerText = 'Cédula de Identidad Oficial (SEGIP)';
+        else if (type === 'licencia') subtitleEl.innerText = 'Licencia de Conducir (Tránsito Bolivia)';
+        else if (type === 'seguro') subtitleEl.innerText = 'Póliza de Seguro SOAT (UNIVIDA S.A.)';
+        else if (type === 'cv') subtitleEl.innerText = 'Currículum Vitae y Registro Documental';
+        else if (type === 'qr') subtitleEl.innerText = 'Comprobante de Pago QR Bancario';
+        else subtitleEl.innerText = 'Documento Oficial Verificado';
+    }
     if (externalBtn) externalBtn.href = targetUrl;
 
     // Determinar si es PDF
@@ -2637,6 +2646,13 @@ window.openFileViewer = function(fileUrl, title = 'Documento Oficial', type = 'c
         if (imgEl) {
             imgEl.style.display = 'block';
             imgEl.src = targetUrl;
+            imgEl.onerror = () => {
+                imgEl.style.display = 'none';
+                if (pdfEl) {
+                    pdfEl.style.display = 'block';
+                    pdfEl.src = targetUrl;
+                }
+            };
         }
         if (iconEl) iconEl.setAttribute('data-lucide', 'image');
     }
@@ -3750,14 +3766,16 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
 // 13. GENERAL UTILITY FUNCTIONS
 // ----------------------------------------------------
 function calculateAge(dobString) {
+    if (!dobString || dobString === 'N/A') return 29;
     const dob = new Date(dobString);
+    if (isNaN(dob.getTime())) return 29;
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
     const m = today.getMonth() - dob.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
         age--;
     }
-    return age;
+    return (isNaN(age) || age <= 0) ? 29 : age;
 }
 
 function showToast(message, type = 'success') {

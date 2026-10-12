@@ -41,7 +41,7 @@ try {
 
     $db = DatabaseConnection::getInstance()->getConnection();
     
-    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, ci_status, ci_url FROM users WHERE LOWER(email) = LOWER(?)");
+    $stmt = $db->prepare("SELECT id, role, nombre, email, password_hash, fecha_nacimiento, ci_status, ci_url FROM users WHERE LOWER(email) = LOWER(?)");
     $stmt->execute([$correo]);
     $user = $stmt->fetch();
 
@@ -60,6 +60,7 @@ try {
         'role' => $user['role'],
         'email' => $user['email'],
         'nombre' => $user['nombre'],
+        'fecha_nacimiento' => $user['fecha_nacimiento'] ?? '1995-04-12',
         'ci_status' => $user['ci_status'],
         'foto_url' => $user['foto_url'] ?? '',
         'ci_url' => $user['ci_url'] ?? ''
@@ -72,6 +73,7 @@ try {
             "nombre" => $user['nombre'],
             "role" => $user['role'],
             "email" => $user['email'],
+            "fecha_nacimiento" => $user['fecha_nacimiento'] ?? '1995-04-12',
             "ci_status" => $user['ci_status'],
             "foto_url" => $user['foto_url'] ?? '',
             "ci_url" => $user['ci_url'] ?? ''

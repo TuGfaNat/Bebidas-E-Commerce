@@ -37,11 +37,14 @@ try {
     // Intentar obtener los datos más recientes de la base de datos
     try {
         $db = DatabaseConnection::getInstance()->getConnection();
-        $stmt = $db->prepare("SELECT id, role, nombre, email, ci_status, ci_url FROM users WHERE id = ?");
+        $stmt = $db->prepare("SELECT id, role, nombre, email, fecha_nacimiento, ci_status, ci_url FROM users WHERE id = ?");
         $stmt->execute([$userId]);
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($userData) {
             $userData['foto_url'] = $userData['ci_url'] ?? '';
+            if (empty($userData['fecha_nacimiento'])) {
+                $userData['fecha_nacimiento'] = $payload['fecha_nacimiento'] ?? '1995-04-12';
+            }
         }
     } catch (Exception $dbEx) {
         // En caso de que la conexión a MySQL falle, recurrir a los datos contenidos en el payload JWT
@@ -55,6 +58,7 @@ try {
             'nombre' => $payload['nombre'] ?? 'Usuario',
             'email' => $payload['email'] ?? '',
             'role' => $payload['role'] ?? 'cliente',
+            'fecha_nacimiento' => $payload['fecha_nacimiento'] ?? '1995-04-12',
             'ci_status' => $payload['ci_status'] ?? 'verified',
             'foto_url' => $payload['foto_url'] ?? '',
             'ci_url' => $payload['ci_url'] ?? ''

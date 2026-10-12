@@ -1479,6 +1479,10 @@ footer {
     padding: 1.5rem;
 }
 
+#fileViewerModal {
+    z-index: 9999 !important;
+}
+
 .file-view-modal.active {
     display: flex;
 }

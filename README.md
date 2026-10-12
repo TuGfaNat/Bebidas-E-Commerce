@@ -15,6 +15,7 @@
 ## 📑 Tabla de Contenido General
 
 1. [🎒 GUÍA RÁPIDA: INSTALACIÓN DESDE CERO (Para Escolares y Principiantes) 🚀](#-guía-rápida-instalación-desde-cero-para-escolares-y-principiantes-)
+   - [💻 ¿Cómo encender el sistema desde la Terminal de VS Code?](#-opción-b-desde-la-terminal-integrada-de-visual-studio-code-)
 2. [¿Qué es Burger 24/7? (Visión General)](#-1-qué-es-burger-247)
 3. [🏛️ Especificación Técnica y Arquitectura de Despliegue](#-2-especificación-técnica-y-arquitectura-de-despliegue)
 4. [📐 Diagramas del Sistema y Flujos Transaccionales](#-3-diagramas-del-sistema-y-flujos-transaccionales)
@@ -74,10 +75,28 @@ Imagina que este proyecto es un restaurante de hamburguesas de la vida real:
    - ✅ Crea la base de datos `burger_shop` con el menú de hamburguesas y usuarios listos en español.
 
 #### 🔹 Paso 3: Encender la Tienda y Usarla
-1. Haz **doble clic** sobre el archivo:  
-   🚀 **`iniciar_sistema.bat`** *(o `start_services.bat`)*
-2. ¡Y listo! Tu navegador web se abrirá automáticamente en:  
-   👉 **`http://localhost/Bebidas-E-Commerce/`**
+
+Para levantar el proyecto de la forma más sencilla y directa posible, tienes dos opciones:
+
+##### 💻 Opción A: Desde la Terminal en VS Code (1 solo comando nativo de PHP) 🚀
+1. Abre la terminal en VS Code presionando: **`Ctrl + ~`** *(o en el menú superior: `Terminal` ➔ `New Terminal`)*.
+2. Escribe y presiona Enter:
+   ```powershell
+   php -S localhost:8000
+   ```
+3. Abre tu navegador web en:  
+   👉 **`http://localhost:8000/`**
+
+> 💡 **¿Por qué es tan sencillo?**  
+> * ✔ **El Frontend (`index.html`, `app.js`):** PHP lo sirve directamente en tu navegador.  
+> * ✔ **Los Microservicios PHP (`microservices/`):** Se ejecutan al instante para procesar compras, menú y carnets.  
+> * ✔ No requiere scripts intermediarios ni configuraciones complejas. Para apagarlo, solo presionas **`Ctrl + C`** en la terminal.
+
+##### 🖱️ Opción B: Con XAMPP (Apache y MySQL)
+1. Abre **XAMPP Control Panel** y presiona **Start** en **Apache** y **MySQL** (ambos en verde).
+2. Abre tu navegador web en:  
+   👉 **`http://localhost/Bebidas-E-Commerce/`**  
+   *(O ejecuta `.\iniciar_sistema.bat` para abrirlo automáticamente).*
 
 ---
 
@@ -462,6 +481,16 @@ php tests/test_e2e_suite.php
    </FilesMatch>
    ```
    Esto bloquea cualquier intento de inyección de scripts maliciosos (Anti-RCE).
+
+5. **Ejecución y Control desde la Terminal de VS Code (PHP Nativo):**
+   | Acción deseada | Comando en Terminal (PowerShell / CMD) | Descripción |
+   |---|---|---|
+   | 🌐 **Servidor de Desarrollo PHP** (Puerto 8000) | `php -S localhost:8000` | Levanta el servidor web embebido de PHP en la terminal. |
+   | 🚀 **Encender Sistema Completo** (Apache + MySQL) | `.\iniciar_sistema.bat` *(o `.\start_services.bat`)* | Comprueba y arranca los servicios de XAMPP. |
+   | 🔍 **Diagnóstico del Entorno** (32 verificaciones) | `php check_deploy.php` *(o `.\check_deploy.bat`)* | Comprueba PHP, extensiones, MySQL, C++ y JWT. |
+   | 🗄️ **Migraciones de Base de Datos** (Crear/poblar BD) | `php migrate.php` | Conecta a MySQL e inicializa las 6 tablas y datos. |
+   | ⚡ **Compilar Motor C++** (Optimización `-O3`) | `.\cpp\build.bat` | Compila `cpp/motor_core.cpp` con g++. |
+   | ⚡ **Atajo Rápido con Tarea de VS Code** | Presiona `Ctrl + Shift + B` en VS Code | Inicia el servidor PHP automáticamente. |
 
 ---
 

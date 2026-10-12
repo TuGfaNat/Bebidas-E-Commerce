@@ -1074,6 +1074,23 @@ function setupEventListeners() {
     document.getElementById('btnCheckout').addEventListener('click', openCheckoutModal);
     document.getElementById('btnCancelCheckout').addEventListener('click', closeCheckoutModal);
 
+    // Cerrar al hacer clic en el backdrop fuera del contenido
+    const checkoutModalEl = document.getElementById('checkoutModal');
+    if (checkoutModalEl) {
+        checkoutModalEl.addEventListener('click', (e) => {
+            if (e.target === checkoutModalEl) {
+                closeCheckoutModal();
+            }
+        });
+    }
+
+    // Auto-reajustar mapa interactivo de checkout en resize
+    window.addEventListener('resize', () => {
+        if (checkoutModalEl && checkoutModalEl.classList.contains('active') && checkoutMapInstance) {
+            checkoutMapInstance.invalidateSize();
+        }
+    });
+
     document.getElementById('payOptQr').addEventListener('click', () => {
         document.getElementById('payOptQr').classList.add('active');
         document.getElementById('payOptCash').classList.remove('active');
@@ -2290,7 +2307,15 @@ function initCheckoutMap() {
                 setCheckoutDeliveryCoords(selectedDeliveryCoords.lat, selectedDeliveryCoords.lon);
             }
         }
-    }, 200);
+
+        // Forzar recalculo de dimensiones del mapa inmediatamente y post animación modal
+        if (checkoutMapInstance) {
+            checkoutMapInstance.invalidateSize();
+            setTimeout(() => {
+                if (checkoutMapInstance) checkoutMapInstance.invalidateSize();
+            }, 250);
+        }
+    }, 150);
 }
 
 function closeCheckoutModal() {

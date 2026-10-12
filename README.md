@@ -19,7 +19,7 @@
 2. [¿Qué es Burger 24/7? (Visión General)](#-1-qué-es-burger-247)
 3. [🏛️ Especificación Técnica y Arquitectura de Despliegue](#-2-especificación-técnica-y-arquitectura-de-despliegue)
 4. [📐 Diagramas del Sistema y Flujos Transaccionales](#-3-diagramas-del-sistema-y-flujos-transaccionales)
-5. [🛡️ Regla de Oro, Auditoría y Estándar BMAD](#-4-regla-de-oro-auditoría-y-estándar-bmad)
+5. [🛡️ Regla de Oro y Estándar BMAD](#-4-regla-de-oro-y-estándar-bmad)
 6. [📡 Catálogo Completo de APIs REST](#-5-catálogo-completo-de-apis-rest)
 7. [⚡ Módulo Crítico de Rendimiento en C++](#-6-módulo-crítico-de-rendimiento-en-c)
 8. [🗄️ Modelo Relacional de Base de Datos (Diccionario 3FN)](#-7-modelo-relacional-de-base-de-datos-diccionario-3fn)
@@ -167,7 +167,7 @@ En la pantalla de inicio, en la esquina inferior izquierda, verás un botón mor
 
 * 👤 **Panel de Cliente:** Catálogo dinámico organizado por categorías (Hamburguesas, Combos, Bebidas, Acompañamientos), carrito reactivo, selección visual del punto de entrega mediante un mapa interactivo (GPS con Leaflet), pasarela de pago (QR digital o contraentrega en efectivo), generación de **Recibo Digital Imprimible** y seguimiento en tiempo real.
 * 🛵 **Panel de Repartidor (Rider):** Notificación de órdenes en zona, cálculo instantáneo de fletes con el motor nativo en C++, trazado de rutas viales sobre mapas oscuros CartoDB, confirmación de entregas y arqueo de caja de recaudación.
-* 👑 **Panel de Administrador (Super Usuario):** Gestión integral del menú e inventario (CRUD atómico de productos), monitoreo geográfico en vivo de la flota de repartidores en tiempo real, aprobación/rechazo de expedientes de identidad (C.I.) y conductores, reportes financieros y ledger inmutable de auditoría.
+* 👑 **Panel de Administrador (Super Usuario):** Gestión integral del menú e inventario (CRUD atómico de productos), monitoreo geográfico en vivo de la flota de repartidores en tiempo real, aprobación/rechazo de expedientes de identidad (C.I.) y conductores, y reportes financieros de ventas.
 
 ---
 
@@ -276,7 +276,6 @@ sequenceDiagram
         PHP->>MySQL: INSERT INTO pedidos (...)
         PHP->>MySQL: INSERT INTO pedido_detalles (...)
         PHP->>MySQL: UPDATE productos SET stock = stock - cantidad
-        PHP->>MySQL: INSERT INTO auditoria_logs (...)
         PHP->>MySQL: COMMIT
         PHP-->>Cliente: HTTP 201 (Envelope BMAD: pedido_id, total, flete)
     else Stock insuficiente en validación C++
@@ -306,19 +305,15 @@ stateDiagram-v2
 
 ---
 
-## 🛡️ 4. Regla de Oro, Auditoría y Estándar BMAD
+## 🛡️ 4. Regla de Oro y Estándar BMAD
 
-### La Regla de Oro (Trazabilidad Obligatoria)
-Toda tabla en el esquema de base de datos y toda respuesta generada por los servicios debe contener indefectiblemente los cuatro atributos de trazabilidad:
+### La Regla de Oro (Trazabilidad Básica)
+Toda tabla en el esquema de base de datos y toda respuesta generada por los servicios contiene los atributos estándar de trazabilidad:
 
 $$\text{Trazabilidad} = \{ \texttt{created\_at}, \texttt{updated\_at}, \texttt{created\_by}, \texttt{updated\_by} \}$$
 
-Adicionalmente, se cuenta con la tabla inmutable `auditoria_logs`, la cual almacena un registro inalterable de cada evento relevante:
-* Fecha y hora en formato UTC / ISO-8601.
-* Identificador del operador o usuario (`user_id`).
-* Acción realizada (ej. `LOGIN_SUCCESS`, `ORDER_CREATED`, `ORDER_DELIVERED`, `CI_APPROVED`).
-* Comparativa diferencial en JSON estructurado (`estado_anterior_json` y `estado_nuevo_json`).
-* Dirección IP de procedencia.
+*(Nota: Para mayor sencillez y facilidad de aprendizaje de los estudiantes, el sistema se mantiene ligero y directo, enfocado en el flujo de comercio electrónico y entregas sin sobrecargas complejas).*
+
 
 ### Estándar de Respuesta Unificada BMAD
 Todas las APIs responden bajo la siguiente estructura unificada y determinista:
@@ -357,7 +352,6 @@ Todos los endpoints reciben y emiten `application/json`, requiriendo la cabecera
 | `GET` | `/microservices/Auth/admin_approval.php` | Admin | Consulta de expedientes de usuarios y riders pendientes. |
 | `POST` | `/microservices/Auth/admin_approval.php` | Admin | Aprobación o rechazo de C.I. y documentos de choferes. |
 | `GET` | `/microservices/Auth/admin_users.php` | Admin | Listado general de usuarios registrados para gestión interna. |
-| `GET` | `/microservices/Auth/audit_logs.php` | Admin | Consulta paginada del ledger inmutable de auditoría. |
 | `GET` | `/microservices/Auth/view_document.php` | Admin | Descarga o visualización protegida de carnets y documentos. |
 | `GET` | `/microservices/Catalog/catalog.php` | Público | Obtención del menú clasificado por categorías con existencias. |
 | `POST` | `/microservices/Transactions/checkout.php` | Cliente | Creación atómica de pedido con validación C++ y MySQL `FOR UPDATE`. |
@@ -409,32 +403,18 @@ Base de datos: **`burger_shop`** (Juego de caracteres: `utf8mb4_unicode_ci`, Mot
          │ 1                       ▲                         │
          │                         │                         │ 1
          │ 1                       │ 1              ┌─────────────────┐
-┌─────────────────┐                │                │    productos    │
-│documentacion_   │                │                ├─────────────────┤
-│     rider       │                │                │ id (PK)         │
-├─────────────────┤                │                │ nombre          │
-│ id (PK)         │                │                │ categoria       │
-│ user_id (FK, UQ)│                │                │ precio          │
-│ licencia_url    │                │                │ stock           │
-│ seguro_url      │                │                │ activo          │
-│ cv_url          │                │                │ created_at/upd..│
-│ estado          │                │                └─────────────────┘
-│ created_at/upd..│                │
-└─────────────────┘                │
-                                   │ 1
-                         ┌─────────────────┐
-                         │ auditoria_logs  │
-                         ├─────────────────┤
-                         │ id (PK)         │
-                         │ user_id (FK)    │
-                         │ accion          │
-                         │ tabla_afectada  │
-                         │ registro_id     │
-                         │ estado_ant_json │
-                         │ estado_nuev_json│
-                         │ ip_origen       │
-                         │ created_at      │
-                         └─────────────────┘
+┌─────────────────┐                                 ┌─────────────────┐
+│documentacion_   │                                 │    productos    │
+│     rider       │                                 ├─────────────────┤
+├─────────────────┤                                 │ id (PK)         │
+│ id (PK)         │                                 │ nombre          │
+│ user_id (FK, UQ)│                                 │ categoria       │
+│ licencia_url    │                                 │ precio          │
+│ seguro_url      │                                 │ stock           │
+│ cv_url          │                                 │ activo          │
+│ estado          │                                 │ created_at/upd..│
+│ created_at/upd..│                                 └─────────────────┘
+└─────────────────┘
 ```
 
 ---
@@ -498,7 +478,7 @@ php tests/test_e2e_suite.php
 
 | Rol | Nombre | Correo Electrónico | Contraseña | Estado C.I. | Perfil Funcional |
 |---|---|---|---|---|---|
-| 👑 **Admin** | Admin Central | `admin@mail.com` | `admin` | ✅ Verificado | Control total del menú, aprobación KYC y auditoría. |
+| 👑 **Admin** | Admin Central | `admin@mail.com` | `admin` | ✅ Verificado | Control total del menú, aprobación KYC y reportes de ventas. |
 | 👤 **Cliente** | Carlos Pérez | `carlos@mail.com` | `carlos` | ✅ Verificado | Cliente habilitado para compras y checkout inmediato. |
 | ⏳ **Cliente** | María López | `maria@mail.com` | `maria` | ⏳ Pendiente | C.I. en revisión; precios ocultos hasta aprobación. |
 | ❌ **Cliente** | Roberto Flores | `roberto@mail.com` | `roberto` | ❌ Rechazado | Cuenta bloqueada por documento observado. |
@@ -551,7 +531,7 @@ Burger-E-Commerce/
 │   ├── motor_core.exe           # Binario nativo compilado de latencia ultra-baja (<150 µs)
 │   └── build.bat                # Script de compilación nativa automatizada (MinGW / GCC)
 ├── microservices/               # Microservicios modulares en PHP (8.2+)
-│   ├── Auth/                    # Autenticación, registro, JWT, perfil y auditoría
+│   ├── Auth/                    # Autenticación, registro, JWT y perfil de usuario
 │   ├── Catalog/                 # Catálogo de menú, saneamiento y control de existencias
 │   ├── Transactions/            # Checkout atómico, cancelaciones y reportes
 │   └── Rider/                   # Asignación de despachos y liquidación de caja

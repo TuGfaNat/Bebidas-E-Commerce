@@ -412,7 +412,6 @@
                 <button class="admin-tab-btn" data-tab="users" id="tabBtnUsers">Gestión de Usuarios</button>
                 <button class="admin-tab-btn" data-tab="catalog" id="tabBtnCatalog">Control de Catálogo (CRUD)</button>
                 <button class="admin-tab-btn" data-tab="monitoring" id="tabBtnMonitoring">Monitoreo & Caja Central</button>
-                <button class="admin-tab-btn" data-tab="audit" id="tabBtnAudit">Ledger de Auditoría (BMAD)</button>
                 <button class="admin-tab-btn" data-tab="reports" id="tabBtnReports">Reporte de Ventas & Riders</button>
             </div>
 
@@ -567,36 +566,6 @@
                                 <!-- Riders cash settlement status -->
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 4: Audit Ledger (BMAD) -->
-            <div class="admin-subpanel" id="subpanelAudit">
-                <div class="glass-card mb-4" style="margin-bottom: 1.5rem;">
-                    <h3>Ledger Inmutable de Auditoría</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                        Trazabilidad obligatoria (Regla de Oro). Muestra todos los cambios del sistema en tiempo real. 
-                        Cualquier ajuste de stock, aprobación o actualización financiera queda capturado de manera inalterable.
-                    </p>
-                    <div class="audit-log-container" style="overflow-x: auto;">
-                        <table class="audit-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>IP / Marca de Tiempo</th>
-                                    <th>Operador</th>
-                                    <th>Tabla Afectada</th>
-                                    <th>Acción</th>
-                                    <th>Registro ID</th>
-                                    <th>Datos Anteriores (JSON)</th>
-                                    <th>Datos Nuevos (JSON)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="auditTableBody">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -1037,11 +1006,11 @@
                     </div>
                 </div>
 
-                <!-- Pie de Imprenta y Auditoría -->
+                <!-- Pie del Recibo -->
                 <div style="margin-top: 0.85rem; border-top: 1px dashed #cbd5e1; padding-top: 0.55rem; text-align: center; font-size: 0.65rem; color: #64748b;">
                     <p style="margin: 0.1rem 0;">¡GRACIAS POR TU PREFERENCIA!</p>
                     <p style="margin: 0.1rem 0;">Burger 24/7 · Calidad y rapidez artesanal</p>
-                    <p style="margin: 0.2rem 0; font-family: monospace;" id="lblReceiptHash">ID Transacción: #0 · Auditoría C++ Verificada</p>
+                    <p style="margin: 0.2rem 0; font-family: monospace;" id="lblReceiptHash">ID Transacción: #0 · Pedido Confirmado</p>
                 </div>
             </div>
 
@@ -1056,7 +1025,7 @@
         <div class="footer-content">
             <div>
                 <p>&copy; 2026 Burger 24/7 E-commerce. Sistema de Pedidos y Delivery de Hamburguesas.</p>
-                <p style="font-size: 0.75rem; margin-top: 0.25rem;">Cumplimiento obligatorio de auditoría, control de trazabilidad relacional de inventario y no repudio.</p>
+                <p style="font-size: 0.75rem; margin-top: 0.25rem;">Plataforma de comercio electrónico con pedidos y entregas en tiempo real.</p>
             </div>
             <div>
                 <p>Tecnologías: PHP, C++, MySQL, HTML5, CSS3, JavaScript ES6 | v1.0.1</p>

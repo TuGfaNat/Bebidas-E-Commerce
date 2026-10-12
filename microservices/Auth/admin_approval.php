@@ -81,13 +81,7 @@ try {
         $stmt = $db->prepare("UPDATE users SET ci_status = ?, updated_by = ? WHERE id = ?");
         $stmt->execute([$mappedState, $adminId, $targetId]);
 
-        $stmtLog = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmtLog->execute([
-            'users', $targetId, 'UPDATE',
-            json_encode(['ci_status' => $oldData['ci_status']]),
-            json_encode(['ci_status' => $mappedState]),
-            $adminId, $adminId
-        ]);
+
 
     } elseif ($tipo === 'view_user') {
         $stmtView = $db->prepare("SELECT id, nombre, email, ci_url, ci_status FROM users WHERE id = ?");
@@ -122,13 +116,7 @@ try {
         $stmtU = $db->prepare("UPDATE users SET ci_status = ?, updated_by = ? WHERE id = ?");
         $stmtU->execute([$mappedState, $adminId, $targetId]);
 
-        $stmtLog = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmtLog->execute([
-            'documentacion_rider', $targetId, 'UPDATE',
-            json_encode(['estado_aprobacion' => $oldData['estado_aprobacion']]),
-            json_encode(['estado_aprobacion' => $nuevoEstado]),
-            $adminId, $adminId
-        ]);
+
     } else {
         throw new Exception("Tipo inválido. Use 'user', 'rider', 'view_user', o 'view_rider'.");
     }

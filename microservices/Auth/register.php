@@ -102,9 +102,7 @@ try {
     $stmtUpdateAudit = $db->prepare("UPDATE users SET created_by = ?, updated_by = ? WHERE id = ?");
     $stmtUpdateAudit->execute([$newUserId, $newUserId, $newUserId]);
 
-    // Registro de logs (simulado, asumiendo tabla auditoria_logs si existe)
-    $stmtLog = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_nuevos, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmtLog->execute(['users', $newUserId, 'INSERT', json_encode(['email' => $correo, 'ci_url' => $ciUrl]), $newUserId, $newUserId]);
+
 
     $db->commit();
 

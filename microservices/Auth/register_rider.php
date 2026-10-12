@@ -118,12 +118,7 @@ try {
     $stmtDoc->execute([$newRiderId, $uploadedFiles['licencia'], $uploadedFiles['seguro'], $uploadedFiles['cv'], $newRiderId, $newRiderId]);
     $newDocId = $db->lastInsertId();
 
-    // 6. Registro de Logs de Auditoría
-    $stmtLogUser = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_nuevos, created_by, updated_by) VALUES (?, ?, 'INSERT', ?, ?, ?)");
-    $stmtLogUser->execute(['users', $newRiderId, json_encode(['email' => $correo, 'role' => $role, 'ci_status' => 'pending']), $newRiderId, $newRiderId]);
 
-    $stmtLogDoc = $db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_nuevos, created_by, updated_by) VALUES (?, ?, 'INSERT', ?, ?, ?)");
-    $stmtLogDoc->execute(['documentacion_rider', $newDocId, json_encode(['rider_id' => $newRiderId, 'estado_aprobacion' => 'pendiente']), $newRiderId, $newRiderId]);
 
     $db->commit();
 

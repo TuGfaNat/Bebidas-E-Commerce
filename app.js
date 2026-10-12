@@ -272,24 +272,10 @@ function getBurgerProducts() {
 }
 
 // ----------------------------------------------------
-// 2. AUDIT LOG WRITER (BMAD METHOD)
+// 2. AUDITORÍA (MÓDULO SIMPLIFICADO / DESHABILITADO)
 // ----------------------------------------------------
 function logAuditoria(tabla, registroId, accion, datosAnteriores, datosNuevos, userId) {
-    const newLog = {
-        id: DB.auditoria_logs.length + 1,
-        tabla_afectada: tabla,
-        registro_id: registroId,
-        accion: accion,
-        datos_anteriores: datosAnteriores ? JSON.stringify(datosAnteriores) : null,
-        datos_nuevos: datosNuevos ? JSON.stringify(datosNuevos) : null,
-        ip_address: '127.0.0.1', 
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: userId,
-        updated_by: userId
-    };
-    DB.auditoria_logs.unshift(newLog); 
-    saveDatabase();
+    // No-op: Auditoría desactivada para aligerar y simplificar el sistema
 }
 
 // ----------------------------------------------------
@@ -450,8 +436,6 @@ function setupEventListeners() {
                     renderAdminPendingApprovals();
                 } else if (tabId === 'users') {
                     renderAdminAllUsers();
-                } else if (tabId === 'audit') {
-                    renderAdminAuditLogs();
                 }
             }
         });
@@ -549,7 +533,6 @@ function updateUIForCurrentRole() {
         renderAdminProductsTable();
         renderAdminReports();
         renderAdminMonitoring();
-        renderAdminAuditLogs();
         syncProductsFromBackend();
     }
 }
@@ -1876,13 +1859,7 @@ window.uploadMockDoc = function(docType) {
         doc.estado_aprobacion = 'pendiente';
         showToast('Expediente completo y enviado para aprobación del administrador.', 'success');
         
-        logAuditoria('documentacion_rider', doc.id, 'INSERT', null, { 
-            rider_id: r.id, 
-            estado_aprobacion: 'pendiente', 
-            licencia: doc.licencia_url,
-            seguro: doc.seguro_url,
-            cv: doc.cv_url
-        }, r.id);
+
     } else {
         showToast('Documento subido correctamente.', 'info');
     }
@@ -3282,125 +3259,9 @@ function resetProductForm() {
 }
 
 async function renderAdminAuditLogs() {
-    const tbody = document.getElementById('auditTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">Cargando registros de auditoría desde MySQL...</td></tr>';
-
-    try {
-        const res = await apiGet('/Auth/audit_logs.php');
-        if (!res.ok || !res.data) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--accent-red);"><i data-lucide="alert-triangle"></i> Error al cargar logs de auditoría del sistema.</td></tr>';
-            initLucide();
-            showGlobalApiError('Error al consultar auditoria_logs desde MySQL.');
-            return;
-        }
-
-        const logs = res.data;
-        if (!Array.isArray(logs) || logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-secondary);">No hay registros de auditoría en la base de datos.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = '';
-        logs.forEach(log => {
-            const tr = document.createElement('tr');
-            const nameUser = log.user_nombre ? `${log.user_nombre} (${log.user_role || 'usuario'})` : (log.created_by ? `User #${log.created_by}` : 'SYSTEM');
-
-            let preData = '-';
-            if (log.datos_anteriores) {
-                try {
-                    preData = JSON.stringify(typeof log.datos_anteriores === 'string' ? JSON.parse(log.datos_anteriores) : log.datos_anteriores, null, 2);
-                } catch (e) {
-                    preData = String(log.datos_anteriores);
-                }
-            }
-
-            let postData = '-';
-            if (log.datos_nuevos) {
-                try {
-                    postData = JSON.stringify(typeof log.datos_nuevos === 'string' ? JSON.parse(log.datos_nuevos) : log.datos_nuevos, null, 2);
-                } catch (e) {
-                    postData = String(log.datos_nuevos);
-                }
-            }
-
-            let badgeClass = 'badge-verified'; 
-            if (log.accion === 'UPDATE') badgeClass = 'badge-pending'; 
-            else if (log.accion === 'DELETE') badgeClass = 'badge-rejected'; 
-
-            // Col 1: ID
-            const tdId = document.createElement('td');
-            const strongId = document.createElement('strong');
-            strongId.textContent = `#${log.id}`;
-            tdId.appendChild(strongId);
-            tr.appendChild(tdId);
-
-            // Col 2: Fecha e IP
-            const tdDate = document.createElement('td');
-            tdDate.style.fontSize = '0.75rem';
-            tdDate.style.color = 'var(--text-secondary)';
-            tdDate.appendChild(document.createTextNode(new Date(log.created_at).toLocaleString()));
-            tdDate.appendChild(document.createElement('br'));
-            const spanIp = document.createElement('span');
-            spanIp.style.color = 'var(--text-muted)';
-            spanIp.textContent = `IP: ${log.ip_address || '127.0.0.1'}`;
-            tdDate.appendChild(spanIp);
-            tr.appendChild(tdDate);
-
-            // Col 3: Usuario
-            const tdUser = document.createElement('td');
-            tdUser.textContent = nameUser;
-            tr.appendChild(tdUser);
-
-            // Col 4: Tabla afectada
-            const tdTable = document.createElement('td');
-            const spanTable = document.createElement('span');
-            spanTable.style.fontFamily = 'monospace';
-            spanTable.style.color = 'var(--accent-purple)';
-            spanTable.textContent = log.tabla_afectada;
-            tdTable.appendChild(spanTable);
-            tr.appendChild(tdTable);
-
-            // Col 5: Acción
-            const tdAction = document.createElement('td');
-            const spanAction = document.createElement('span');
-            spanAction.className = `badge ${badgeClass}`;
-            spanAction.textContent = log.accion;
-            tdAction.appendChild(spanAction);
-            tr.appendChild(tdAction);
-
-            // Col 6: ID de registro
-            const tdRecId = document.createElement('td');
-            const strongRecId = document.createElement('strong');
-            strongRecId.textContent = `#${log.registro_id}`;
-            tdRecId.appendChild(strongRecId);
-            tr.appendChild(tdRecId);
-
-            // Col 7: Datos anteriores (Seguro contra XSS)
-            const tdPre = document.createElement('td');
-            const preElem = document.createElement('pre');
-            preElem.className = 'json-render';
-            preElem.textContent = preData;
-            tdPre.appendChild(preElem);
-            tr.appendChild(tdPre);
-
-            // Col 8: Datos nuevos (Seguro contra XSS)
-            const tdPost = document.createElement('td');
-            const postElem = document.createElement('pre');
-            postElem.className = 'json-render';
-            postElem.textContent = postData;
-            tdPost.appendChild(postElem);
-            tr.appendChild(tdPost);
-
-            tbody.appendChild(tr);
-        });
-    } catch (err) {
-        console.error('Error cargando audit logs:', err);
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--accent-red);"><i data-lucide="alert-triangle"></i> Error de red conectando con la API de auditoría.</td></tr>';
-        initLucide();
-        showGlobalApiError('Error de red al consultar auditoria_logs.');
-    }
+    return;
 }
+
 
 async function renderAdminReports() {
     const list = document.getElementById('riderLeaderboard');

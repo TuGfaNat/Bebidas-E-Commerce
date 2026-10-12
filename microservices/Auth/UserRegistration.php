@@ -78,7 +78,6 @@ class UserRegistration {
     }
 
     private function logAuditoria($tabla, $registroId, $accion, $datosAnteriores, $datosNuevos, $userId) {
-        $stmt = $this->db->prepare("INSERT INTO auditoria_logs (tabla_afectada, registro_id, accion, datos_anteriores, datos_nuevos, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$tabla, $registroId, $accion, $datosAnteriores, $datosNuevos, $userId, $userId]);
+        return;
     }
 }

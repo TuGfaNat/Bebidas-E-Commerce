@@ -2313,7 +2313,7 @@ function updateCheckoutFinalTotal() {
             placeBtn.innerText = `Confirmar Pedido (Pagar en Efectivo al Recibir: ${finalTotal.toFixed(2)} Bs)`;
             placeBtn.style.background = 'var(--accent-green)';
         } else {
-            placeBtn.innerText = `Confirmar Pedido (Pago con QR: ${finalTotal.toFixed(2)} Bs)`;
+            placeBtn.innerText = `Confirmar y Enviar Comprobante QR (Total: ${finalTotal.toFixed(2)} Bs)`;
             placeBtn.style.background = 'var(--accent-purple)';
         }
     }
@@ -2323,7 +2323,8 @@ function updateCheckoutFinalTotal() {
 function validateCheckoutForm() {
     const hasLocation = selectedDeliveryCoords !== null;
     const isQr = document.getElementById('payOptQr').classList.contains('active');
-    const hasQrFile = document.getElementById('fileQrComprobante').files.length > 0;
+    const qrInput = document.getElementById('fileQrComprobante');
+    const hasQrFile = qrInput && qrInput.files && qrInput.files.length > 0;
     const txtDir = document.getElementById('txtCheckoutDireccion');
     const txtTel = document.getElementById('txtCheckoutTelefono');
     const hasAddress = txtDir ? txtDir.value.trim().length > 0 : true;
@@ -2331,7 +2332,8 @@ function validateCheckoutForm() {
     
     const placeBtn = document.getElementById('btnPlaceOrder');
     if (placeBtn) {
-        // Para Contraentrega o QR se requiere ubicación seleccionada, dirección y teléfono de contacto
+        // Para Contraentrega: requiere ubicación, dirección y teléfono.
+        // Para QR: requiere ubicación, dirección, teléfono Y comprobante QR para despachar a cocina.
         placeBtn.disabled = !(hasLocation && hasAddress && hasPhone && (!isQr || hasQrFile));
     }
 }
@@ -2364,14 +2366,14 @@ async function submitOrderCheckout() {
         return;
     }
 
-    const u = currentSession.cliente;
     const isQr = document.getElementById('payOptQr').classList.contains('active');
     const metodoPago = isQr ? 'qr' : 'contraentrega';
+    const qrFileInput = document.getElementById('fileQrComprobante');
+    const qrFile = (isQr && qrFileInput && qrFileInput.files && qrFileInput.files.length > 0) ? qrFileInput.files[0] : null;
 
-    let qrUrl = null;
-    if (isQr) {
-        const file = document.getElementById('fileQrComprobante').files[0];
-        qrUrl = `/uploads/qr/qr_${Date.now()}_${file ? file.name : 'comprobante.png'}`;
+    if (isQr && !qrFile) {
+        showToast('Por favor adjunta la foto o captura de tu comprobante de pago QR antes de continuar.', 'warning');
+        return;
     }
 
     // Proceso de Checkout atómico contra backend MySQL
@@ -2386,6 +2388,13 @@ async function submitOrderCheckout() {
         cantidad: item.quantity
     }));
 
+    const placeBtn = document.getElementById('btnPlaceOrder');
+    const origBtnText = placeBtn ? placeBtn.innerHTML : '';
+    if (placeBtn) {
+        placeBtn.disabled = true;
+        placeBtn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Procesando Pedido...';
+    }
+
     try {
         const res = await apiPost('/Transactions/checkout.php', {
             items: itemsPayload,
@@ -2393,13 +2402,17 @@ async function submitOrderCheckout() {
             longitud: selectedDeliveryCoords.lon,
             metodo_pago: metodoPago,
             distancia_km: selectedDeliveryCoords.distKm,
-            qr_comprobante_url: qrUrl,
+            qr_comprobante_url: null,
             direccion_entrega: direccionEntrega,
             referencia_entrega: referenciaEntrega,
             telefono_contacto: telefonoContacto
         });
 
         if (!res.ok) {
+            if (placeBtn) {
+                placeBtn.disabled = false;
+                placeBtn.innerHTML = origBtnText;
+            }
             if (res.status === 400 && res.error && res.error.includes('Stock insuficiente')) {
                 showToast(`Error: ${res.error}`, 'danger');
                 return;
@@ -2410,6 +2423,25 @@ async function submitOrderCheckout() {
             showToast(`Error en checkout: ${res.error || 'No se pudo procesar la transacción.'}`, 'danger');
             showGlobalApiError('Error al procesar el checkout en el servidor: ' + (res.error || 'Operación rechazada.'));
             return;
+        }
+
+        const newOrderId = res.data && res.data.pedido_id ? res.data.pedido_id : null;
+
+        // Si es pago QR y el usuario subió su comprobante, vincular el archivo real vía upload_qr
+        if (isQr && qrFile && newOrderId) {
+            try {
+                const formData = new FormData();
+                formData.append('pedido_id', newOrderId);
+                formData.append('qr_image', qrFile);
+                const uploadRes = await apiPost('/Transactions/checkout.php?action=upload_qr', formData);
+                if (uploadRes.ok) {
+                    showToast('¡Comprobante QR vinculado exitosamente! Pago registrado.', 'success');
+                } else {
+                    console.warn('Fallo al subir archivo comprobante QR:', uploadRes.error);
+                }
+            } catch (upErr) {
+                console.warn('Error subiendo archivo comprobante:', upErr);
+            }
         }
 
         closeCheckoutModal();
@@ -2429,14 +2461,22 @@ async function submitOrderCheckout() {
         const pTelIn = document.getElementById('profileInputTelefono');
         if (pTelIn) pTelIn.value = telefonoContacto;
 
-        showToast('¡Pedido registrado en MySQL exitosamente! Inventario descontado.', 'success');
+        const successMsg = isQr
+            ? '¡Pedido registrado y pagado con QR! Enviado a cocina para preparación.'
+            : '¡Pedido registrado con pago Contraentrega! El repartidor cobrará al entregar.';
+        showToast(successMsg, 'success');
+
         await renderClienteActiveOrderTracker();
         await renderProducts();
-        if (res.data && res.data.pedido_id && window.openReceiptModal) {
-            window.openReceiptModal(res.data.pedido_id);
+        if (newOrderId && window.openReceiptModal) {
+            window.openReceiptModal(newOrderId);
         }
     } catch (err) {
         console.error('Error enviando checkout a backend:', err);
+        if (placeBtn) {
+            placeBtn.disabled = false;
+            placeBtn.innerHTML = origBtnText;
+        }
         showToast('Error de conexión. No se pudo registrar el pedido.', 'danger');
         showGlobalApiError('No se pudo procesar la compra en el servidor. Por favor verifica la conexión.');
     }
@@ -2500,6 +2540,7 @@ async function renderClienteActiveOrderTracker() {
     }
 
     const isContra = activeOrder.estado_pago === 'contraentrega' || activeOrder.estado_pago === 'pagado_efectivo';
+    const isQrPaid = activeOrder.estado_pago === 'pagado_qr';
     const qrBtn = activeOrder.qr_comprobante_url
         ? ` <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${activeOrder.qr_comprobante_url}', 'Comprobante QR - Pedido #${activeOrder.id}', 'qr', null)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; margin-left: 0.4rem; vertical-align: middle;"><i data-lucide="receipt" style="width:12px;height:12px;"></i> Ver Comprobante QR</button>`
         : '';
@@ -2509,9 +2550,14 @@ async function renderClienteActiveOrderTracker() {
         ? ` <button class="btn btn-danger btn-sm" onclick="clienteCancelarPedido(${activeOrder.id})" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; margin-left: 0.5rem; vertical-align: middle;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Cancelar</button>`
         : '';
 
-    const payBadge = isContra
-        ? '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="banknote" style="width:13px;height:13px;vertical-align:middle;"></i> Contraentrega (Pagarás en efectivo al recibir)</span>'
-        : `<span class="badge" style="background:rgba(249,115,22,0.15); color:var(--accent-purple); border:1px solid rgba(249,115,22,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR</span>${qrBtn}`;
+    let payBadge = '';
+    if (isContra) {
+        payBadge = '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.8rem; font-weight:700;"><i data-lucide="banknote" style="width:13px;height:13px;vertical-align:middle;"></i> Contraentrega (Pagarás en efectivo al recibir)</span>';
+    } else if (isQrPaid) {
+        payBadge = `<span class="badge" style="background:rgba(139,92,246,0.18); color:var(--accent-purple); border:1px solid rgba(139,92,246,0.4); font-size:0.8rem; font-weight:700;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR (Verificado)</span>${qrBtn}`;
+    } else {
+        payBadge = '<span class="badge" style="background:rgba(234,179,8,0.18); color:#facc15; border:1px solid rgba(234,179,8,0.4); font-size:0.8rem; font-weight:700;"><i data-lucide="clock" style="width:13px;height:13px;vertical-align:middle;"></i> Pago con QR (Pendiente de Comprobante)</span>';
+    }
 
     const payEl = document.getElementById('clientActiveOrderPayment');
     if (payEl) payEl.innerHTML = `<strong>Método de Pago:</strong> ${payBadge}`;
@@ -2835,12 +2881,49 @@ async function renderRiderOrderQueue() {
             const refEntrega = p.referencia_entrega ? `(${escapeHtml(p.referencia_entrega)})` : '';
             const telEntrega = p.telefono_contacto || p.cliente_telefono || '';
             const telTienda = tienda.telefono || STORE_COORDS.telefono || '';
+            const isQrPaid = p.estado_pago === 'pagado_qr';
+
+            const headerBadge = isQrPaid
+                ? `<span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border: 1px solid var(--accent-purple); font-weight: 700; font-size: 0.74rem;"><i data-lucide="qr-code" style="width: 12px; height: 12px; vertical-align: middle;"></i> PAGADO VÍA QR</span>`
+                : `<span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; font-weight: 700; font-size: 0.74rem;"><i data-lucide="banknote" style="width: 12px; height: 12px; vertical-align: middle;"></i> PAGO CONTRAENTREGA</span>`;
+
+            const paymentBanner = isQrPaid ? `
+                <div style="grid-column: span 2; background: rgba(139, 92, 246, 0.12); border: 1.5px solid rgba(139, 92, 246, 0.45); border-radius: 6px; padding: 0.6rem 0.75rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #c4b5fd; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="qr-code" style="width: 14px; height: 14px;"></i> PAGO CON QR: <strong style="color: #4ade80;">PAGADO PREVIAMENTE</strong>
+                        </span>
+                        <span class="badge" style="background: #10b981; color: #fff; font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.45rem;">NO COBRAR AL CLIENTE</span>
+                    </div>
+                    <div style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.4;">
+                        ✓ El cliente ya transfirió los <strong>${Number(p.total).toFixed(2)} Bs</strong> vía QR bancario. No solicites dinero en efectivo al entregar.
+                    </div>
+                    ${p.qr_comprobante_url ? `
+                    <div style="margin-top: 0.35rem;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openFileViewer('${p.qr_comprobante_url}', 'Comprobante QR - Pedido #${p.pedido_id}', 'qr', null)" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;">
+                            <i data-lucide="receipt"></i> Ver Comprobante QR
+                        </button>
+                    </div>` : ''}
+                </div>
+            ` : `
+                <div style="grid-column: span 2; background: rgba(234, 179, 8, 0.12); border: 1.5px solid rgba(234, 179, 8, 0.5); border-radius: 6px; padding: 0.6rem 0.75rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #facc15; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="banknote" style="width: 14px; height: 14px;"></i> PAGO CONTRAENTREGA: <strong style="color: #fbbf24;">EFECTIVO</strong>
+                        </span>
+                        <span class="badge" style="background: #f59e0b; color: #000; font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.45rem;">COBRAR EN EFECTIVO</span>
+                    </div>
+                    <div style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.4;">
+                        ⚠️ <strong>Cobrar al Cliente en Mano:</strong> <span style="font-size: 0.88rem; font-weight: 800; color: #fff;">${Number(p.total).toFixed(2)} Bs</span> en efectivo al momento de entregar el pedido.
+                    </div>
+                </div>
+            `;
 
             return `
                 <div class="order-card">
                     <div class="order-card-header">
                         <span class="order-id">Pedido #${p.pedido_id}</span>
-                        <span class="badge ${p.estado_pago === 'pagado_qr' ? 'badge-verified' : 'badge-pending'}">${(p.estado_pago || '').replace('_', ' ')}</span>
+                        ${headerBadge}
                     </div>
                     <div class="order-card-body">
                         <div>
@@ -2855,6 +2938,8 @@ async function renderRiderOrderQueue() {
                             <div class="order-meta-label">Artículos del Pedido</div>
                             <div class="order-meta-val" style="font-weight: 500;">${escapeHtml(itemsText || 'Combo / Hamburguesa')}</div>
                         </div>
+
+                        ${paymentBanner}
 
                         <!-- Dirección de Recogida (Restaurante / Cocina) -->
                         <div style="grid-column: span 2; background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 6px; padding: 0.5rem 0.65rem;">
@@ -3015,7 +3100,44 @@ function renderRiderActiveOrderPanel() {
     if (itemsEl) itemsEl.innerHTML = `<strong>Detalles:</strong> ${escapeHtml(detailsText || 'Sin detalles')}`;
     
     const payEl = document.getElementById('riderActiveOrderPayment');
-    if (payEl) payEl.innerHTML = `<strong>Total a Cobrar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs (${(activeOrder.estado_pago || '').toUpperCase()})`;
+    const isQrPaid = activeOrder.estado_pago === 'pagado_qr';
+    if (payEl) {
+        if (isQrPaid) {
+            payEl.innerHTML = `
+                <div style="background: rgba(139, 92, 246, 0.12); border: 1.5px solid rgba(139, 92, 246, 0.45); border-radius: 6px; padding: 0.65rem 0.85rem; margin-top: 0.5rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                        <strong style="color: #c4b5fd; font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="qr-code" style="width: 14px; height: 14px;"></i> Estado de Pago: PAGADO CON QR
+                        </strong>
+                        <span class="badge" style="background: #10b981; color: #fff; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.5rem;">NO COBRAR AL CLIENTE</span>
+                    </div>
+                    <div style="color: #cbd5e1; font-size: 0.76rem; line-height: 1.4;">
+                        ✓ El monto de <strong>${Number(activeOrder.total).toFixed(2)} Bs</strong> ya fue transferido por el cliente vía QR bancario. No solicites dinero en efectivo al entregar.
+                    </div>
+                    ${activeOrder.qr_comprobante_url ? `
+                    <div style="margin-top: 0.4rem;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openFileViewer('${activeOrder.qr_comprobante_url}', 'Comprobante QR - Pedido #${activeOrder.id}', 'qr', null)" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;">
+                            <i data-lucide="receipt"></i> Inspeccionar Comprobante QR
+                        </button>
+                    </div>` : ''}
+                </div>
+            `;
+        } else {
+            payEl.innerHTML = `
+                <div style="background: rgba(234, 179, 8, 0.12); border: 1.5px solid rgba(234, 179, 8, 0.5); border-radius: 6px; padding: 0.65rem 0.85rem; margin-top: 0.5rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                        <strong style="color: #facc15; font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="banknote" style="width: 14px; height: 14px;"></i> Estado de Pago: CONTRAENTREGA EN EFECTIVO
+                        </strong>
+                        <span class="badge" style="background: #f59e0b; color: #000; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.5rem;">COBRAR EN EFECTIVO</span>
+                    </div>
+                    <div style="color: #cbd5e1; font-size: 0.76rem; line-height: 1.4;">
+                        ⚠️ <strong>Cobrar en Mano al Cliente:</strong> <span style="font-size: 0.95rem; font-weight: 800; color: #fff;">${Number(activeOrder.total).toFixed(2)} Bs</span> en efectivo al entregar el pedido.
+                    </div>
+                </div>
+            `;
+        }
+    }
 
     const latCliente = activeOrder.latitud || -16.5090;
     const lonCliente = activeOrder.longitud || -68.1340;
@@ -3036,8 +3158,13 @@ function renderRiderActiveOrderPanel() {
             activeBtn.className = 'btn btn-primary';
             cancelBtn.style.display = 'block';
         } else if (activeOrder.estado_pedido === 'en_camino') {
-            activeBtn.innerText = 'Finalizar Entrega (Cobrar)';
-            activeBtn.className = 'btn btn-success';
+            if (isQrPaid) {
+                activeBtn.innerText = 'Finalizar Entrega (Entregar sin Cobro)';
+                activeBtn.className = 'btn btn-success';
+            } else {
+                activeBtn.innerText = `Finalizar Entrega (Cobrar ${Number(activeOrder.total).toFixed(2)} Bs)`;
+                activeBtn.className = 'btn btn-success';
+            }
             cancelBtn.style.display = 'none';
         }
     }
@@ -3124,7 +3251,12 @@ async function processRiderActiveOrderStep() {
 
     const oldState = activeOrder.estado_pedido;
     const nextState = oldState === 'asignado' ? 'en_camino' : 'entregado';
-    let msg = nextState === 'en_camino' ? 'Viaje iniciado. Conduce con cuidado.' : 'Pedido entregado con éxito.';
+    const isContra = activeOrder.estado_pago === 'contraentrega' || activeOrder.estado_pago === 'pagado_efectivo';
+    let msg = nextState === 'en_camino'
+        ? 'Viaje iniciado hacia el domicilio del cliente. Conduce con precaución.'
+        : (isContra
+            ? `¡Pedido entregado con éxito! Has cobrado ${Number(activeOrder.total).toFixed(2)} Bs en efectivo.`
+            : '¡Pedido entregado con éxito! (Pedido ya cancelado previamente vía QR, no se cobró dinero).');
 
     const token = getAuthToken();
     if (!token) {
@@ -3266,8 +3398,8 @@ function renderFilteredRiderHistory(filter = 'all') {
         const itemsText = (o.items || []).map(i => `${i.cantidad}x ${i.nombre}`).join(', ') || 'Productos varios';
         const isContraentrega = o.estado_pago === 'contraentrega' || o.estado_pago === 'pagado_efectivo' || o.estado_pago === 'liquidado';
         const payBadge = isContraentrega
-            ? '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">💵 Contraentrega (Efectivo)</span>'
-            : '<span class="badge" style="background: rgba(249, 115, 22, 0.15); color: var(--accent-purple); border: 1px solid rgba(249, 115, 22, 0.3);">📱 Pago QR</span>';
+            ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight:700;"><i data-lucide="banknote" style="width:12px;height:12px;vertical-align:middle;"></i> Contraentrega (Cobrado ${Number(o.total).toFixed(2)} Bs)</span>`
+            : `<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.3); font-weight:700;"><i data-lucide="qr-code" style="width:12px;height:12px;vertical-align:middle;"></i> Pagado vía QR</span>`;
 
         const rawDate = o.fecha_actualizacion || o.fecha_creacion;
         let dateStr = 'Reciente';

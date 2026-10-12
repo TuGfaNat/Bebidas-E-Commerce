@@ -108,12 +108,12 @@ try {
 
         $stmt = $db->query("
             SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
-                   p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto, p.created_at,
+                   p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto, p.qr_comprobante_url, p.created_at,
                    u.nombre AS cliente_nombre, u.email AS cliente_email, u.telefono AS cliente_telefono_user
             FROM pedidos p
             LEFT JOIN users u ON p.cliente_id = u.id
             WHERE p.estado_pedido = 'pendiente' 
-              AND p.estado_pago IN ('pagado_qr', 'contraentrega', 'esperando_pago')
+              AND p.estado_pago IN ('pagado_qr', 'contraentrega')
             ORDER BY p.id DESC
         ");
         $pedidos = $stmt->fetchAll();
@@ -145,6 +145,7 @@ try {
                 'cliente_telefono' => $p['telefono_contacto'] ?: ($p['cliente_telefono_user'] ?? ''),
                 'direccion_entrega' => $p['direccion_entrega'] ?: 'Dirección marcada en mapa',
                 'referencia_entrega' => $p['referencia_entrega'] ?: '',
+                'qr_comprobante_url' => $p['qr_comprobante_url'] ?? null,
                 'tienda' => $storeObj,
                 'total' => floatval($p['total']),
                 'estado_pago' => $p['estado_pago'],
@@ -170,7 +171,7 @@ try {
         $pedidoActivo = null;
         $stmtActive = $db->prepare("
             SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
-                   p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto, p.created_at,
+                   p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto, p.qr_comprobante_url, p.created_at,
                    u.nombre AS cliente_nombre, u.email AS cliente_email, u.telefono AS cliente_telefono_user
             FROM pedidos p
             LEFT JOIN users u ON p.cliente_id = u.id
@@ -204,6 +205,7 @@ try {
                 'cliente_telefono' => $activeRow['telefono_contacto'] ?: ($activeRow['cliente_telefono_user'] ?? ''),
                 'direccion_entrega' => $activeRow['direccion_entrega'] ?: 'Dirección marcada en mapa',
                 'referencia_entrega' => $activeRow['referencia_entrega'] ?: '',
+                'qr_comprobante_url' => $activeRow['qr_comprobante_url'] ?? null,
                 'tienda' => $storeObj,
                 'total' => floatval($activeRow['total']),
                 'estado_pago' => $activeRow['estado_pago'],
@@ -310,7 +312,7 @@ try {
 
         $db->beginTransaction();
 
-        $stmtOld = $db->prepare("SELECT id, estado_pedido, rider_id FROM pedidos WHERE id = ? FOR UPDATE");
+        $stmtOld = $db->prepare("SELECT id, estado_pedido, rider_id, estado_pago FROM pedidos WHERE id = ? FOR UPDATE");
         $stmtOld->execute([$pedidoId]);
         $oldData = $stmtOld->fetch();
 
@@ -325,6 +327,15 @@ try {
             $db->rollBack();
             http_response_code(409);
             echo formatResponse("error", null, $userId, "El pedido ya fue asignado a otro rider o no está disponible.", "ORDER_UNAVAILABLE");
+            exit;
+        }
+
+        // Validación estricta: Si el cliente pagará con QR, debe haber completado el pago previo (pagado_qr) antes de asignarse.
+        // Si es pago en efectivo, es contraentrega directo.
+        if ($oldData['estado_pago'] !== 'pagado_qr' && $oldData['estado_pago'] !== 'contraentrega') {
+            $db->rollBack();
+            http_response_code(400);
+            echo formatResponse("error", null, $userId, "El pedido requiere confirmación previa de pago con QR antes de poder ser asignado a un conductor.", "PAYMENT_NOT_CONFIRMED");
             exit;
         }
 

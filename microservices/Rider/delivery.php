@@ -66,7 +66,8 @@ try {
         $db = DatabaseConnection::getInstance()->getConnection();
         $stmtActive = $db->prepare("
             SELECT p.id, p.cliente_id, p.rider_id, p.estado_pedido, p.estado_pago, p.total,
-                   p.latitud, p.longitud, p.created_at, u.nombre as cliente_nombre
+                   p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto,
+                   p.qr_comprobante_url, p.created_at, u.nombre as cliente_nombre, u.telefono as cliente_telefono
             FROM pedidos p
             LEFT JOIN users u ON p.cliente_id = u.id
             WHERE p.rider_id = ? AND p.estado_pedido IN ('asignado', 'en_camino')

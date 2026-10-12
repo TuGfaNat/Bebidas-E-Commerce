@@ -685,57 +685,34 @@
 
                             <div class="form-group places-search-box-wrapper" style="margin-bottom: 0.85rem;">
                                 <label style="font-size: 0.82rem; font-weight: 600; color: #38bdf8; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
-                                    <span><i data-lucide="search" style="width: 13px; height: 13px; vertical-align: middle;"></i> Buscar Ubicación de Sede (Estilo Google Maps):</span>
-                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">Escribe calle, avenida o plaza</span>
+                                    <span><i data-lucide="map-pin" style="width: 13px; height: 13px; vertical-align: middle;"></i> Dirección Física de la Sucursal:</span>
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">Búsqueda y sugerencias en vivo</span>
                                 </label>
                                 <div style="position: relative;">
-                                    <input type="text" id="inputSearchStoreAddress" class="input-styled places-search-input" placeholder="🔍 Escribe para buscar en La Paz (ej: Sopocachi, Plaza Abaroa, Calacoto)..." autocomplete="off" style="width: 100%; padding: 0.6rem 2rem 0.6rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff; font-size: 0.82rem;">
+                                    <input type="text" id="adminStoreDireccion" class="input-styled places-search-input" placeholder="🔍 Escribe la calle, avenida, plaza o edificio..." required autocomplete="off" style="width: 100%; padding: 0.6rem 2rem 0.6rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff; font-size: 0.82rem;">
                                     <button type="button" id="btnClearStoreSearch" style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; font-size: 1rem; cursor: pointer; padding: 2px 6px;">&times;</button>
                                     <div id="storeSearchSuggestions" class="places-suggestions-dropdown" style="display: none;"></div>
                                 </div>
                             </div>
 
-                            <div class="form-group" style="margin-bottom: 0.85rem;">
-                                <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
-                                    Dirección Física Completa (Calle, Número, Edificio):
-                                </label>
-                                <input type="text" id="adminStoreDireccion" class="input-styled" placeholder="Ej: Av. 20 de Octubre #2150, Sopocachi, La Paz" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
-                            </div>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
                                 <div class="form-group">
                                     <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
                                         Zona / Barrio (La Paz):
                                     </label>
-                                    <select id="adminStoreZonaSelect" class="form-control" onchange="handleAdminStoreZoneChange(this.value)" style="width: 100%; font-size: 0.8rem; padding: 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #1e293b; color: #fff;">
-                                        <option value="Sopocachi|-16.5050|-68.1290">Sopocachi (Av. 20 de Octubre)</option>
-                                        <option value="Centro / Prado|-16.4985|-68.1335">Centro / El Prado</option>
-                                        <option value="Miraflores|-16.5045|-68.1205">Miraflores (Estadio Siles)</option>
-                                        <option value="San Pedro|-16.5015|-68.1375">San Pedro (Plaza Sucre)</option>
-                                        <option value="Calacoto|-16.5410|-68.0860">Calacoto (Zona Sur)</option>
-                                        <option value="San Jorge|-16.5125|-68.1245">San Jorge (Av. Arce)</option>
-                                        <option value="Obrajes|-16.5280|-68.1120">Obrajes (Calle 17)</option>
-                                        <option value="personalizado">Coordenadas Personalizadas</option>
-                                    </select>
+                                    <input type="text" id="adminStoreZona" class="input-styled" placeholder="Ej: Sopocachi, Calacoto, Centro" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff; font-size: 0.82rem;">
                                 </div>
                                 <div class="form-group">
                                     <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
                                         Teléfono de Atención / Cocina:
                                     </label>
-                                    <input type="text" id="adminStoreTelefono" class="input-styled" placeholder="Ej: +591 71523481" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
+                                    <input type="text" id="adminStoreTelefono" class="input-styled" placeholder="Ej: +591 71523481" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff; font-size: 0.82rem;">
                                 </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
-                                <div class="form-group">
-                                    <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Latitud GPS:</label>
-                                    <input type="number" step="0.000001" id="adminStoreLat" class="input-styled" required style="width: 100%; padding: 0.5rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: #fff; border-radius: var(--radius-sm);">
-                                </div>
-                                <div class="form-group">
-                                    <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Longitud GPS:</label>
-                                    <input type="number" step="0.000001" id="adminStoreLon" class="input-styled" required style="width: 100%; padding: 0.5rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: #fff; border-radius: var(--radius-sm);">
-                                </div>
-                            </div>
+                            <!-- Coordenadas calculadas en segundo plano de forma transparente (sin pedir números manuales al usuario) -->
+                            <input type="hidden" id="adminStoreLat" value="-16.5050">
+                            <input type="hidden" id="adminStoreLon" value="-68.1290">
 
                             <button type="submit" id="btnSaveAdminStore" class="btn btn-primary" style="background: #f97316; border: none; padding: 0.7rem 1.4rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                 <i data-lucide="save"></i> Guardar Ubicación del Restaurante
@@ -817,13 +794,13 @@
                     <div>
                         <h3>1. Ubicación de Entrega (La Paz, Bolivia)</h3>
                         <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.45rem;">
-                            Busca tu dirección estilo Google Maps, usa tu GPS en vivo o toca cualquier punto del mapa:
+                            Escribe tu dirección, usa tu GPS en vivo o selecciona un punto en el mapa:
                         </p>
                         
-                        <!-- Buscador Google Maps en Vivo -->
+                        <!-- Buscador de Dirección en Vivo -->
                         <div class="places-search-box-wrapper" style="margin-bottom: 0.5rem;">
                             <label for="inputSearchCheckoutAddress" style="font-size: 0.76rem; color: #f8fafc; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; font-weight: 700;">
-                                <span><i data-lucide="search" style="width: 13px; height: 13px; vertical-align: middle; color: #38bdf8;"></i> Buscar Dirección en La Paz:</span>
+                                <span><i data-lucide="search" style="width: 13px; height: 13px; vertical-align: middle; color: #38bdf8;"></i> Buscar Dirección o Zona:</span>
                                 <button type="button" id="btnGeolocateCheckout" class="btn-gps-pill" title="Detectar mi ubicación actual vía GPS">
                                     <i data-lucide="crosshair" style="width: 12px; height: 12px;"></i> Mi GPS en Vivo
                                 </button>

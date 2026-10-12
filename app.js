@@ -93,12 +93,14 @@ function updateAdminStorePreview() {
 
     const inNom = document.getElementById('adminStoreNombre');
     const inDir = document.getElementById('adminStoreDireccion');
+    const inZon = document.getElementById('adminStoreZona');
     const inTel = document.getElementById('adminStoreTelefono');
     const inLat = document.getElementById('adminStoreLat');
     const inLon = document.getElementById('adminStoreLon');
 
     if (inNom && !inNom.value) inNom.value = STORE_COORDS.nombre;
     if (inDir && !inDir.value) inDir.value = STORE_COORDS.direccion;
+    if (inZon && !inZon.value) inZon.value = STORE_COORDS.zona;
     if (inTel && !inTel.value) inTel.value = STORE_COORDS.telefono;
     if (inLat && !inLat.value) inLat.value = STORE_COORDS.lat;
     if (inLon && !inLon.value) inLon.value = STORE_COORDS.lon;
@@ -113,8 +115,10 @@ window.handleAdminStoreZoneChange = function(val) {
         const lon = parseFloat(parts[2]);
         const inLat = document.getElementById('adminStoreLat');
         const inLon = document.getElementById('adminStoreLon');
+        const inZon = document.getElementById('adminStoreZona');
         if (inLat) inLat.value = lat;
         if (inLon) inLon.value = lon;
+        if (inZon) inZon.value = zona;
         const pCoo = document.getElementById('previewAdminStoreCoords');
         if (pCoo) pCoo.innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
         const pZon = document.getElementById('previewAdminStoreZona');
@@ -126,12 +130,14 @@ window.renderAdminStoreConfig = async function() {
     await syncStoreConfigFromBackend();
     const inNom = document.getElementById('adminStoreNombre');
     const inDir = document.getElementById('adminStoreDireccion');
+    const inZon = document.getElementById('adminStoreZona');
     const inTel = document.getElementById('adminStoreTelefono');
     const inLat = document.getElementById('adminStoreLat');
     const inLon = document.getElementById('adminStoreLon');
 
     if (inNom) inNom.value = STORE_COORDS.nombre;
     if (inDir) inDir.value = STORE_COORDS.direccion;
+    if (inZon) inZon.value = STORE_COORDS.zona;
     if (inTel) inTel.value = STORE_COORDS.telefono;
     if (inLat) inLat.value = STORE_COORDS.lat;
     if (inLon) inLon.value = STORE_COORDS.lon;
@@ -144,29 +150,27 @@ window.handleSaveAdminStoreConfig = async function(event) {
 
     const nombreEl = document.getElementById('adminStoreNombre');
     const dirEl = document.getElementById('adminStoreDireccion');
+    const zonaEl = document.getElementById('adminStoreZona');
     const telEl = document.getElementById('adminStoreTelefono');
     const latEl = document.getElementById('adminStoreLat');
     const lonEl = document.getElementById('adminStoreLon');
 
     const nombre = nombreEl ? nombreEl.value.trim() : '';
     const direccion = dirEl ? dirEl.value.trim() : '';
+    const zona = (zonaEl && zonaEl.value.trim()) ? zonaEl.value.trim() : (STORE_COORDS.zona || 'Sopocachi');
     const telefono = telEl ? telEl.value.trim() : '';
-    const lat = latEl ? parseFloat(latEl.value) : NaN;
-    const lon = lonEl ? parseFloat(lonEl.value) : NaN;
-
-    const selZona = document.getElementById('adminStoreZonaSelect');
-    let zona = 'La Paz';
-    if (selZona && selZona.value !== 'personalizado') {
-        zona = selZona.value.split('|')[0];
-    }
+    let lat = latEl ? parseFloat(latEl.value) : NaN;
+    let lon = lonEl ? parseFloat(lonEl.value) : NaN;
 
     if (!nombre || !direccion) {
         showToast('El nombre del restaurante y la dirección física son obligatorios.', 'warning');
         return;
     }
     if (isNaN(lat) || isNaN(lon)) {
-        showToast('Coordenadas GPS de la tienda inválidas.', 'warning');
-        return;
+        lat = STORE_COORDS.lat || -16.5050;
+        lon = STORE_COORDS.lon || -68.1290;
+        if (latEl) latEl.value = lat;
+        if (lonEl) lonEl.value = lon;
     }
 
     const btn = document.getElementById('btnSaveAdminStore');
@@ -1025,10 +1029,11 @@ function setupEventListeners() {
     });
 
     // ----------------------------------------------------
-    // BUSCADOR GOOGLE MAPS PARA SEDE DEL RESTAURANTE (ADMIN)
+    // BUSCADOR EN VIVO PARA SEDE DEL RESTAURANTE (ADMIN)
     // ----------------------------------------------------
-    setupPlacesAutocomplete('inputSearchStoreAddress', 'btnClearStoreSearch', 'storeSearchSuggestions', (item) => {
+    setupPlacesAutocomplete('adminStoreDireccion', 'btnClearStoreSearch', 'storeSearchSuggestions', (item) => {
         const inDir = document.getElementById('adminStoreDireccion');
+        const inZon = document.getElementById('adminStoreZona');
         const inLat = document.getElementById('adminStoreLat');
         const inLon = document.getElementById('adminStoreLon');
         const pDir = document.getElementById('previewAdminStoreDireccion');
@@ -1036,17 +1041,18 @@ function setupEventListeners() {
         const pZon = document.getElementById('previewAdminStoreZona');
 
         if (inDir) inDir.value = item.display_name;
+        if (inZon && item.zone) inZon.value = item.zone;
         if (inLat) inLat.value = item.lat.toFixed(6);
         if (inLon) inLon.value = item.lon.toFixed(6);
         if (pDir) pDir.innerText = item.display_name;
         if (pCoo) pCoo.innerText = `${item.lat.toFixed(4)}, ${item.lon.toFixed(4)}`;
         if (pZon && item.zone) pZon.innerText = item.zone;
 
-        showToast(`📍 Sede del restaurante posicionada en: ${item.title}`, 'info');
+        showToast(`📍 Ubicación seleccionada: ${item.title}`, 'info');
     });
 
     // ----------------------------------------------------
-    // BUSCADOR GOOGLE MAPS PARA DIRECCIÓN DE PERFIL
+    // BUSCADOR EN VIVO PARA DIRECCIÓN DE PERFIL
     // ----------------------------------------------------
     setupPlacesAutocomplete('profileInputDireccion', null, 'profileSearchSuggestions', (item) => {
         const pDir = document.getElementById('profileInputDireccion');

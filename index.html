@@ -19,7 +19,7 @@
     <div id="loginScreen" class="login-screen">
         <div class="login-card glass-card">
             <div style="text-align: center; margin-bottom: 1.5rem;">
-                <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
                 <h2 style="font-weight: 700; font-size: 1.6rem;">Burger 24/7</h2>
                 <p style="font-size: 0.85rem; color: var(--text-secondary);">Hamburguesería Gourmet & Delivery Rápido</p>
             </div>
@@ -153,7 +153,7 @@
             </button>
 
             <!-- Grupo Administrador -->
-            <div style="font-size:0.68rem; font-weight:700; color:#8b5cf6; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Administrador</div>
+            <div style="font-size:0.68rem; font-weight:700; color:#f97316; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.3rem;">Administrador</div>
             <button class="btn btn-secondary btn-sm" onclick="quickLogin('admin@mail.com', 'admin')" style="text-align:left; font-size:0.74rem; padding: 0.3rem 0.5rem; display:flex; align-items:center; gap:0.4rem;">
                 <img src="uploads/ci/foto_admin.svg" style="width:18px;height:18px;border-radius:50%;" />
                 <span>Admin Central (Gerencia)</span>
@@ -172,7 +172,7 @@
             <!-- Header Active User Info -->
             <div class="header-user-status" id="headerUserStatus" style="display: none; align-items: center; gap: 0.75rem;">
                 <!-- Botón directo de Carrito para el Cliente -->
-                <button class="btn btn-primary btn-sm" id="btnHeaderCart" style="display: none; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; font-weight: 600; background: linear-gradient(135deg, #f97316, #ef4444); border: none;">
+                <button class="btn btn-primary btn-sm" id="btnHeaderCart" style="display: none; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; font-weight: 600; background: var(--accent-purple); border: none;">
                     <i data-lucide="shopping-cart" style="width: 14px; height: 14px;"></i>
                     <span>Mi Carrito (<span id="headerCartCount">0</span>)</span>
                 </button>
@@ -214,7 +214,7 @@
                             <!-- Populated dynamically via JS -->
                         </div>
                         <!-- Botón directo de Carrito en el Sidebar -->
-                        <button class="btn btn-primary btn-sm" id="btnSidebarCart" style="width: 100%; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; background: linear-gradient(135deg, #f97316, #ef4444); border: none; padding: 0.55rem;">
+                        <button class="btn btn-primary btn-sm" id="btnSidebarCart" style="width: 100%; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; background: var(--accent-purple); border: none; padding: 0.55rem;">
                             <i data-lucide="shopping-bag" style="width: 15px; height: 15px;"></i>
                             <span>Ver Mi Carrito (<span id="sidebarCartCount">0</span>)</span>
                         </button>
@@ -591,7 +591,7 @@
                                 <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Pedidos Entregados</p>
                                 <h2 style="font-size: 2.25rem; font-weight: 800; margin-top: 0.5rem; margin-bottom: 0;" id="reportTotalOrders">0</h2>
                             </div>
-                            <div style="background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); width: 48px; height: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
+                            <div style="background: rgba(249, 115, 22, 0.15); color: var(--accent-purple); width: 48px; height: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
                                 <i data-lucide="package-check"></i>
                             </div>
                         </div>
@@ -680,7 +680,7 @@
                 <span>Total Estimado</span>
                 <span id="cartTotal">0.00 Bs</span>
             </div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem; font-weight: 700; background: linear-gradient(135deg, #f97316, #ef4444); border: none;" id="btnCheckout">Proceder al Pago (Contraentrega o QR) ➔</button>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem; font-weight: 700; background: var(--accent-purple); border: none;" id="btnCheckout">Proceder al Pago (Contraentrega o QR) ➔</button>
         </div>
     </div>
 
@@ -747,12 +747,12 @@
                         </div>
 
                         <!-- QR Image Upload Block -->
-                        <div id="qrUploadBlock" style="display: none; background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.25); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                        <div id="qrUploadBlock" style="display: none; background: #0f172a; border: 1px solid var(--border-color); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
                             <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 0.4rem;">
                                 <i data-lucide="scan" style="width:14px;height:14px;vertical-align:middle;"></i> Escanea el QR Oficial de Burger 24/7:
                             </label>
                             
-                            <div style="text-align: center; margin-bottom: 0.75rem; background: #fff; padding: 0.4rem; border-radius: var(--radius-md); width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 0 15px rgba(255,255,255,0.1);">
+                            <div style="text-align: center; margin-bottom: 0.75rem; background: #fff; padding: 0.4rem; border-radius: var(--radius-md); width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
                                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=95x95&data=Burger247Checkout" alt="QR Code" style="display: block; width: 95px; height:95px;">
                             </div>
 
@@ -772,7 +772,7 @@
                                 <span>Total Final a Pagar:</span>
                                 <span id="lblCheckoutTotal">0.00 Bs</span>
                             </div>
-                            <button class="btn btn-primary" style="width: 100%; font-weight: 700; padding: 0.75rem; background: linear-gradient(135deg, #10b981, #059669); border: none;" id="btnPlaceOrder" disabled>
+                            <button class="btn btn-primary" style="width: 100%; font-weight: 700; padding: 0.75rem; background: var(--accent-green); border: none;" id="btnPlaceOrder" disabled>
                                 Confirmar Pedido (Pagar Contraentrega)
                             </button>
                         </div>
@@ -812,10 +812,10 @@
 
     <!-- MODAL "MI PERFIL" DE USUARIO (CLIENTE, RIDER, ADMINISTRADOR) -->
     <div class="file-view-modal" id="userProfileModal">
-        <div class="user-profile-modal-container glass-card" style="width: 100%; max-width: 620px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
+        <div class="user-profile-modal-container glass-card" style="width: 100%; max-width: 620px; background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
             <div class="file-view-header" style="padding: 1.15rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6);">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div id="profileRoleAvatar" style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #f97316, #ef4444); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white; border: 2px solid rgba(255, 255, 255, 0.15); flex-shrink: 0;">
+                    <div id="profileRoleAvatar" style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white; border: 2px solid rgba(255, 255, 255, 0.15); flex-shrink: 0;">
                         <img id="profileUserAvatarImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
                         <span id="profileUserAvatarLetter">U</span>
                     </div>
@@ -921,14 +921,14 @@
 
     <!-- MODAL "RECIBO DIGITAL / TICKET DE COMPRA" (PRINT READY) -->
     <div class="file-view-modal" id="orderReceiptModal">
-        <div class="receipt-modal-container glass-card" style="width: 100%; max-width: 500px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); overflow: hidden; display: flex; flex-direction: column; max-height: 92vh;">
+        <div class="receipt-modal-container glass-card" style="width: 100%; max-width: 500px; background: #1e293b; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; max-height: 92vh;">
             <div class="receipt-header-bar" style="padding: 0.9rem 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.7);">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <i data-lucide="receipt" style="color: #f97316; width: 18px; height: 18px;"></i>
                     <h3 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #f8fafc;">Recibo Digital de Compra</h3>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <button class="btn btn-primary btn-sm" id="btnReceiptPrint" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.35rem; background: linear-gradient(135deg, #10b981, #059669); border: none;" title="Imprimir o Guardar como PDF">
+                    <button class="btn btn-primary btn-sm" id="btnReceiptPrint" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.35rem; background: var(--accent-green); border: none;" title="Imprimir o Guardar como PDF">
                         <i data-lucide="printer" style="width: 13px; height: 13px;"></i> Imprimir
                     </button>
                     <button class="close-drawer" id="btnReceiptClose" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.2rem 0.4rem;" title="Cerrar">&times;</button>

@@ -9,7 +9,7 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:32+00:00",
+            "timestamp": "2026-10-12T04:31:38+00:00",
             "details": "Envelope BMAD conforme a SPEC §4",
             "request": {
                 "correo": "admin@mail.com"
@@ -17,7 +17,7 @@
             "response": {
                 "status": "success",
                 "data": {
-                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJyb2xlIjoic3VwZXJfdXN1YXJpbyIsImVtYWlsIjoiYWRtaW5AbWFpbC5jb20iLCJub21icmUiOiJBZG1pbiBDZW50cmFsIiwiZmVjaGFfbmFjaW1pZW50byI6IjE5ODgtMTEtMDMiLCJjaV9zdGF0dXMiOiJ2ZXJpZmllZCIsImZvdG9fdXJsIjoiIiwiY2lfdXJsIjoiXC91cGxvYWRzXC9jaVwvY2lfYWRtaW4uanBnIiwiZXhwIjoxNzkxODY0NjMyLCJpYXQiOjE3OTE3NzgyMzJ9.1ZaqReEytin3ZqkvdEkIXsQw9MArvuPWOutRvkG43e0",
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjozLCJyb2xlIjoic3VwZXJfdXN1YXJpbyIsImVtYWlsIjoiYWRtaW5AbWFpbC5jb20iLCJub21icmUiOiJBZG1pbiBDZW50cmFsIiwiZmVjaGFfbmFjaW1pZW50byI6IjE5ODgtMTEtMDMiLCJjaV9zdGF0dXMiOiJ2ZXJpZmllZCIsImZvdG9fdXJsIjoiIiwiY2lfdXJsIjoiXC91cGxvYWRzXC9jaVwvY2lfYWRtaW4uanBnIiwiZXhwIjoxNzkxODY1ODk4LCJpYXQiOjE3OTE3Nzk0OTh9.4lmtkdWKz6_1909mz9SdaqgdlKYv0e4JBz0NJdS5mOs",
                     "user": {
                         "id": 3,
                         "nombre": "Admin Central",
@@ -31,7 +31,7 @@
                 },
                 "audit": {
                     "user_id": 3,
-                    "timestamp": "2026-10-12T06:10:32+02:00"
+                    "timestamp": "2026-10-12T06:31:38+02:00"
                 },
                 "error_details": null
             }
@@ -42,19 +42,19 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:32+00:00",
-            "details": "User ID: 15",
+            "timestamp": "2026-10-12T04:31:38+00:00",
+            "details": "User ID: 17",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
                     "mensaje": "Usuario registrado correctamente y C.I. guardado.",
-                    "user_id": 15,
-                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTUiLCJyb2xlIjoiY2xpZW50ZSIsImVtYWlsIjoiY2xpZW50ZV9lMmVfMTc5MTc3ODIzMkBtYWlsLmNvbSIsImV4cCI6MTc5MTg2NDYzMiwiaWF0IjoxNzkxNzc4MjMyfQ.vCra8SIWKog6aa9IzN-V3DAvPi8E95c4ivFFb1i0vlA"
+                    "user_id": 17,
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTciLCJyb2xlIjoiY2xpZW50ZSIsImVtYWlsIjoiY2xpZW50ZV9lMmVfMTc5MTc3OTQ5OEBtYWlsLmNvbSIsImV4cCI6MTc5MTg2NTg5OCwiaWF0IjoxNzkxNzc5NDk4fQ.vn1QC3B2S4wMSJAfevMjlZGFZBiHwAPj5gXvT0soJHw"
                 },
                 "audit": {
-                    "user_id": "15",
-                    "timestamp": "2026-10-12T06:10:32+02:00"
+                    "user_id": "17",
+                    "timestamp": "2026-10-12T06:31:38+02:00"
                 },
                 "error_details": null
             }
@@ -65,7 +65,7 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:32+00:00",
+            "timestamp": "2026-10-12T04:31:38+00:00",
             "details": "C.I. verificado exitosamente",
             "request": null,
             "response": {
@@ -75,7 +75,7 @@
                 },
                 "audit": {
                     "user_id": 3,
-                    "timestamp": "2026-10-12T06:10:32+02:00"
+                    "timestamp": "2026-10-12T06:31:38+02:00"
                 },
                 "error_details": null
             }
@@ -86,27 +86,27 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:32+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Token renovado con rol cliente",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
-                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxNSwicm9sZSI6ImNsaWVudGUiLCJlbWFpbCI6ImNsaWVudGVfZTJlXzE3OTE3NzgyMzJAbWFpbC5jb20iLCJub21icmUiOiJDbGllbnRlIEUyRSAxNzkxNzc4MjMyIiwiZmVjaGFfbmFjaW1pZW50byI6IjIwMDAtMDEtMDEiLCJjaV9zdGF0dXMiOiJ2ZXJpZmllZCIsImZvdG9fdXJsIjoiIiwiY2lfdXJsIjoiXC91cGxvYWRzXC9jaVwvY2lfNmFjYzVkYjg2ZDVkYy5wZGYiLCJleHAiOjE3OTE4NjQ2MzIsImlhdCI6MTc5MTc3ODIzMn0.v1tiVG5lZnWfMDP4YjWx-EVRgE6G0DA7VA2FCvUYHSA",
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxNywicm9sZSI6ImNsaWVudGUiLCJlbWFpbCI6ImNsaWVudGVfZTJlXzE3OTE3Nzk0OThAbWFpbC5jb20iLCJub21icmUiOiJDbGllbnRlIEUyRSAxNzkxNzc5NDk4IiwiZmVjaGFfbmFjaW1pZW50byI6IjIwMDAtMDEtMDEiLCJjaV9zdGF0dXMiOiJ2ZXJpZmllZCIsImZvdG9fdXJsIjoiIiwiY2lfdXJsIjoiXC91cGxvYWRzXC9jaVwvY2lfNmFjYzYyYWFiYWUzOS5wZGYiLCJleHAiOjE3OTE4NjU4OTksImlhdCI6MTc5MTc3OTQ5OX0.ryv5c5coWXSL2tlKYQkoCZpvDQjPJ-H8f_hNAp-VJEc",
                     "user": {
-                        "id": 15,
-                        "nombre": "Cliente E2E 1791778232",
+                        "id": 17,
+                        "nombre": "Cliente E2E 1791779498",
                         "role": "cliente",
-                        "email": "cliente_e2e_1791778232@mail.com",
+                        "email": "cliente_e2e_1791779498@mail.com",
                         "fecha_nacimiento": "2000-01-01",
                         "ci_status": "verified",
                         "foto_url": "",
-                        "ci_url": "\/uploads\/ci\/ci_6acc5db86d5dc.pdf"
+                        "ci_url": "\/uploads\/ci\/ci_6acc62aabae39.pdf"
                     }
                 },
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:32+02:00"
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:39+02:00"
                 },
                 "error_details": null
             }
@@ -117,7 +117,7 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:32+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "12 productos obtenidos",
             "request": null,
             "response": {
@@ -130,8 +130,8 @@
             "status": "PASS",
             "http_code": 201,
             "expected_code": 201,
-            "timestamp": "2026-10-12T04:10:33+00:00",
-            "details": "Pedido #12 creado con C++ (69us)",
+            "timestamp": "2026-10-12T04:31:39+00:00",
+            "details": "Pedido #14 creado con C++ (67us)",
             "request": {
                 "action": "create_order",
                 "latitud": -16.51,
@@ -149,7 +149,7 @@
                 "status": "success",
                 "data": {
                     "mensaje": "Pedido creado exitosamente con módulo crítico C++ (cálculos de flete y stock validados).",
-                    "pedido_id": 12,
+                    "pedido_id": 14,
                     "subtotal": 16,
                     "costo_envio": 10,
                     "total": 26,
@@ -166,16 +166,16 @@
                         }
                     ],
                     "cpp_audit": {
-                        "user_id": 15,
-                        "timestamp": "2026-10-12T04:10:32Z",
+                        "user_id": 17,
+                        "timestamp": "2026-10-12T04:31:39Z",
                         "action": "CPP_MOTOR_CORE_CALCULATION",
                         "motor": "C++ Native Core (SPEC §2)",
-                        "tiempo_computo_us": 69
+                        "tiempo_computo_us": 67
                     }
                 },
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "CREATE_ORDER",
                     "ip_address": "::1"
                 },
@@ -188,16 +188,16 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
-            "details": "Pedido activo: #12",
+            "timestamp": "2026-10-12T04:31:39+00:00",
+            "details": "Pedido activo: #14",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
                     "pedido_activo": {
-                        "id": 12,
-                        "pedido_id": 12,
-                        "cliente_id": 15,
+                        "id": 14,
+                        "pedido_id": 14,
+                        "cliente_id": 17,
                         "rider_id": null,
                         "estado_pago": "contraentrega",
                         "estado_pedido": "pendiente",
@@ -205,12 +205,12 @@
                         "latitud": -16.51,
                         "longitud": -68.13,
                         "qr_comprobante_url": null,
-                        "created_at": "2026-10-12 00:10:32",
-                        "updated_at": "2026-10-12 00:10:32",
+                        "created_at": "2026-10-12 00:31:39",
+                        "updated_at": "2026-10-12 00:31:39",
                         "detalles": [
                             {
-                                "id": 13,
-                                "pedido_id": 12,
+                                "id": 15,
+                                "pedido_id": 14,
                                 "producto_id": 8,
                                 "cantidad": 1,
                                 "precio_unitario": "16.00",
@@ -220,9 +220,9 @@
                     },
                     "pedidos": [
                         {
-                            "id": 12,
-                            "pedido_id": 12,
-                            "cliente_id": 15,
+                            "id": 14,
+                            "pedido_id": 14,
+                            "cliente_id": 17,
                             "rider_id": null,
                             "estado_pago": "contraentrega",
                             "estado_pedido": "pendiente",
@@ -230,12 +230,12 @@
                             "latitud": -16.51,
                             "longitud": -68.13,
                             "qr_comprobante_url": null,
-                            "created_at": "2026-10-12 00:10:32",
-                            "updated_at": "2026-10-12 00:10:32",
+                            "created_at": "2026-10-12 00:31:39",
+                            "updated_at": "2026-10-12 00:31:39",
                             "detalles": [
                                 {
-                                    "id": 13,
-                                    "pedido_id": 12,
+                                    "id": 15,
+                                    "pedido_id": 14,
                                     "producto_id": 8,
                                     "cantidad": 1,
                                     "precio_unitario": "16.00",
@@ -247,8 +247,8 @@
                     "total": 1
                 },
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "GET_CLIENT_ORDERS",
                     "ip_address": "::1"
                 },
@@ -261,13 +261,13 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Rider ID: 2",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
-                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6InBlZHJvQG1haWwuY29tIiwibm9tYnJlIjoiUGVkcm8gR1x1MDBmM21leiIsImZlY2hhX25hY2ltaWVudG8iOiIxOTkyLTA4LTI1IiwiY2lfc3RhdHVzIjoidmVyaWZpZWQiLCJmb3RvX3VybCI6IiIsImNpX3VybCI6IlwvdXBsb2Fkc1wvY2lcL2NpX3BlZHJvLmpwZyIsImV4cCI6MTc5MTg2NDYzMywiaWF0IjoxNzkxNzc4MjMzfQ.gxh1-bWwZT1fbK5JWxNcKJjHarqCwCBKEonpRaQ3Bz8",
+                    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJyb2xlIjoicmlkZXIiLCJlbWFpbCI6InBlZHJvQG1haWwuY29tIiwibm9tYnJlIjoiUGVkcm8gR1x1MDBmM21leiIsImZlY2hhX25hY2ltaWVudG8iOiIxOTkyLTA4LTI1IiwiY2lfc3RhdHVzIjoidmVyaWZpZWQiLCJmb3RvX3VybCI6IiIsImNpX3VybCI6IlwvdXBsb2Fkc1wvY2lcL2NpX3BlZHJvLmpwZyIsImV4cCI6MTc5MTg2NTg5OSwiaWF0IjoxNzkxNzc5NDk5fQ.hU1SFAfAayojVKlWX9sElk8XYEHPYzIEq9a2SUt6rLY",
                     "user": {
                         "id": 2,
                         "nombre": "Pedro Gómez",
@@ -281,7 +281,7 @@
                 },
                 "audit": {
                     "user_id": 2,
-                    "timestamp": "2026-10-12T06:10:33+02:00"
+                    "timestamp": "2026-10-12T06:31:39+02:00"
                 },
                 "error_details": null
             }
@@ -292,7 +292,7 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Pedidos pendientes en cola: 4",
             "request": null,
             "response": {
@@ -301,26 +301,26 @@
         },
         {
             "id": "HP-10",
-            "name": "Rider Acepta y Asigna Pedido #12",
+            "name": "Rider Acepta y Asigna Pedido #14",
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Transición: pendiente -> asignado",
             "request": {
-                "pedido_id": 12
+                "pedido_id": 14
             },
             "response": {
                 "status": "success",
                 "data": {
-                    "mensaje": "Pedido #12 aceptado y asignado exitosamente.",
-                    "pedido_id": 12,
+                    "mensaje": "Pedido #14 aceptado y asignado exitosamente.",
+                    "pedido_id": 14,
                     "estado_pedido": "asignado",
                     "rider_id": 2
                 },
                 "audit": {
                     "user_id": 2,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "ACCEPT_ORDER",
                     "ip_address": "::1"
                 },
@@ -329,18 +329,18 @@
         },
         {
             "id": "HP-11",
-            "name": "Rider Despacha Pedido #12 (en_camino)",
+            "name": "Rider Despacha Pedido #14 (en_camino)",
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Transición: asignado -> en_camino",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
-                    "mensaje": "Pedido #12 en camino.",
-                    "pedido_id": 12,
+                    "mensaje": "Pedido #14 en camino.",
+                    "pedido_id": 14,
                     "estado_anterior": "asignado",
                     "estado_pedido": "en_camino",
                     "estado_pago": "contraentrega",
@@ -348,7 +348,7 @@
                 },
                 "audit": {
                     "user_id": 2,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "ADVANCE_DELIVERY",
                     "ip_address": "::1"
                 },
@@ -357,18 +357,18 @@
         },
         {
             "id": "HP-12",
-            "name": "Rider Finaliza Entrega #12 (entregado)",
+            "name": "Rider Finaliza Entrega #14 (entregado)",
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Transición: en_camino -> entregado",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
-                    "mensaje": "Pedido #12 entregado con éxito.",
-                    "pedido_id": 12,
+                    "mensaje": "Pedido #14 entregado con éxito.",
+                    "pedido_id": 14,
                     "estado_anterior": "en_camino",
                     "estado_pedido": "entregado",
                     "estado_pago": "pagado_efectivo",
@@ -376,7 +376,7 @@
                 },
                 "audit": {
                     "user_id": 2,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "ADVANCE_DELIVERY",
                     "ip_address": "::1"
                 },
@@ -389,7 +389,7 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Pedidos contraentrega conciliados y liquidados",
             "request": {
                 "rider_id": 2
@@ -402,13 +402,13 @@
                     "nombre_rider": "Pedro Gómez",
                     "total_liquidado_bs": 26,
                     "pedidos_liquidados": [
-                        12
+                        14
                     ],
                     "cantidad_pedidos": 1
                 },
                 "audit": {
                     "user_id": 3,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "SETTLE_CASH",
                     "ip_address": "::1"
                 },
@@ -421,14 +421,14 @@
             "status": "PASS",
             "http_code": 201,
             "expected_code": 201,
-            "timestamp": "2026-10-12T04:10:33+00:00",
-            "details": "Pedido #13 creado",
+            "timestamp": "2026-10-12T04:31:39+00:00",
+            "details": "Pedido #15 creado",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
                     "mensaje": "Pedido creado exitosamente con módulo crítico C++ (cálculos de flete y stock validados).",
-                    "pedido_id": 13,
+                    "pedido_id": 15,
                     "subtotal": 16,
                     "costo_envio": 7,
                     "total": 23,
@@ -445,16 +445,16 @@
                         }
                     ],
                     "cpp_audit": {
-                        "user_id": 15,
-                        "timestamp": "2026-10-12T04:10:33Z",
+                        "user_id": 17,
+                        "timestamp": "2026-10-12T04:31:39Z",
                         "action": "CPP_MOTOR_CORE_CALCULATION",
                         "motor": "C++ Native Core (SPEC §2)",
-                        "tiempo_computo_us": 64
+                        "tiempo_computo_us": 62
                     }
                 },
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "CREATE_ORDER",
                     "ip_address": "::1"
                 },
@@ -463,20 +463,20 @@
         },
         {
             "id": "HP-15",
-            "name": "Cancelación Legal con Reembolso de Stock #13",
+            "name": "Cancelación Legal con Reembolso de Stock #15",
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Stock restaurado y orden cancelada",
             "request": {
-                "pedido_id": 13
+                "pedido_id": 15
             },
             "response": {
                 "status": "success",
                 "data": {
-                    "mensaje": "Pedido #13 cancelado exitosamente y stock reembolsado.",
-                    "pedido_id": 13,
+                    "mensaje": "Pedido #15 cancelado exitosamente y stock reembolsado.",
+                    "pedido_id": 15,
                     "estado_anterior": "pendiente",
                     "nuevo_estado": "cancelado",
                     "reembolsos": [
@@ -484,13 +484,13 @@
                             "producto_id": 8,
                             "nombre": "Aros de Cebolla Crocantes",
                             "cantidad_reembolsada": 1,
-                            "stock_restaurado": 79
+                            "stock_restaurado": 78
                         }
                     ]
                 },
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "CANCEL_ORDER",
                     "ip_address": "::1"
                 },
@@ -503,25 +503,25 @@
             "status": "PASS",
             "http_code": 200,
             "expected_code": 200,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Totales consolidados y métricas operativas",
             "request": null,
             "response": {
                 "status": "success",
                 "data": {
                     "resumen": {
-                        "total_ventas_bs": 238,
-                        "total_pedidos": 13,
-                        "pedidos_entregados": 6,
-                        "pedidos_cancelados": 4,
+                        "total_ventas_bs": 264,
+                        "total_pedidos": 15,
+                        "pedidos_entregados": 7,
+                        "pedidos_cancelados": 5,
                         "pedidos_en_camino": 0,
                         "pedidos_pendientes": 3
                     },
                     "metodos_pago": [
                         {
                             "estado_pago": "liquidado",
-                            "cantidad_pedidos": 5,
-                            "monto_total": "180.00"
+                            "cantidad_pedidos": 6,
+                            "monto_total": "206.00"
                         },
                         {
                             "estado_pago": "contraentrega",
@@ -541,14 +541,14 @@
                             "recaudacion": "186.00"
                         },
                         {
+                            "categoria": "Acompañamientos",
+                            "unidades_vendidas": "3",
+                            "recaudacion": "48.00"
+                        },
+                        {
                             "categoria": "Combos",
                             "unidades_vendidas": "1",
                             "recaudacion": "44.00"
-                        },
-                        {
-                            "categoria": "Acompañamientos",
-                            "unidades_vendidas": "2",
-                            "recaudacion": "32.00"
                         },
                         {
                             "categoria": "Bebidas",
@@ -561,8 +561,8 @@
                             "rider_id": 2,
                             "nombre": "Pedro Gómez",
                             "email": "pedro@mail.com",
-                            "entregas_exitosas": 6,
-                            "recaudacion_total": "238.00"
+                            "entregas_exitosas": 7,
+                            "recaudacion_total": "264.00"
                         }
                     ],
                     "top_productos": [
@@ -575,20 +575,20 @@
                             "total_recaudado": "154.00"
                         },
                         {
+                            "id": 8,
+                            "nombre": "Aros de Cebolla Crocantes",
+                            "categoria": "Acompañamientos",
+                            "marca": "Sides",
+                            "total_unidades": "3",
+                            "total_recaudado": "48.00"
+                        },
+                        {
                             "id": 10,
                             "nombre": "Coca-Cola Original 500ml",
                             "categoria": "Bebidas",
                             "marca": "Coca-Cola",
                             "total_unidades": "2",
                             "total_recaudado": "12.00"
-                        },
-                        {
-                            "id": 8,
-                            "nombre": "Aros de Cebolla Crocantes",
-                            "categoria": "Acompañamientos",
-                            "marca": "Sides",
-                            "total_unidades": "2",
-                            "total_recaudado": "32.00"
                         },
                         {
                             "id": 2,
@@ -610,7 +610,7 @@
                 },
                 "audit": {
                     "user_id": 3,
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "GENERATE_REPORT",
                     "ip_address": "::1"
                 },
@@ -623,7 +623,7 @@
             "status": "PASS",
             "http_code": 401,
             "expected_code": 401,
-            "timestamp": "2026-10-12T04:10:33+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Rechazado con 401 y acción AUTH_STRICT",
             "request": null,
             "response": {
@@ -631,7 +631,7 @@
                 "data": null,
                 "audit": {
                     "user_id": "ANONYMOUS",
-                    "timestamp": "2026-10-12T06:10:33+02:00",
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "AUTH_STRICT",
                     "ip_address": "::1"
                 },
@@ -644,15 +644,15 @@
             "status": "PASS",
             "http_code": 403,
             "expected_code": 403,
-            "timestamp": "2026-10-12T04:10:34+00:00",
+            "timestamp": "2026-10-12T04:31:39+00:00",
             "details": "Rechazado con 403 (CI_UNVERIFIED)",
             "request": null,
             "response": {
                 "status": "error",
                 "data": null,
                 "audit": {
-                    "user_id": 16,
-                    "timestamp": "2026-10-12T06:10:34+02:00",
+                    "user_id": 18,
+                    "timestamp": "2026-10-12T06:31:39+02:00",
                     "action": "CI_UNVERIFIED",
                     "ip_address": "::1"
                 },
@@ -665,7 +665,7 @@
             "status": "PASS",
             "http_code": 400,
             "expected_code": 400,
-            "timestamp": "2026-10-12T04:10:34+00:00",
+            "timestamp": "2026-10-12T04:31:40+00:00",
             "details": "Rechazado con 400 (CPP_VALIDATION_FAILED) y ROLLBACK",
             "request": null,
             "response": {
@@ -674,32 +674,32 @@
                     "valido": false,
                     "producto_id": 8,
                     "solicitado": 999999,
-                    "stock_actual": 79
+                    "stock_actual": 78
                 },
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:34+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:40+02:00",
                     "action": "CPP_VALIDATION_FAILED",
                     "ip_address": "::1"
                 },
-                "error_details": "Stock insuficiente para 'Aros de Cebolla Crocantes' (ID #8). Solicitado: 999999, Disponible en cocina: 79."
+                "error_details": "Stock insuficiente para 'Aros de Cebolla Crocantes' (ID #8). Solicitado: 999999, Disponible en cocina: 78."
             }
         },
         {
             "id": "CN-04",
-            "name": "Cancelación Ilegal de Orden Entregada #12",
+            "name": "Cancelación Ilegal de Orden Entregada #14",
             "status": "PASS",
             "http_code": 400,
             "expected_code": 400,
-            "timestamp": "2026-10-12T04:10:34+00:00",
+            "timestamp": "2026-10-12T04:31:40+00:00",
             "details": "Rechazado con 400 (ORDER_NOT_CANCELLABLE)",
             "request": null,
             "response": {
                 "status": "error",
                 "data": null,
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:34+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:40+02:00",
                     "action": "INVALID_ORDER_STATE",
                     "ip_address": "::1"
                 },
@@ -712,15 +712,15 @@
             "status": "PASS",
             "http_code": 403,
             "expected_code": 403,
-            "timestamp": "2026-10-12T04:10:34+00:00",
+            "timestamp": "2026-10-12T04:31:40+00:00",
             "details": "Rechazado con 403 Forbidden (requireAuth)",
             "request": null,
             "response": {
                 "status": "error",
                 "data": null,
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:34+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:40+02:00",
                     "action": "FORBIDDEN",
                     "ip_address": "::1"
                 },
@@ -733,15 +733,15 @@
             "status": "PASS",
             "http_code": 400,
             "expected_code": 400,
-            "timestamp": "2026-10-12T04:10:34+00:00",
+            "timestamp": "2026-10-12T04:31:40+00:00",
             "details": "Rechazado con 400 (EMPTY_CART)",
             "request": null,
             "response": {
                 "status": "error",
                 "data": null,
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:34+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:40+02:00",
                     "action": "EMPTY_CART",
                     "ip_address": "::1"
                 },
@@ -754,15 +754,15 @@
             "status": "PASS",
             "http_code": 403,
             "expected_code": 403,
-            "timestamp": "2026-10-12T04:10:34+00:00",
+            "timestamp": "2026-10-12T04:31:40+00:00",
             "details": "Rechazado con 403 Forbidden (requireAuth)",
             "request": null,
             "response": {
                 "status": "error",
                 "data": null,
                 "audit": {
-                    "user_id": 15,
-                    "timestamp": "2026-10-12T06:10:34+02:00",
+                    "user_id": 17,
+                    "timestamp": "2026-10-12T06:31:40+02:00",
                     "action": "FORBIDDEN",
                     "ip_address": "::1"
                 },

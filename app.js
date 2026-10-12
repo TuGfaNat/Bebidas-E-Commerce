@@ -575,7 +575,7 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card">
                 <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
                     <h2 style="font-weight: 700; font-size: 1.6rem;">Burger 24/7</h2>
                     <p style="font-size: 0.85rem; color: var(--text-secondary);">Hamburguesería Gourmet & Delivery Rápido</p>
                 </div>
@@ -607,7 +607,7 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card" style="max-width: 480px;">
                 <div style="text-align: center; margin-bottom: 1.25rem;">
-                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="flame"></i></div>
                     <h2>Registro de Cliente - Burger 24/7</h2>
                     <p style="font-size: 0.85rem; color: var(--text-secondary);">Sube tu C.I. para desbloquear el menú de hamburguesas gourmet</p>
                 </div>
@@ -644,7 +644,7 @@ function renderAuthCard(view = 'login') {
         content = `
             <div class="login-card glass-card" style="max-width: 500px;">
                 <div style="text-align: center; margin-bottom: 1.25rem;">
-                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #f97316, #ef4444); color:#fff; border-radius:var(--radius-md);"><i data-lucide="bike"></i></div>
+                    <div class="logo-icon" style="margin: 0 auto 0.75rem; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; background:var(--accent-purple); color:#fff; border-radius:var(--radius-md);"><i data-lucide="bike"></i></div>
                     <h2>Postulación de Repartidor - Burger 24/7</h2>
                     <p style="font-size: 0.85rem; color: var(--text-secondary);">Carga tu expediente digital para entregas de pedidos de hamburguesas</p>
                 </div>
@@ -1466,10 +1466,10 @@ function updateCheckoutFinalTotal() {
     if (placeBtn) {
         if (isCash) {
             placeBtn.innerText = `Confirmar Pedido (Pagar en Efectivo al Recibir: ${finalTotal.toFixed(2)} Bs)`;
-            placeBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            placeBtn.style.background = 'var(--accent-green)';
         } else {
             placeBtn.innerText = `Confirmar Pedido (Pago con QR: ${finalTotal.toFixed(2)} Bs)`;
-            placeBtn.style.background = 'linear-gradient(135deg, #8b5cf6, #6d28d9)';
+            placeBtn.style.background = 'var(--accent-purple)';
         }
     }
     validateCheckoutForm();
@@ -1614,7 +1614,7 @@ async function renderClienteActiveOrderTracker() {
 
     const payBadge = isContra
         ? '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="banknote" style="width:13px;height:13px;vertical-align:middle;"></i> Contraentrega (Pagarás en efectivo al recibir)</span>'
-        : `<span class="badge" style="background:rgba(139,92,246,0.15); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR</span>${qrBtn}`;
+        : `<span class="badge" style="background:rgba(249,115,22,0.15); color:var(--accent-purple); border:1px solid rgba(249,115,22,0.3); font-size:0.8rem; font-weight:600;"><i data-lucide="qr-code" style="width:13px;height:13px;vertical-align:middle;"></i> Pagado con QR</span>${qrBtn}`;
 
     const payEl = document.getElementById('clientActiveOrderPayment');
     if (payEl) payEl.innerHTML = `<strong>Método de Pago:</strong> ${payBadge}`;
@@ -1641,7 +1641,7 @@ async function renderClienteActiveOrderTracker() {
             clientTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: L.divIcon({
                     className: 'node-store-wrap',
-                    html: '<div style="background:#8b5cf6; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #8b5cf6;"></div>',
+                    html: '<div style="background:#f97316; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
                     iconSize: [12, 12],
                     iconAnchor: [6, 6]
                 })
@@ -1656,7 +1656,7 @@ async function renderClienteActiveOrderTracker() {
             clientTrackingMarkerClient = L.marker([latCliente, lonCliente], {
                 icon: L.divIcon({
                     className: 'node-client-wrap',
-                    html: '<div style="background:#f59e0b; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
+                    html: '<div style="background:#f59e0b; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
                     iconSize: [12, 12],
                     iconAnchor: [6, 6]
                 })
@@ -1673,7 +1673,7 @@ async function renderClienteActiveOrderTracker() {
                 [STORE_COORDS.lat, STORE_COORDS.lon],
                 [latCliente, lonCliente]
             ], {
-                color: '#8b5cf6',
+                color: '#f97316',
                 weight: 3,
                 dashArray: '5, 5'
             }).addTo(clientTrackingMapInstance);
@@ -2087,7 +2087,7 @@ function renderRiderActiveOrderPanel() {
             riderTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: L.divIcon({
                     className: 'node-store-wrap',
-                    html: '<div style="background:#8b5cf6; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #8b5cf6;"></div>',
+                    html: '<div style="background:#f97316; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
                     iconSize: [12, 12],
                     iconAnchor: [6, 6]
                 })
@@ -2304,7 +2304,7 @@ function renderFilteredRiderHistory(filter = 'all') {
         const isContraentrega = o.estado_pago === 'contraentrega' || o.estado_pago === 'pagado_efectivo' || o.estado_pago === 'liquidado';
         const payBadge = isContraentrega
             ? '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">💵 Contraentrega (Efectivo)</span>'
-            : '<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3);">📱 Pago QR</span>';
+            : '<span class="badge" style="background: rgba(249, 115, 22, 0.15); color: var(--accent-purple); border: 1px solid rgba(249, 115, 22, 0.3);">📱 Pago QR</span>';
 
         const rawDate = o.fecha_actualizacion || o.fecha_creacion;
         let dateStr = 'Reciente';
@@ -2321,7 +2321,7 @@ function renderFilteredRiderHistory(filter = 'all') {
             : '';
 
         return `
-            <div class="order-card" style="border-left: 3px solid ${o.estado_pedido === 'entregado' ? '#10b981' : (o.estado_pedido === 'rechazado' || o.estado_pedido === 'cancelado' ? '#ef4444' : '#8b5cf6')};">
+            <div class="order-card" style="border-left: 3px solid ${o.estado_pedido === 'entregado' ? '#10b981' : (o.estado_pedido === 'rechazado' || o.estado_pedido === 'cancelado' ? '#ef4444' : '#f97316')};">
                 <div class="order-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
                     <div>
                         <span class="order-id" style="font-weight:700;">Pedido #${o.pedido_id}</span>
@@ -2780,7 +2780,7 @@ window.openUserProfile = async function() {
                         </div>
                         <div class="profile-metric-card">
                             <span class="metric-lbl">Efectivo ya Rendido</span>
-                            <span class="metric-val" style="color: #8b5cf6;">${Number(metrics.efectivo_liquidado || 0).toFixed(2)} Bs</span>
+                            <span class="metric-val" style="color: #f97316;">${Number(metrics.efectivo_liquidado || 0).toFixed(2)} Bs</span>
                         </div>
                     `;
                 }
@@ -2824,7 +2824,7 @@ window.openUserProfile = async function() {
                         </div>
                         <div class="profile-metric-card">
                             <span class="metric-lbl">Flota de Riders</span>
-                            <span class="metric-val" style="color: #8b5cf6;">${metrics.total_riders || 0}</span>
+                            <span class="metric-val" style="color: #f97316;">${metrics.total_riders || 0}</span>
                         </div>
                         <div class="profile-metric-card">
                             <span class="metric-lbl">Postulaciones Pendientes</span>
@@ -3536,7 +3536,7 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
             adminMonitoringMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: L.divIcon({
                     className: 'node-store-wrap',
-                    html: '<div style="background:#8b5cf6; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #8b5cf6;"></div>',
+                    html: '<div style="background:#f97316; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
                     iconSize: [14, 14],
                     iconAnchor: [7, 7]
                 })
@@ -3575,7 +3575,7 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
         adminMonitoringMarkerClient = L.marker([latCliente, lonCliente], {
             icon: L.divIcon({
                 className: 'node-client-wrap',
-                html: '<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
+                html: '<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
                 iconSize: [14, 14],
                 iconAnchor: [7, 7]
             })
@@ -3586,7 +3586,7 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
             [STORE_COORDS.lat, STORE_COORDS.lon],
             [latCliente, lonCliente]
         ], {
-            color: '#8b5cf6',
+            color: '#f97316',
             weight: 3,
             dashArray: '5, 5'
         }).addTo(adminMonitoringMapInstance);
@@ -3667,8 +3667,8 @@ function showToast(message, type = 'success') {
         toast.style.background = 'rgba(245, 158, 11, 0.95)';
         toast.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.2)';
     } else {
-        toast.style.background = 'rgba(139, 92, 246, 0.95)';
-        toast.style.boxShadow = '0 4px 15px rgba(139, 92, 246, 0.2)';
+        toast.style.background = '#ea580c';
+        toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.25)';
     }
 
     toast.innerText = message;

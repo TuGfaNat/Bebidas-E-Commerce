@@ -50,6 +50,107 @@ const LA_PAZ_BOUNDS = [
 const MAP_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const MAP_TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
+// Cache en memoria para rutas trazadas de calles OSRM (evita peticiones repetitivas)
+const routePathCache = new Map();
+
+/**
+ * Traza una ruta de navegación profesional estilo Google Maps / PedidosYa
+ * Si hay conectividad, consulta el algoritmo de calles de OSRM en La Paz.
+ * Si no, dibuja una línea suave y redondeada con resplandor exterior.
+ */
+async function renderDeliveryRoute(mapInstance, start, end, existingLayerGroup, options = {}) {
+    if (!mapInstance || !start || !end) return null;
+
+    const coreColor = options.color || '#2563eb';
+    const glowColor = options.glowColor || 'rgba(37, 99, 235, 0.35)';
+    const cacheKey = `${Number(start[0]).toFixed(4)},${Number(start[1]).toFixed(4)}->${Number(end[0]).toFixed(4)},${Number(end[1]).toFixed(4)}`;
+
+    let initialPoints = [start, end];
+
+    if (!existingLayerGroup) {
+        existingLayerGroup = L.layerGroup().addTo(mapInstance);
+    } else {
+        existingLayerGroup.clearLayers();
+    }
+
+    // Trazo exterior difuminado (resplandor suave de la ruta)
+    const glowPolyline = L.polyline(initialPoints, {
+        color: glowColor,
+        weight: 8,
+        opacity: 0.6,
+        lineCap: 'round',
+        lineJoin: 'round'
+    }).addTo(existingLayerGroup);
+
+    // Trazo interior nítido
+    const corePolyline = L.polyline(initialPoints, {
+        color: coreColor,
+        weight: 4,
+        opacity: 0.95,
+        lineCap: 'round',
+        lineJoin: 'round'
+    }).addTo(existingLayerGroup);
+
+    // Si ya teníamos la ruta calculada en caché, aplicarla directamente
+    if (routePathCache.has(cacheKey)) {
+        const cached = routePathCache.get(cacheKey);
+        glowPolyline.setLatLngs(cached);
+        corePolyline.setLatLngs(cached);
+        return existingLayerGroup;
+    }
+
+    // Consulta asíncrona a OSRM para seguir las calles reales de La Paz
+    try {
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`;
+        const ctrl = new AbortController();
+        const timeout = setTimeout(() => ctrl.abort(), 2000);
+        const res = await fetch(osrmUrl, { signal: ctrl.signal });
+        clearTimeout(timeout);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.routes && data.routes[0] && data.routes[0].geometry && data.routes[0].geometry.coordinates) {
+                const streetPoints = data.routes[0].geometry.coordinates.map(pt => [pt[1], pt[0]]);
+                if (streetPoints.length > 1) {
+                    routePathCache.set(cacheKey, streetPoints);
+                    glowPolyline.setLatLngs(streetPoints);
+                    corePolyline.setLatLngs(streetPoints);
+                }
+            }
+        }
+    } catch (e) {
+        // En caso de corte o desconexión, la línea directa redondeada ya está visible
+    }
+
+    return existingLayerGroup;
+}
+
+function createStorePinIcon() {
+    return L.divIcon({
+        className: 'custom-map-pin',
+        html: '<div style="background:#f97316; width:28px; height:28px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;" title="Burger 24/7 Central Sopocachi">🍔</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+}
+
+function createClientPinIcon(label = "Punto de Entrega") {
+    return L.divIcon({
+        className: 'custom-map-pin',
+        html: '<div style="background:#ef4444; width:28px; height:28px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;" title="' + label + '">📍</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+    });
+}
+
+function createRiderPinIcon() {
+    return L.divIcon({
+        className: 'custom-map-pin rider-pulse-pin',
+        html: '<div style="background:#10b981; width:30px; height:30px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 12px #10b981; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer;" title="Repartidor en Ruta">🛵</div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+}
+
 // Selected client delivery coordinates during checkout
 let selectedDeliveryCoords = null;
 
@@ -1395,16 +1496,17 @@ function setCheckoutDeliveryCoords(lat, lng) {
         checkoutMarkerClient.setLatLng([lat, lng]);
     } else if (checkoutMapInstance) {
         checkoutMarkerClient = L.marker([lat, lng], {
-            icon: L.divIcon({
-                className: 'node-client-wrap',
-                html: '<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
-                iconSize: [14, 14],
-                iconAnchor: [7, 7]
-            })
+            icon: createClientPinIcon("Punto de Entrega")
         }).addTo(checkoutMapInstance);
     }
     if (checkoutMapInstance) {
         checkoutMapInstance.setView([lat, lng], 14);
+        renderDeliveryRoute(checkoutMapInstance, [STORE_COORDS.lat, STORE_COORDS.lon], [lat, lng], checkoutRouteLine, {
+            color: '#3b82f6',
+            glowColor: 'rgba(59, 130, 246, 0.35)'
+        }).then(layer => {
+            checkoutRouteLine = layer;
+        });
     }
 
     const logistics = calculateLogistics(lat, lng);
@@ -1465,12 +1567,7 @@ function initCheckoutMap() {
             }).addTo(checkoutMapInstance);
 
             checkoutMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
-                icon: L.divIcon({
-                    className: 'node-store-wrap',
-                    html: '<div style="background:#f97316; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f97316; display:flex; align-items:center; justify-content:center; font-size:10px;">🍔</div>',
-                    iconSize: [16, 16],
-                    iconAnchor: [8, 8]
-                })
+                icon: createStorePinIcon()
             }).addTo(checkoutMapInstance).bindPopup("<b>Burger 24/7 - Central Sopocachi</b><br>Av. 20 de Octubre #2150 (La Paz)").openPopup();
 
             checkoutMapInstance.on('click', (e) => {
@@ -1676,13 +1773,8 @@ async function renderClienteActiveOrderTracker() {
             }).addTo(clientTrackingMapInstance);
 
             clientTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
-                icon: L.divIcon({
-                    className: 'node-store-wrap',
-                    html: '<div style="background:#f97316; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6]
-                })
-            }).addTo(clientTrackingMapInstance);
+                icon: createStorePinIcon()
+            }).addTo(clientTrackingMapInstance).bindPopup("<b>Burger 24/7 - Central Sopocachi</b><br>Av. 20 de Octubre #2150 (Cocina)");
         } else {
             clientTrackingMapInstance.invalidateSize();
         }
@@ -1691,36 +1783,25 @@ async function renderClienteActiveOrderTracker() {
             clientTrackingMarkerClient.setLatLng([latCliente, lonCliente]);
         } else {
             clientTrackingMarkerClient = L.marker([latCliente, lonCliente], {
-                icon: L.divIcon({
-                    className: 'node-client-wrap',
-                    html: '<div style="background:#f59e0b; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6]
-                })
-            }).addTo(clientTrackingMapInstance);
+                icon: createClientPinIcon("Tu Ubicación de Entrega")
+            }).addTo(clientTrackingMapInstance).bindPopup("<b>Tu Ubicación de Entrega</b>");
         }
 
-        if (clientTrackingRouteLine) {
-            clientTrackingRouteLine.setLatLngs([
-                [STORE_COORDS.lat, STORE_COORDS.lon],
-                [latCliente, lonCliente]
-            ]);
-        } else {
-            clientTrackingRouteLine = L.polyline([
-                [STORE_COORDS.lat, STORE_COORDS.lon],
-                [latCliente, lonCliente]
-            ], {
-                color: '#f97316',
-                weight: 3,
-                dashArray: '5, 5'
-            }).addTo(clientTrackingMapInstance);
-        }
+        renderDeliveryRoute(
+            clientTrackingMapInstance,
+            [STORE_COORDS.lat, STORE_COORDS.lon],
+            [latCliente, lonCliente],
+            clientTrackingRouteLine,
+            { color: '#2563eb', glowColor: 'rgba(37, 99, 235, 0.35)' }
+        ).then(layer => {
+            clientTrackingRouteLine = layer;
+        });
 
         const bounds = L.latLngBounds([
             [STORE_COORDS.lat, STORE_COORDS.lon],
             [latCliente, lonCliente]
         ]);
-        clientTrackingMapInstance.fitBounds(bounds, { padding: [20, 20] });
+        clientTrackingMapInstance.fitBounds(bounds, { padding: [25, 25] });
 
         if (activeOrder.estado_pedido === 'pendiente') {
             if (clientTrackingMarkerRider) {
@@ -1744,13 +1825,8 @@ async function renderClienteActiveOrderTracker() {
                 clientTrackingMarkerRider.setLatLng([riderLat, riderLon]);
             } else {
                 clientTrackingMarkerRider = L.marker([riderLat, riderLon], {
-                    icon: L.divIcon({
-                        className: 'node-rider-wrap',
-                        html: '<div style="background:#10b981; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #10b981; display:flex; align-items:center; justify-content:center; color:#fff; font-size:8px;"><i class="lucide-bike" style="width:8px;height:8px;fill:currentColor;"></i></div>',
-                        iconSize: [16, 16],
-                        iconAnchor: [8, 8]
-                    })
-                }).addTo(clientTrackingMapInstance);
+                    icon: createRiderPinIcon()
+                }).addTo(clientTrackingMapInstance).bindPopup("<b>Rider Asignado</b><br>Despacho en curso");
             }
         }
     }, 200);
@@ -2125,13 +2201,8 @@ function renderRiderActiveOrderPanel() {
             }).addTo(riderTrackingMapInstance);
 
             riderTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
-                icon: L.divIcon({
-                    className: 'node-store-wrap',
-                    html: '<div style="background:#f97316; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6]
-                })
-            }).addTo(riderTrackingMapInstance);
+                icon: createStorePinIcon()
+            }).addTo(riderTrackingMapInstance).bindPopup("<b>Burger 24/7 - Central Sopocachi</b><br>Av. 20 de Octubre #2150 (Cocina)");
         } else {
             riderTrackingMapInstance.invalidateSize();
         }
@@ -2140,36 +2211,25 @@ function renderRiderActiveOrderPanel() {
             riderTrackingMarkerClient.setLatLng([latCliente, lonCliente]);
         } else {
             riderTrackingMarkerClient = L.marker([latCliente, lonCliente], {
-                icon: L.divIcon({
-                    className: 'node-client-wrap',
-                    html: '<div style="background:#f59e0b; width:12px; height:12px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #f59e0b;"></div>',
-                    iconSize: [12, 12],
-                    iconAnchor: [6, 6]
-                })
-            }).addTo(riderTrackingMapInstance);
+                icon: createClientPinIcon("Dirección del Cliente")
+            }).addTo(riderTrackingMapInstance).bindPopup("<b>Dirección del Cliente</b>");
         }
 
-        if (riderTrackingRouteLine) {
-            riderTrackingRouteLine.setLatLngs([
-                [STORE_COORDS.lat, STORE_COORDS.lon],
-                [latCliente, lonCliente]
-            ]);
-        } else {
-            riderTrackingRouteLine = L.polyline([
-                [STORE_COORDS.lat, STORE_COORDS.lon],
-                [latCliente, lonCliente]
-            ], {
-                color: '#10b981',
-                weight: 3,
-                dashArray: '5, 5'
-            }).addTo(riderTrackingMapInstance);
-        }
+        renderDeliveryRoute(
+            riderTrackingMapInstance,
+            [STORE_COORDS.lat, STORE_COORDS.lon],
+            [latCliente, lonCliente],
+            riderTrackingRouteLine,
+            { color: '#10b981', glowColor: 'rgba(16, 185, 129, 0.35)' }
+        ).then(layer => {
+            riderTrackingRouteLine = layer;
+        });
 
         const bounds = L.latLngBounds([
             [STORE_COORDS.lat, STORE_COORDS.lon],
             [latCliente, lonCliente]
         ]);
-        riderTrackingMapInstance.fitBounds(bounds, { padding: [20, 20] });
+        riderTrackingMapInstance.fitBounds(bounds, { padding: [25, 25] });
 
         const riderPos = (activeOrder.estado_pedido === 'asignado')
             ? [STORE_COORDS.lat, STORE_COORDS.lon]
@@ -2182,13 +2242,8 @@ function renderRiderActiveOrderPanel() {
             riderTrackingMarkerRider.setLatLng(riderPos);
         } else {
             riderTrackingMarkerRider = L.marker(riderPos, {
-                icon: L.divIcon({
-                    className: 'node-rider-wrap',
-                    html: '<div style="background:#10b981; width:16px; height:16px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #10b981; display:flex; align-items:center; justify-content:center; color:#fff; font-size:8px;"><i data-lucide="bike" style="width:8px;height:8px;fill:currentColor;"></i></div>',
-                    iconSize: [16, 16],
-                    iconAnchor: [8, 8]
-                })
-            }).addTo(riderTrackingMapInstance);
+                icon: createRiderPinIcon()
+            }).addTo(riderTrackingMapInstance).bindPopup("<b>Tu Posición (Repartidor)</b>");
         }
     }, 200);
 }
@@ -3578,12 +3633,7 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
             }).addTo(adminMonitoringMapInstance);
 
             adminMonitoringMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
-                icon: L.divIcon({
-                    className: 'node-store-wrap',
-                    html: '<div style="background:#f97316; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
-                    iconSize: [14, 14],
-                    iconAnchor: [7, 7]
-                })
+                icon: createStorePinIcon()
             }).addTo(adminMonitoringMapInstance).bindPopup("<b>Burger 24/7 Central Sopocachi</b><br>Cocina & Despacho");
         }
 
@@ -3617,23 +3667,19 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
         const riderName = order.rider_nombre || 'Rider';
 
         adminMonitoringMarkerClient = L.marker([latCliente, lonCliente], {
-            icon: L.divIcon({
-                className: 'node-client-wrap',
-                html: '<div style="background:#f59e0b; width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
-                iconSize: [14, 14],
-                iconAnchor: [7, 7]
-            })
+            icon: createClientPinIcon(`Cliente: ${clientName}`)
         }).addTo(adminMonitoringMapInstance);
         adminMonitoringMarkerClient.bindPopup(`<b>Cliente: ${clientName}</b><br>Pedido #${order.id}`);
 
-        adminMonitoringRouteLine = L.polyline([
+        renderDeliveryRoute(
+            adminMonitoringMapInstance,
             [STORE_COORDS.lat, STORE_COORDS.lon],
-            [latCliente, lonCliente]
-        ], {
-            color: '#f97316',
-            weight: 3,
-            dashArray: '5, 5'
-        }).addTo(adminMonitoringMapInstance);
+            [latCliente, lonCliente],
+            adminMonitoringRouteLine,
+            { color: '#6366f1', glowColor: 'rgba(99, 102, 241, 0.35)' }
+        ).then(layer => {
+            adminMonitoringRouteLine = layer;
+        });
 
         const bounds = L.latLngBounds([
             [STORE_COORDS.lat, STORE_COORDS.lon],
@@ -3654,12 +3700,7 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
         }
 
         adminMonitoringMarkerRider = L.marker([riderLat, riderLon], {
-            icon: L.divIcon({
-                className: 'node-rider-wrap',
-                html: `<div style="background:#10b981; width:18px; height:18px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 10px #10b981; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px;">🛵</div>`,
-                iconSize: [18, 18],
-                iconAnchor: [9, 9]
-            })
+            icon: createRiderPinIcon()
         }).addTo(adminMonitoringMapInstance);
         adminMonitoringMarkerRider.bindPopup(`<b>Rider: ${riderName}</b><br>Estado: ${order.estado_pedido.toUpperCase()}`);
 

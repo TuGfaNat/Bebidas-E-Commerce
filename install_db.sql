@@ -12,6 +12,16 @@ USE `burger_shop`;
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- Limpieza de tablas previas obsoletas para asegurar esquema integro y evitar error #1054
+DROP TABLE IF EXISTS auditoria_logs;
+DROP TABLE IF EXISTS pedido_detalles;
+DROP TABLE IF EXISTS pedidos;
+DROP TABLE IF EXISTS documentacion_rider;
+DROP TABLE IF EXISTS productos;
+DROP TABLE IF EXISTS configuracion_tienda;
+DROP TABLE IF EXISTS configuracion_pagos;
+DROP TABLE IF EXISTS users;
+
 -- 1. Tabla de Usuarios (users)
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -11,7 +11,14 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     fecha_nacimiento DATE NOT NULL,
     ci_url VARCHAR(255),
+    ci_reverso_url VARCHAR(255),
+    foto_url VARCHAR(255),
     ci_status ENUM('pending', 'verified', 'rejected') DEFAULT 'pending',
+    direccion VARCHAR(255) DEFAULT NULL,
+    telefono VARCHAR(50) DEFAULT NULL,
+    motivo_rechazo TEXT,
+    apelacion_motivo TEXT,
+    apelacion_estado ENUM('ninguna', 'pendiente', 'resuelta') DEFAULT 'ninguna',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_by INT,
@@ -45,6 +52,9 @@ CREATE TABLE IF NOT EXISTS pedidos (
     total DECIMAL(10, 2) NOT NULL,
     latitud DECIMAL(10, 8),
     longitud DECIMAL(11, 8),
+    direccion_entrega VARCHAR(255) DEFAULT NULL,
+    referencia_entrega VARCHAR(255) DEFAULT NULL,
+    telefono_contacto VARCHAR(50) DEFAULT NULL,
     qr_comprobante_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -76,9 +86,13 @@ CREATE TABLE IF NOT EXISTS documentacion_rider (
     id INT AUTO_INCREMENT PRIMARY KEY,
     rider_id INT NOT NULL UNIQUE,
     licencia_url VARCHAR(255) NOT NULL,
+    licencia_reverso_url VARCHAR(255),
     seguro_url VARCHAR(255) NOT NULL,
     cv_url VARCHAR(255) NOT NULL,
     estado_aprobacion ENUM('pendiente', 'aprobado', 'rechazado') DEFAULT 'pendiente',
+    motivo_rechazo TEXT,
+    apelacion_motivo TEXT,
+    apelacion_estado ENUM('ninguna', 'pendiente', 'resuelta') DEFAULT 'ninguna',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_by INT,
@@ -102,4 +116,33 @@ CREATE TABLE IF NOT EXISTS auditoria_logs (
     updated_by INT,
     FOREIGN KEY (created_by) REFERENCES users(id),
     FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS configuracion_pagos (
+    id INT PRIMARY KEY DEFAULT 1,
+    banco VARCHAR(100) NOT NULL DEFAULT 'Banco Unión',
+    titular VARCHAR(150) NOT NULL DEFAULT 'Burger 24/7 S.R.L. (Admin Central)',
+    cuenta VARCHAR(50) NOT NULL DEFAULT '100000482910',
+    alias_qr VARCHAR(100) NOT NULL DEFAULT 'burger247@banco',
+    qr_imagen_url VARCHAR(255) DEFAULT NULL,
+    modo_qr ENUM('dinamico', 'subido', 'hibrido') NOT NULL DEFAULT 'hibrido',
+    costo_fijo DECIMAL(10,2) DEFAULT NULL,
+    instrucciones TEXT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS configuracion_tienda (
+    id INT PRIMARY KEY DEFAULT 1,
+    nombre_tienda VARCHAR(150) NOT NULL DEFAULT 'Burger 24/7 - Central Sopocachi',
+    direccion VARCHAR(255) NOT NULL DEFAULT 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
+    zona VARCHAR(100) NOT NULL DEFAULT 'Sopocachi',
+    telefono VARCHAR(50) NOT NULL DEFAULT '+591 71234567',
+    latitud DECIMAL(10,8) NOT NULL DEFAULT -16.50742100,
+    longitud DECIMAL(11,8) NOT NULL DEFAULT -68.13098200,
+    horario_apertura VARCHAR(100) NOT NULL DEFAULT '18:00 - 02:00',
+    tiempo_estimado_min INT NOT NULL DEFAULT 35,
+    costo_envio_base DECIMAL(10,2) NOT NULL DEFAULT 10.00,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT DEFAULT NULL
 );

@@ -389,6 +389,8 @@ Todos los endpoints reciben y emiten `application/json`, requiriendo la cabecera
 | `POST` | `/microservices/Transactions/checkout.php` | Cliente | Creación atómica de pedido con validación C++ y MySQL `FOR UPDATE`. |
 | `POST` | `/microservices/Transactions/cancel_order.php`| Cliente/Admin| Cancelación legal de pedido con restauración automática de stock. |
 | `GET` | `/microservices/Transactions/report.php` | Admin | Métricas KPI de ventas, desglose QR/efectivo y monitoreo en vivo. |
+| `GET` | `/microservices/Transactions/qr_config.php` | Público | Consulta de datos bancarios y código QR oficial con costo dinámico. |
+| `POST` | `/microservices/Transactions/qr_config.php` | Admin | Configuración del QR de pago, datos de cuenta y subida de imagen oficial. |
 | `GET` | `/microservices/Rider/assignment.php` | Rider | Consulta de pedidos pendientes de entrega en la zona del rider. |
 | `POST` | `/microservices/Rider/delivery.php` | Rider | Aceptación, inicio de trayecto y confirmación de cobro en efectivo. |
 

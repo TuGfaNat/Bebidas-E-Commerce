@@ -529,6 +529,7 @@ function setupEventListeners() {
         document.getElementById('payOptCash').classList.remove('active');
         document.getElementById('qrUploadBlock').style.display = 'block';
         document.getElementById('cashDetailsBlock').style.display = 'none';
+        updateCheckoutFinalTotal();
         validateCheckoutForm();
     });
     document.getElementById('payOptCash').addEventListener('click', () => {
@@ -565,9 +566,18 @@ function setupEventListeners() {
             
             document.querySelectorAll('.admin-subpanel').forEach(panel => panel.classList.remove('active'));
             const tabId = btn.dataset.tab;
-            const targetPanel = document.getElementById(`subpanel${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
-            if (targetPanel) targetPanel.classList.add('active');
+            let targetPanel = document.getElementById(`subpanel${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
+            if (!targetPanel && tabId === 'qrconfig') targetPanel = document.getElementById('subpanelQrConfig');
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+                targetPanel.style.display = 'block';
+            }
             
+            // Ocultar los demás subpaneles explícitamente para evitar solapamientos
+            document.querySelectorAll('.admin-subpanel').forEach(panel => {
+                if (panel !== targetPanel) panel.style.display = 'none';
+            });
+
             if (tabId === 'monitoring') {
                 renderAdminMonitoring();
                 setTimeout(() => {
@@ -577,6 +587,8 @@ function setupEventListeners() {
                 stopAdminMonitoringPolling();
                 if (tabId === 'reports') {
                     renderAdminReports();
+                } else if (tabId === 'qrconfig') {
+                    renderAdminQrConfig();
                 } else if (tabId === 'catalog' || tabId === 'products') {
                     renderAdminProductsTable();
                     if (config.connectedMode) syncProductsFromBackend();
@@ -1568,6 +1580,9 @@ function openCheckoutModal() {
     closeCartDrawer();
     document.getElementById('checkoutModal').classList.add('active');
 
+    // Cargar configuración oficial del código QR y datos bancarios
+    fetchPaymentQrConfig();
+
     // Default payment method: Contraentrega
     const payCash = document.getElementById('payOptCash');
     const payQr = document.getElementById('payOptQr');
@@ -1628,6 +1643,9 @@ function updateCheckoutFinalTotal() {
     const shipping = selectedDeliveryCoords ? parseFloat(selectedDeliveryCoords.costBs) : 0;
     const finalTotal = subtotal + shipping;
     document.getElementById('lblCheckoutTotal').innerText = `${finalTotal.toFixed(2)} Bs`;
+
+    // Actualizar el código QR con el costo exacto del pedido
+    updateCheckoutQrDisplay(finalTotal);
 
     const isCash = document.getElementById('payOptCash').classList.contains('active');
     const placeBtn = document.getElementById('btnPlaceOrder');
@@ -3440,19 +3458,24 @@ async function renderAdminReports() {
         const ridersRanking = Array.isArray(data.ranking_riders) ? data.ranking_riders : [];
         if (elActiveRiders) elActiveRiders.innerText = ridersRanking.length;
 
-        // Métodos de pago desde MySQL
+        // Métodos de pago desde MySQL (concatenando pagos por QR y efectivo)
         const metodos = Array.isArray(data.metodos_pago) ? data.metodos_pago : [];
         let qrSum = 0;
         let cashSum = 0;
 
-        metodos.forEach(m => {
-            const totalMonto = parseFloat(m.monto_total || 0);
-            if (m.estado_pago === 'pagado_qr') {
-                qrSum += totalMonto;
-            } else if (['pagado_efectivo', 'contraentrega', 'liquidado'].includes(m.estado_pago)) {
-                cashSum += totalMonto;
-            }
-        });
+        if (data.estadisticas_qr) {
+            qrSum = parseFloat(data.estadisticas_qr.total_qr_bs || 0);
+            cashSum = parseFloat(data.estadisticas_qr.total_efectivo_bs || 0);
+        } else {
+            metodos.forEach(m => {
+                const totalMonto = parseFloat(m.monto_total || 0);
+                if (m.estado_pago === 'pagado_qr' || m.estado_pago === 'qr') {
+                    qrSum += totalMonto;
+                } else if (['pagado_efectivo', 'contraentrega', 'liquidado'].includes(m.estado_pago)) {
+                    cashSum += totalMonto;
+                }
+            });
+        }
 
         const totalPayments = qrSum + cashSum;
         const qrPct = totalPayments > 0 ? (qrSum / totalPayments) * 100 : 0;
@@ -3462,6 +3485,46 @@ async function renderAdminReports() {
         if (elQrBar) elQrBar.style.width = `${qrPct}%`;
         if (elCashVal) elCashVal.innerText = `${cashSum.toFixed(2)} Bs (${Math.round(cashPct)}%)`;
         if (elCashBar) elCashBar.style.width = `${cashPct}%`;
+
+        // Concatenación del Total QR en el badge superior de la tabla
+        const badgeQrTotal = document.getElementById('badgeTotalQrSales');
+        if (badgeQrTotal) {
+            badgeQrTotal.innerText = `Total Recaudado por QR: ${qrSum.toFixed(2)} Bs`;
+        }
+
+        // Tabla de Transacciones QR Recientes
+        const tableQr = document.getElementById('tableAdminQrTransactions');
+        if (tableQr) {
+            const qrList = (data.estadisticas_qr && Array.isArray(data.estadisticas_qr.transacciones_recientes)) 
+                ? data.estadisticas_qr.transacciones_recientes 
+                : [];
+
+            if (qrList.length === 0) {
+                tableQr.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No se registran transacciones por QR aún.</td></tr>`;
+            } else {
+                tableQr.innerHTML = qrList.map(tx => `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 0.6rem; font-weight: 700; color: #fff;">#${tx.pedido_id}</td>
+                        <td style="padding: 0.6rem; color: var(--text-secondary);">${escapeHtml(tx.cliente_nombre || 'Cliente')} <small style="display:block; font-size:0.75rem; color:var(--text-muted);">${escapeHtml(tx.cliente_email || '')}</small></td>
+                        <td style="padding: 0.6rem; font-weight: 700; color: var(--accent-purple);">${parseFloat(tx.total).toFixed(2)} Bs</td>
+                        <td style="padding: 0.6rem;">
+                            <span class="badge ${tx.estado_pedido === 'entregado' ? 'badge-verified' : 'badge-pending'}" style="font-size: 0.72rem;">
+                                ${tx.estado_pedido}
+                            </span>
+                        </td>
+                        <td style="padding: 0.6rem; font-size: 0.75rem; color: var(--text-muted);">${new Date(tx.created_at).toLocaleString()}</td>
+                        <td style="padding: 0.6rem; text-align: right;">
+                            ${tx.qr_comprobante_url ? `
+                                <button class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;" onclick="openFileViewer('${tx.qr_comprobante_url}', 'Comprobante Pedido #${tx.pedido_id}', 'qr', null)">
+                                    <i data-lucide="eye" style="width:12px;height:12px;vertical-align:middle;"></i> Ver Recibo
+                                </button>
+                            ` : `<span style="color:var(--text-muted); font-size:0.75rem;">Sin archivo</span>`}
+                        </td>
+                    </tr>
+                `).join('');
+                initLucide();
+            }
+        }
 
         // Ranking de riders desde MySQL
         if (list) {
@@ -3833,3 +3896,201 @@ function showToast(message, type = 'success') {
         }, 300);
     }, 3500);
 }
+
+// ========================================================================================
+// 💳 ESTADO Y CONFIGURACIÓN DEL CÓDIGO QR DE PAGO (SUPER ADMIN & CHECKOUT)
+// ========================================================================================
+let paymentQrConfig = {
+    banco: 'Banco Unión',
+    titular: 'Burger 24/7 S.R.L. (Admin Central)',
+    cuenta: '100000482910',
+    alias_qr: 'burger247@banco',
+    qr_imagen_url: null,
+    modo_qr: 'hibrido',
+    costo_fijo: null
+};
+
+// 🧒 EXPLICACIÓN FÁCIL:
+// Pregunta a la cocina central (Transactions/qr_config.php) qué cuenta bancaria y QR
+// tiene configurado el dueño del restaurante para cobrar.
+async function fetchPaymentQrConfig() {
+    try {
+        const res = await apiGet('/Transactions/qr_config.php');
+        if (res.ok && res.data) {
+            paymentQrConfig = Object.assign(paymentQrConfig, res.data);
+            const subtotal = cart.reduce((acc, item) => acc + (item.product.precio * item.quantity), 0);
+            const shipping = selectedDeliveryCoords ? parseFloat(selectedDeliveryCoords.costBs) : 0;
+            updateCheckoutQrDisplay(subtotal + shipping);
+        }
+    } catch (err) {
+        console.warn('No se pudo cargar la configuración del QR desde la API:', err);
+    }
+}
+
+// 🧒 EXPLICACIÓN FÁCIL:
+// Dibuja el código QR en la pantalla del cliente con el COSTO EXACTO del pedido
+// (para que cuando escanee con su app del banco, sepa cuánto dinero transferir).
+function updateCheckoutQrDisplay(totalBs) {
+    const cost = parseFloat(totalBs || 0);
+    const lblCost = document.getElementById('lblQrMontoCost');
+    if (lblCost) lblCost.innerText = `${cost.toFixed(2)} Bs`;
+
+    const lblBank = document.getElementById('lblQrBankName');
+    if (lblBank) lblBank.innerText = paymentQrConfig.banco || 'Banco Unión';
+
+    const lblTitular = document.getElementById('lblQrTitular');
+    if (lblTitular) lblTitular.innerText = paymentQrConfig.titular || 'Burger 24/7 S.R.L.';
+
+    const lblCuenta = document.getElementById('lblQrCuenta');
+    if (lblCuenta) lblCuenta.innerText = paymentQrConfig.cuenta || '100000482910';
+
+    const imgQr = document.getElementById('imgCheckoutQr');
+    if (imgQr) {
+        if (paymentQrConfig.qr_imagen_url) {
+            imgQr.src = paymentQrConfig.qr_imagen_url;
+        } else {
+            const qrPayload = `PAGO BURGER 24/7 | MONTO: ${cost.toFixed(2)} Bs | BANCO: ${paymentQrConfig.banco} | TITULAR: ${paymentQrConfig.titular} | CUENTA: ${paymentQrConfig.cuenta}`;
+            imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPayload)}`;
+        }
+    }
+}
+
+// 🧒 EXPLICACIÓN FÁCIL:
+// Abre el escritorio del Super Admin donde puede cambiar su banco, su cuenta o subir
+// una foto de su propio QR bancario oficial.
+async function renderAdminQrConfig() {
+    try {
+        const res = await apiGet('/Transactions/qr_config.php');
+        const data = (res.ok && res.data) ? res.data : paymentQrConfig;
+        paymentQrConfig = Object.assign(paymentQrConfig, data);
+
+        const inpBanco = document.getElementById('adminQrBanco');
+        const inpTitular = document.getElementById('adminQrTitular');
+        const inpCuenta = document.getElementById('adminQrCuenta');
+        const inpAlias = document.getElementById('adminQrAlias');
+
+        if (inpBanco) inpBanco.value = data.banco || '';
+        if (inpTitular) inpTitular.value = data.titular || '';
+        if (inpCuenta) inpCuenta.value = data.cuenta || '';
+        if (inpAlias) inpAlias.value = data.alias_qr || '';
+
+        updateAdminQrPreview();
+        initAdminQrInputListeners();
+    } catch (err) {
+        console.error('Error al cargar configuración QR de admin:', err);
+    }
+}
+
+function updateAdminQrPreview() {
+    const banco = document.getElementById('adminQrBanco')?.value || paymentQrConfig.banco || 'Banco Unión';
+    const titular = document.getElementById('adminQrTitular')?.value || paymentQrConfig.titular || 'Burger 24/7 S.R.L.';
+    const cuenta = document.getElementById('adminQrCuenta')?.value || paymentQrConfig.cuenta || '100000482910';
+
+    const prevBanco = document.getElementById('previewAdminQrBanco');
+    if (prevBanco) prevBanco.innerText = banco;
+    const prevTitular = document.getElementById('previewAdminQrTitular');
+    if (prevTitular) prevTitular.innerText = titular;
+    const prevCuenta = document.getElementById('previewAdminQrCuenta');
+    if (prevCuenta) prevCuenta.innerText = cuenta;
+
+    const prevImg = document.getElementById('previewAdminQrImg');
+    if (prevImg) {
+        if (paymentQrConfig.qr_imagen_url) {
+            prevImg.src = paymentQrConfig.qr_imagen_url;
+        } else {
+            const qrData = `PAGO BURGER 24/7 | MONTO: 45.00 Bs | BANCO: ${banco} | TITULAR: ${titular} | CUENTA: ${cuenta}`;
+            prevImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData)}`;
+        }
+    }
+}
+
+let adminQrListenersAttached = false;
+function initAdminQrInputListeners() {
+    if (adminQrListenersAttached) return;
+    adminQrListenersAttached = true;
+
+    ['adminQrBanco', 'adminQrTitular', 'adminQrCuenta'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateAdminQrPreview);
+    });
+
+    const fileInput = document.getElementById('fileAdminQrImage');
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const prevImg = document.getElementById('previewAdminQrImg');
+                    if (prevImg) prevImg.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+window.handleSaveAdminQrConfig = async function(event) {
+    if (event) event.preventDefault();
+    const banco = document.getElementById('adminQrBanco')?.value || '';
+    const titular = document.getElementById('adminQrTitular')?.value || '';
+    const cuenta = document.getElementById('adminQrCuenta')?.value || '';
+    const alias = document.getElementById('adminQrAlias')?.value || '';
+    const fileInput = document.getElementById('fileAdminQrImage');
+    const btn = document.getElementById('btnSaveAdminQr');
+
+    const token = getAuthToken();
+    if (!token) {
+        showToast('Error 401: Sesión no válida de Administrador.', 'danger');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('banco', banco);
+    formData.append('titular', titular);
+    formData.append('cuenta', cuenta);
+    formData.append('alias_qr', alias);
+    formData.append('modo_qr', (fileInput && fileInput.files.length > 0) ? 'subido' : 'hibrido');
+
+    if (fileInput && fileInput.files[0]) {
+        formData.append('qr_image', fileInput.files[0]);
+    }
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader" class="spin"></i> Guardando...`;
+            initLucide();
+        }
+
+        const baseUrl = config.apiBaseUrl || '';
+        const res = await fetch(`${baseUrl}/Transactions/qr_config.php`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        const json = await res.json();
+        if (!res.ok || json.status !== 'success') {
+            showToast(`Error al guardar QR: ${json.error_details || 'Operación rechazada'}`, 'danger');
+            return;
+        }
+
+        showToast('¡Configuración de Código QR actualizada con éxito!', 'success');
+        if (json.data && json.data.config) {
+            paymentQrConfig = Object.assign(paymentQrConfig, json.data.config);
+            updateAdminQrPreview();
+        }
+    } catch (err) {
+        console.error('Error guardando configuración QR:', err);
+        showToast('Error de red al guardar configuración del código QR.', 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="save"></i> Guardar Configuración QR`;
+            initLucide();
+        }
+    }
+};

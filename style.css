@@ -1526,7 +1526,7 @@ footer {
 
 /* Responsiveness */
 @media (max-width: 1024px) {
-    .cliente-grid, .rider-grid, .approval-grid, .admin-catalog-grid {
+    .cliente-grid, .rider-grid, .approval-grid, .admin-catalog-grid, .admin-qr-grid {
         grid-template-columns: 1fr;
     }
     .reports-stats-grid {

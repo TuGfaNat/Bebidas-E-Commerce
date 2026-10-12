@@ -219,4 +219,23 @@ INSERT INTO auditoria_logs (id, tabla_afectada, registro_id, accion, datos_anter
 (1, 'users', 3, 'INSERT', NULL, '{"nombre":"Admin Central (Gerencia)","role":"super_usuario"}', '127.0.0.1', 3, 3)
 ON DUPLICATE KEY UPDATE accion = VALUES(accion);
 
+-- 7. Tabla de Configuración de Pagos y Código QR Oficial
+CREATE TABLE IF NOT EXISTS configuracion_pagos (
+    id INT PRIMARY KEY DEFAULT 1,
+    banco VARCHAR(100) NOT NULL DEFAULT 'Banco Unión',
+    titular VARCHAR(150) NOT NULL DEFAULT 'Burger 24/7 S.R.L. (Admin Central)',
+    cuenta VARCHAR(50) NOT NULL DEFAULT '100000482910',
+    alias_qr VARCHAR(100) NOT NULL DEFAULT 'burger247@banco',
+    qr_imagen_url VARCHAR(255) DEFAULT NULL,
+    modo_qr ENUM('dinamico', 'subido', 'hibrido') NOT NULL DEFAULT 'hibrido',
+    costo_fijo DECIMAL(10,2) DEFAULT NULL,
+    instrucciones TEXT DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO configuracion_pagos (id, banco, titular, cuenta, alias_qr, modo_qr, instrucciones)
+VALUES (1, 'Banco Unión', 'Burger 24/7 S.R.L. (Admin Central)', '100000482910', 'burger247@banco', 'hibrido', 'Transfiere el monto exacto del pedido y sube tu comprobante.')
+ON DUPLICATE KEY UPDATE banco = VALUES(banco);
+
 SET FOREIGN_KEY_CHECKS = 1;

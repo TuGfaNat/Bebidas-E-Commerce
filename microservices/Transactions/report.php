@@ -92,6 +92,39 @@ try {
     ");
     $comparativaPagos = $stmtPagos->fetchAll();
 
+    // 🧒 EXPLICACIÓN FÁCIL:
+    // Suma cuánto dinero total entró por pagos con QR y cuántos pedidos se pagaron con QR
+    // para concatenarlo con las finanzas del restaurante.
+    $stmtMetodosDetalle = $db->query("
+        SELECT 
+            COALESCE(SUM(CASE WHEN estado_pago IN ('pagado_qr', 'qr') THEN total ELSE 0 END), 0) as total_qr_bs,
+            COALESCE(SUM(CASE WHEN estado_pago IN ('pagado_qr', 'qr') THEN 1 ELSE 0 END), 0) as cantidad_qr,
+            COALESCE(SUM(CASE WHEN estado_pago IN ('pagado_efectivo', 'contraentrega', 'liquidado') THEN total ELSE 0 END), 0) as total_efectivo_bs,
+            COALESCE(SUM(CASE WHEN estado_pago IN ('pagado_efectivo', 'contraentrega', 'liquidado') THEN 1 ELSE 0 END), 0) as cantidad_efectivo
+        FROM pedidos
+        WHERE estado_pedido != 'cancelado'
+    ");
+    $statsQrVsEfectivo = $stmtMetodosDetalle->fetch(PDO::FETCH_ASSOC);
+
+    // Lista de transacciones recientes pagadas con QR
+    $stmtTransaccionesQr = $db->query("
+        SELECT 
+            p.id as pedido_id,
+            p.total,
+            p.estado_pago,
+            p.estado_pedido,
+            p.qr_comprobante_url,
+            p.created_at,
+            u.nombre as cliente_nombre,
+            u.email as cliente_email
+        FROM pedidos p
+        JOIN users u ON p.cliente_id = u.id
+        WHERE p.estado_pago IN ('pagado_qr', 'qr') AND p.estado_pedido != 'cancelado'
+        ORDER BY p.id DESC
+        LIMIT 10
+    ");
+    $transaccionesQr = $stmtTransaccionesQr->fetchAll(PDO::FETCH_ASSOC);
+
     // 3. Ventas por Categoría de Producto
     $stmtCategorias = $db->query("
         SELECT 
@@ -153,6 +186,13 @@ try {
             "pedidos_pendientes" => (int)($resumen['pedidos_pendientes'] ?? 0)
         ],
         "metodos_pago" => $comparativaPagos,
+        "estadisticas_qr" => [
+            "total_qr_bs" => (float)($statsQrVsEfectivo['total_qr_bs'] ?? 0),
+            "cantidad_pedidos_qr" => (int)($statsQrVsEfectivo['cantidad_qr'] ?? 0),
+            "total_efectivo_bs" => (float)($statsQrVsEfectivo['total_efectivo_bs'] ?? 0),
+            "cantidad_pedidos_efectivo" => (int)($statsQrVsEfectivo['cantidad_efectivo'] ?? 0),
+            "transacciones_recientes" => $transaccionesQr
+        ],
         "ventas_por_categoria" => $ventasCategorias,
         "ranking_riders" => $rankingRiders,
         "top_productos" => $topProductos

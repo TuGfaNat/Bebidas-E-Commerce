@@ -68,8 +68,8 @@ try {
     $pdo->exec("USE `$db`");
     echo "[OK] Base de datos '$db' verificada / creada exitosamente.\n";
 
-    // Cargar init_schema.sql
-    $sqlFile = __DIR__ . '/init_schema.sql';
+    // Cargar install_db.sql (archivo único de esquema y semilla)
+    $sqlFile = __DIR__ . '/install_db.sql';
     if (!file_exists($sqlFile)) {
         throw new Exception("No se encontró el archivo $sqlFile");
     }

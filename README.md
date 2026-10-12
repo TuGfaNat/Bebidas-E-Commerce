@@ -536,8 +536,7 @@ Burger-E-Commerce/
 ├── style.css                    # Estilos visuales CSS3 con diseño Glassmorphism
 ├── app.js                       # Lógica reactiva de la interfaz cliente
 ├── api.js                       # Capa cliente de red desacoplada con Bearer JWT
-├── install_db.sql               # Script SQL idempotente (Crea BD, tablas y semillas)
-├── init_schema.sql              # Esquema DDL normalizado en 3FN
+├── install_db.sql               # Archivo ÚNICO de Base de Datos (Estructura y Semilla Completa)
 ├── migrate.php                  # Asistente de migración y aprovisionamiento de datos
 ├── .env.example                 # Plantilla de variables de entorno de desarrollo
 ├── .env.production.example      # Plantilla de variables de entorno de producción

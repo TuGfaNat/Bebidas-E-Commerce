@@ -21,10 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
     apelacion_estado ENUM('ninguna', 'pendiente', 'resuelta') DEFAULT 'ninguna',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT,
-    updated_by INT,
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    created_by INT DEFAULT NULL,
+    updated_by INT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS productos (
@@ -37,10 +35,8 @@ CREATE TABLE IF NOT EXISTS productos (
     stock INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT,
-    updated_by INT,
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    created_by INT DEFAULT NULL,
+    updated_by INT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS pedidos (
@@ -58,12 +54,10 @@ CREATE TABLE IF NOT EXISTS pedidos (
     qr_comprobante_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT,
-    updated_by INT,
+    created_by INT DEFAULT NULL,
+    updated_by INT DEFAULT NULL,
     FOREIGN KEY (cliente_id) REFERENCES users(id),
-    FOREIGN KEY (rider_id) REFERENCES users(id),
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    FOREIGN KEY (rider_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS pedido_detalles (
@@ -74,12 +68,10 @@ CREATE TABLE IF NOT EXISTS pedido_detalles (
     precio_unitario DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT,
-    updated_by INT,
+    created_by INT DEFAULT NULL,
+    updated_by INT DEFAULT NULL,
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
-    FOREIGN KEY (producto_id) REFERENCES productos(id),
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
 );
 
 CREATE TABLE IF NOT EXISTS documentacion_rider (
@@ -95,11 +87,9 @@ CREATE TABLE IF NOT EXISTS documentacion_rider (
     apelacion_estado ENUM('ninguna', 'pendiente', 'resuelta') DEFAULT 'ninguna',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    created_by INT,
-    updated_by INT,
-    FOREIGN KEY (rider_id) REFERENCES users(id),
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    created_by INT DEFAULT NULL,
+    updated_by INT DEFAULT NULL,
+    FOREIGN KEY (rider_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS configuracion_pagos (

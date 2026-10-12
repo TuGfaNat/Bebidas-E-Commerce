@@ -4221,7 +4221,7 @@ function updateCheckoutQrDisplay(totalBs) {
     const imgQr = document.getElementById('imgCheckoutQr');
     if (imgQr) {
         if (paymentQrConfig.qr_imagen_url) {
-            imgQr.src = paymentQrConfig.qr_imagen_url;
+            imgQr.src = resolveFileUrl(paymentQrConfig.qr_imagen_url, 'qr');
         } else {
             const qrPayload = `PAGO BURGER 24/7 | MONTO: ${cost.toFixed(2)} Bs | BANCO: ${paymentQrConfig.banco} | TITULAR: ${paymentQrConfig.titular} | CUENTA: ${paymentQrConfig.cuenta}`;
             imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrPayload)}`;
@@ -4235,7 +4235,7 @@ function updateCheckoutQrDisplay(totalBs) {
 async function renderAdminQrConfig() {
     try {
         const res = await apiGet('/Transactions/qr_config.php');
-        const data = (res.ok && res.data) ? res.data : paymentQrConfig;
+        const data = (res.ok && res.data && res.data.config) ? res.data.config : ((res.ok && res.data) ? res.data : paymentQrConfig);
         paymentQrConfig = Object.assign(paymentQrConfig, data);
 
         const inpBanco = document.getElementById('adminQrBanco');
@@ -4270,7 +4270,7 @@ function updateAdminQrPreview() {
     const prevImg = document.getElementById('previewAdminQrImg');
     if (prevImg) {
         if (paymentQrConfig.qr_imagen_url) {
-            prevImg.src = paymentQrConfig.qr_imagen_url;
+            prevImg.src = resolveFileUrl(paymentQrConfig.qr_imagen_url, 'qr');
         } else {
             const qrData = `PAGO BURGER 24/7 | MONTO: 45.00 Bs | BANCO: ${banco} | TITULAR: ${titular} | CUENTA: ${cuenta}`;
             prevImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrData)}`;
@@ -4287,6 +4287,7 @@ function initAdminQrInputListeners() {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updateAdminQrPreview);
     });
+
 
     const fileInput = document.getElementById('fileAdminQrImage');
     if (fileInput) {

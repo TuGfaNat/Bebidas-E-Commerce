@@ -45,7 +45,7 @@ try {
     if ($method === 'GET') {
         // Consultar datos del usuario
         $stmtUser = $db->prepare("
-            SELECT id, role, nombre, email, fecha_nacimiento, ci_url, ci_reverso_url, ci_status, 
+            SELECT id, role, nombre, email, fecha_nacimiento, direccion, telefono, ci_url, ci_reverso_url, ci_status, 
                    motivo_rechazo, apelacion_motivo, apelacion_estado, created_at, updated_at
             FROM users 
             WHERE id = ?
@@ -69,6 +69,8 @@ try {
                 "email" => $userData['email'],
                 "role" => $userData['role'],
                 "fecha_nacimiento" => $userData['fecha_nacimiento'],
+                "direccion" => $userData['direccion'] ?? '',
+                "telefono" => $userData['telefono'] ?? '',
                 "ci_url" => $userData['ci_url'],
                 "ci_reverso_url" => $userData['ci_reverso_url'] ?? null,
                 "foto_url" => $userData['foto_url'] ?? '',
@@ -168,6 +170,24 @@ try {
         }
 
         echo formatResponse("success", $profile, $userId, null, "GET_USER_PROFILE");
+        exit;
+    }
+
+    if ($method === 'PUT') {
+        $raw = file_get_contents('php://input');
+        $input = json_decode($raw, true) ?? [];
+
+        $direccion = trim($input['direccion'] ?? '');
+        $telefono = trim($input['telefono'] ?? '');
+
+        $stmtUp = $db->prepare("UPDATE users SET direccion = ?, telefono = ?, updated_at = NOW() WHERE id = ?");
+        $stmtUp->execute([$direccion ?: null, $telefono ?: null, $userId]);
+
+        echo formatResponse("success", [
+            "mensaje" => "Datos de contacto actualizados correctamente.",
+            "direccion" => $direccion,
+            "telefono" => $telefono
+        ], $userId, null, "UPDATE_USER_PROFILE");
         exit;
     }
 

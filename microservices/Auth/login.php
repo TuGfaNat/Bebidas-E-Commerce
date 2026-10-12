@@ -55,7 +55,7 @@ try {
     $db = DatabaseConnection::getInstance()->getConnection();
     
     $stmt = $db->prepare("
-        SELECT id, role, nombre, email, password_hash, fecha_nacimiento, 
+        SELECT id, role, nombre, email, password_hash, fecha_nacimiento, direccion, telefono,
                ci_status, ci_url, ci_reverso_url, motivo_rechazo, apelacion_motivo, apelacion_estado 
         FROM users 
         WHERE LOWER(email) = LOWER(?)
@@ -96,6 +96,8 @@ try {
             "role" => $user['role'],
             "email" => $user['email'],
             "fecha_nacimiento" => $user['fecha_nacimiento'] ?? '1995-04-12',
+            "direccion" => $user['direccion'] ?? '',
+            "telefono" => $user['telefono'] ?? '',
             "ci_status" => $user['ci_status'],
             "foto_url" => $user['foto_url'] ?? '',
             "ci_url" => $user['ci_url'] ?? '',

@@ -50,8 +50,166 @@ let config = {
 // Cart State
 let cart = [];
 
-// Geolocation of Store (La Paz, Sopocachi)
-const STORE_COORDS = { lat: -16.5050, lon: -68.1290 };
+// Geolocation of Store (Dinámica desde base de datos MySQL)
+const STORE_COORDS = {
+    lat: -16.5050,
+    lon: -68.1290,
+    nombre: 'Burger 24/7 - Central Sopocachi',
+    direccion: 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
+    zona: 'Sopocachi',
+    telefono: '+591 71523481'
+};
+
+async function syncStoreConfigFromBackend() {
+    try {
+        const res = await apiGet('/Transactions/store_config.php');
+        if (res && res.ok && res.data && res.data.tienda) {
+            const t = res.data.tienda;
+            STORE_COORDS.lat = parseFloat(t.latitud) || -16.5050;
+            STORE_COORDS.lon = parseFloat(t.longitud) || -68.1290;
+            STORE_COORDS.nombre = t.nombre_tienda || 'Burger 24/7 - Central Sopocachi';
+            STORE_COORDS.direccion = t.direccion || 'Av. 20 de Octubre #2150, Sopocachi, La Paz';
+            STORE_COORDS.zona = t.zona || 'Sopocachi';
+            STORE_COORDS.telefono = t.telefono || '+591 71523481';
+            updateAdminStorePreview();
+        }
+    } catch (e) {
+        console.warn('No se pudo sincronizar la configuración de la tienda:', e);
+    }
+}
+
+function updateAdminStorePreview() {
+    const pNom = document.getElementById('previewAdminStoreNombre');
+    const pDir = document.getElementById('previewAdminStoreDireccion');
+    const pZon = document.getElementById('previewAdminStoreZona');
+    const pTel = document.getElementById('previewAdminStoreTelefono');
+    const pCoo = document.getElementById('previewAdminStoreCoords');
+
+    if (pNom) pNom.innerText = STORE_COORDS.nombre;
+    if (pDir) pDir.innerText = STORE_COORDS.direccion;
+    if (pZon) pZon.innerText = STORE_COORDS.zona;
+    if (pTel) pTel.innerText = STORE_COORDS.telefono;
+    if (pCoo) pCoo.innerText = `${STORE_COORDS.lat.toFixed(4)}, ${STORE_COORDS.lon.toFixed(4)}`;
+
+    const inNom = document.getElementById('adminStoreNombre');
+    const inDir = document.getElementById('adminStoreDireccion');
+    const inTel = document.getElementById('adminStoreTelefono');
+    const inLat = document.getElementById('adminStoreLat');
+    const inLon = document.getElementById('adminStoreLon');
+
+    if (inNom && !inNom.value) inNom.value = STORE_COORDS.nombre;
+    if (inDir && !inDir.value) inDir.value = STORE_COORDS.direccion;
+    if (inTel && !inTel.value) inTel.value = STORE_COORDS.telefono;
+    if (inLat && !inLat.value) inLat.value = STORE_COORDS.lat;
+    if (inLon && !inLon.value) inLon.value = STORE_COORDS.lon;
+}
+
+window.handleAdminStoreZoneChange = function(val) {
+    if (!val || val === 'personalizado') return;
+    const parts = val.split('|');
+    if (parts.length >= 3) {
+        const zona = parts[0];
+        const lat = parseFloat(parts[1]);
+        const lon = parseFloat(parts[2]);
+        const inLat = document.getElementById('adminStoreLat');
+        const inLon = document.getElementById('adminStoreLon');
+        if (inLat) inLat.value = lat;
+        if (inLon) inLon.value = lon;
+        const pCoo = document.getElementById('previewAdminStoreCoords');
+        if (pCoo) pCoo.innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        const pZon = document.getElementById('previewAdminStoreZona');
+        if (pZon) pZon.innerText = zona;
+    }
+};
+
+window.renderAdminStoreConfig = async function() {
+    await syncStoreConfigFromBackend();
+    const inNom = document.getElementById('adminStoreNombre');
+    const inDir = document.getElementById('adminStoreDireccion');
+    const inTel = document.getElementById('adminStoreTelefono');
+    const inLat = document.getElementById('adminStoreLat');
+    const inLon = document.getElementById('adminStoreLon');
+
+    if (inNom) inNom.value = STORE_COORDS.nombre;
+    if (inDir) inDir.value = STORE_COORDS.direccion;
+    if (inTel) inTel.value = STORE_COORDS.telefono;
+    if (inLat) inLat.value = STORE_COORDS.lat;
+    if (inLon) inLon.value = STORE_COORDS.lon;
+
+    updateAdminStorePreview();
+};
+
+window.handleSaveAdminStoreConfig = async function(event) {
+    if (event) event.preventDefault();
+
+    const nombreEl = document.getElementById('adminStoreNombre');
+    const dirEl = document.getElementById('adminStoreDireccion');
+    const telEl = document.getElementById('adminStoreTelefono');
+    const latEl = document.getElementById('adminStoreLat');
+    const lonEl = document.getElementById('adminStoreLon');
+
+    const nombre = nombreEl ? nombreEl.value.trim() : '';
+    const direccion = dirEl ? dirEl.value.trim() : '';
+    const telefono = telEl ? telEl.value.trim() : '';
+    const lat = latEl ? parseFloat(latEl.value) : NaN;
+    const lon = lonEl ? parseFloat(lonEl.value) : NaN;
+
+    const selZona = document.getElementById('adminStoreZonaSelect');
+    let zona = 'La Paz';
+    if (selZona && selZona.value !== 'personalizado') {
+        zona = selZona.value.split('|')[0];
+    }
+
+    if (!nombre || !direccion) {
+        showToast('El nombre del restaurante y la dirección física son obligatorios.', 'warning');
+        return;
+    }
+    if (isNaN(lat) || isNaN(lon)) {
+        showToast('Coordenadas GPS de la tienda inválidas.', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveAdminStore');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Guardando...';
+    }
+
+    try {
+        const res = await apiPost('/Transactions/store_config.php', {
+            nombre_tienda: nombre,
+            direccion: direccion,
+            zona: zona,
+            latitud: lat,
+            longitud: lon,
+            telefono: telefono
+        });
+
+        if (!res.ok) {
+            showToast(`Error: ${res.error || 'No se pudo guardar la ubicación del restaurante.'}`, 'danger');
+            return;
+        }
+
+        STORE_COORDS.nombre = nombre;
+        STORE_COORDS.direccion = direccion;
+        STORE_COORDS.zona = zona;
+        STORE_COORDS.lat = lat;
+        STORE_COORDS.lon = lon;
+        STORE_COORDS.telefono = telefono;
+
+        updateAdminStorePreview();
+        showToast('¡Ubicación y sede del restaurante guardadas exitosamente!', 'success');
+    } catch (e) {
+        console.error('Error guardando store config:', e);
+        showToast('Fallo de red al conectar con el servidor.', 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save"></i> Guardar Ubicación del Restaurante';
+            initLucide();
+        }
+    }
+};
 
 // Delimitación geográfica de La Paz, Bolivia (Evita salirse del área metropolitana)
 const LA_PAZ_BOUNDS = [
@@ -137,10 +295,11 @@ async function renderDeliveryRoute(mapInstance, start, end, existingLayerGroup, 
     return existingLayerGroup;
 }
 
-function createStorePinIcon() {
+function createStorePinIcon(title = null) {
+    const storeTitle = title || (STORE_COORDS && STORE_COORDS.nombre) || 'Burger 24/7 Central Sopocachi';
     return L.divIcon({
         className: 'custom-map-pin',
-        html: '<div style="background:#f97316; width:28px; height:28px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;" title="Burger 24/7 Central Sopocachi">🍔</div>',
+        html: `<div style="background:#f97316; width:28px; height:28px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;" title="${escapeHtml(storeTitle)}">🍔</div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14]
     });
@@ -202,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDatabase();
     setupEventListeners();
     initLucide();
+    syncStoreConfigFromBackend();
 });
 
 // Load icons
@@ -545,6 +705,11 @@ function setupEventListeners() {
     document.getElementById('btnRiderAction').addEventListener('click', processRiderActiveOrderStep);
     document.getElementById('btnRiderCancel').addEventListener('click', cancelRiderActiveOrder);
 
+    const txtCheckDir = document.getElementById('txtCheckoutDireccion');
+    if (txtCheckDir) txtCheckDir.addEventListener('input', validateCheckoutForm);
+    const txtCheckTel = document.getElementById('txtCheckoutTelefono');
+    if (txtCheckTel) txtCheckTel.addEventListener('input', validateCheckoutForm);
+
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
@@ -554,6 +719,7 @@ function setupEventListeners() {
             const tabId = btn.dataset.tab;
             let targetPanel = document.getElementById(`subpanel${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
             if (!targetPanel && tabId === 'qrconfig') targetPanel = document.getElementById('subpanelQrConfig');
+            if (!targetPanel && tabId === 'storeconfig') targetPanel = document.getElementById('subpanelStoreconfig');
             if (targetPanel) {
                 targetPanel.classList.add('active');
                 targetPanel.style.display = 'block';
@@ -575,6 +741,8 @@ function setupEventListeners() {
                     renderAdminReports();
                 } else if (tabId === 'qrconfig') {
                     renderAdminQrConfig();
+                } else if (tabId === 'storeconfig') {
+                    renderAdminStoreConfig();
                 } else if (tabId === 'catalog' || tabId === 'products') {
                     renderAdminProductsTable();
                     if (config.connectedMode) syncProductsFromBackend();
@@ -1642,6 +1810,17 @@ function openCheckoutModal() {
     // Cargar configuración oficial del código QR y datos bancarios
     fetchPaymentQrConfig();
 
+    // Auto-completar dirección y teléfono de contacto guardados del perfil del cliente
+    const curUser = currentSession.cliente || currentSession.currentUser;
+    const txtDir = document.getElementById('txtCheckoutDireccion');
+    const txtTel = document.getElementById('txtCheckoutTelefono');
+    if (txtDir && !txtDir.value && curUser && curUser.direccion) {
+        txtDir.value = curUser.direccion;
+    }
+    if (txtTel && !txtTel.value && curUser && curUser.telefono) {
+        txtTel.value = curUser.telefono;
+    }
+
     // Default payment method: Contraentrega
     const payCash = document.getElementById('payOptCash');
     const payQr = document.getElementById('payOptQr');
@@ -1679,13 +1858,17 @@ function initCheckoutMap() {
 
             checkoutMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: createStorePinIcon()
-            }).addTo(checkoutMapInstance).bindPopup("<b>Burger 24/7 - Central Sopocachi</b><br>Av. 20 de Octubre #2150 (La Paz)").openPopup();
+            }).addTo(checkoutMapInstance).bindPopup(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (La Paz)`).openPopup();
 
             checkoutMapInstance.on('click', (e) => {
                 setCheckoutDeliveryCoords(e.latlng.lat, e.latlng.lng);
             });
         } else {
             checkoutMapInstance.invalidateSize();
+            if (checkoutMarkerStore) {
+                checkoutMarkerStore.setLatLng([STORE_COORDS.lat, STORE_COORDS.lon]);
+                checkoutMarkerStore.setPopupContent(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (La Paz)`);
+            }
             if (selectedDeliveryCoords) {
                 setCheckoutDeliveryCoords(selectedDeliveryCoords.lat, selectedDeliveryCoords.lon);
             }
@@ -1724,23 +1907,45 @@ function validateCheckoutForm() {
     const hasLocation = selectedDeliveryCoords !== null;
     const isQr = document.getElementById('payOptQr').classList.contains('active');
     const hasQrFile = document.getElementById('fileQrComprobante').files.length > 0;
+    const txtDir = document.getElementById('txtCheckoutDireccion');
+    const txtTel = document.getElementById('txtCheckoutTelefono');
+    const hasAddress = txtDir ? txtDir.value.trim().length > 0 : true;
+    const hasPhone = txtTel ? txtTel.value.trim().length > 0 : true;
     
     const placeBtn = document.getElementById('btnPlaceOrder');
     if (placeBtn) {
-        // For Contraentrega, location is enough! No file upload required!
-        // For QR, location and QR file are needed
-        placeBtn.disabled = !(hasLocation && (!isQr || hasQrFile));
+        // Para Contraentrega o QR se requiere ubicación seleccionada, dirección y teléfono de contacto
+        placeBtn.disabled = !(hasLocation && hasAddress && hasPhone && (!isQr || hasQrFile));
     }
 }
 
 // 🧒 EXPLICACIÓN FÁCIL:
 // ¡El momento de la verdad! Cuando aprietas "Confirmar Pedido":
-// 1. Empaqueta tu carrito y la ubicación de tu casa.
+// 1. Empaqueta tu carrito, dirección exacta, teléfono y ubicación de tu casa.
 // 2. Llama al mesero de internet (apiPost /Transactions/checkout.php).
 // 3. La caja registradora llama al Robot C++, descuenta las hamburguesas de la cocina
 //    y te muestra tu recibo digital oficial en pantalla.
 async function submitOrderCheckout() {
     if (cart.length === 0 || !selectedDeliveryCoords) return;
+
+    const dirEl = document.getElementById('txtCheckoutDireccion');
+    const refEl = document.getElementById('txtCheckoutReferencia');
+    const telEl = document.getElementById('txtCheckoutTelefono');
+
+    const direccionEntrega = dirEl ? dirEl.value.trim() : '';
+    const referenciaEntrega = refEl ? refEl.value.trim() : '';
+    const telefonoContacto = telEl ? telEl.value.trim() : '';
+
+    if (!direccionEntrega) {
+        showToast('Por favor escribe tu dirección exacta de entrega.', 'warning');
+        if (dirEl) dirEl.focus();
+        return;
+    }
+    if (!telefonoContacto) {
+        showToast('Por favor escribe tu teléfono o celular de contacto.', 'warning');
+        if (telEl) telEl.focus();
+        return;
+    }
 
     const u = currentSession.cliente;
     const isQr = document.getElementById('payOptQr').classList.contains('active');
@@ -1771,7 +1976,10 @@ async function submitOrderCheckout() {
             longitud: selectedDeliveryCoords.lon,
             metodo_pago: metodoPago,
             distancia_km: selectedDeliveryCoords.distKm,
-            qr_comprobante_url: qrUrl
+            qr_comprobante_url: qrUrl,
+            direccion_entrega: direccionEntrega,
+            referencia_entrega: referenciaEntrega,
+            telefono_contacto: telefonoContacto
         });
 
         if (!res.ok) {
@@ -1853,6 +2061,13 @@ async function renderClienteActiveOrderTracker() {
     const details = activeOrder.detalles || [];
     const detailsText = details.map(d => `${d.cantidad}x ${d.nombre || 'Producto'}`).join(', ');
 
+    const itemsEl = document.getElementById('clientActiveOrderItems');
+    if (itemsEl) {
+        const dirHtml = activeOrder.direccion_entrega ? `<div style="margin-top:0.35rem; font-size:0.8rem; color:#38bdf8;">🏠 <strong>Entrega:</strong> ${escapeHtml(activeOrder.direccion_entrega)}${activeOrder.referencia_entrega ? ` (${escapeHtml(activeOrder.referencia_entrega)})` : ''}</div>` : '';
+        const storeHtml = `<div style="margin-top:0.2rem; font-size:0.78rem; color:var(--text-secondary);">🏪 <strong>Desde Cocina:</strong> ${escapeHtml(STORE_COORDS.direccion)}</div>`;
+        itemsEl.innerHTML = `<strong>Detalles:</strong> ${escapeHtml(detailsText || 'Sin detalles')}${dirHtml}${storeHtml}`;
+    }
+
     const isContra = activeOrder.estado_pago === 'contraentrega' || activeOrder.estado_pago === 'pagado_efectivo';
     const qrBtn = activeOrder.qr_comprobante_url
         ? ` <button class="btn btn-secondary btn-sm" onclick="openFileViewer('${activeOrder.qr_comprobante_url}', 'Comprobante QR - Pedido #${activeOrder.id}', 'qr', null)" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; margin-left: 0.4rem; vertical-align: middle;"><i data-lucide="receipt" style="width:12px;height:12px;"></i> Ver Comprobante QR</button>`
@@ -1894,9 +2109,13 @@ async function renderClienteActiveOrderTracker() {
 
             clientTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: createStorePinIcon()
-            }).addTo(clientTrackingMapInstance).bindPopup("<b>Burger 24/7 - Central Sopocachi</b><br>Av. 20 de Octubre #2150 (Cocina)");
+            }).addTo(clientTrackingMapInstance).bindPopup(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (Cocina)`);
         } else {
             clientTrackingMapInstance.invalidateSize();
+            if (clientTrackingMarkerStore) {
+                clientTrackingMarkerStore.setLatLng([STORE_COORDS.lat, STORE_COORDS.lon]);
+                clientTrackingMarkerStore.setPopupContent(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (Cocina)`);
+            }
         }
 
         if (clientTrackingMarkerClient) {
@@ -2180,6 +2399,12 @@ async function renderRiderOrderQueue() {
         list.innerHTML = pendings.map(p => {
             const logData = p.logistica || { distancia_km: 1.5, tiempo_estimado: '10 min' };
             const itemsText = (p.items || []).map(d => `${d.cantidad}x ${d.nombre}`).join(', ');
+            const tienda = p.tienda_recogida || STORE_COORDS;
+            const dirEntrega = p.direccion_entrega || 'Ubicación seleccionada en mapa';
+            const refEntrega = p.referencia_entrega ? `(${escapeHtml(p.referencia_entrega)})` : '';
+            const telEntrega = p.telefono_contacto || p.cliente_telefono || '';
+            const telTienda = tienda.telefono || STORE_COORDS.telefono || '';
+
             return `
                 <div class="order-card">
                     <div class="order-card-header">
@@ -2199,6 +2424,29 @@ async function renderRiderOrderQueue() {
                             <div class="order-meta-label">Artículos del Pedido</div>
                             <div class="order-meta-val" style="font-weight: 500;">${escapeHtml(itemsText || 'Combo / Hamburguesa')}</div>
                         </div>
+
+                        <!-- Dirección de Recogida (Restaurante / Cocina) -->
+                        <div style="grid-column: span 2; background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 6px; padding: 0.5rem 0.65rem;">
+                            <div style="font-size: 0.72rem; font-weight: 700; color: #f97316; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+                                🏪 Punto de Recogida (Restaurante / Cocina Central):
+                            </div>
+                            <div style="font-size: 0.8rem; color: #f8fafc;">
+                                <strong>${escapeHtml(tienda.nombre || STORE_COORDS.nombre)}</strong> — ${escapeHtml(tienda.direccion || STORE_COORDS.direccion)}
+                            </div>
+                            ${telTienda ? `<div style="font-size: 0.74rem; color: #fdba74; margin-top: 0.2rem;">📞 Cocina: ${escapeHtml(telTienda)}</div>` : ''}
+                        </div>
+
+                        <!-- Dirección de Entrega (Cliente) -->
+                        <div style="grid-column: span 2; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 0.5rem 0.65rem;">
+                            <div style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+                                🏠 Punto de Entrega (Domicilio del Cliente):
+                            </div>
+                            <div style="font-size: 0.8rem; color: #f8fafc;">
+                                <strong>${escapeHtml(dirEntrega)}</strong> ${refEntrega}
+                            </div>
+                            ${telEntrega ? `<div style="font-size: 0.74rem; color: var(--accent-green); margin-top: 0.2rem;">📞 Tel Cliente: <a href="tel:${escapeHtml(telEntrega)}" style="color:var(--accent-green); font-weight:700;">${escapeHtml(telEntrega)}</a></div>` : ''}
+                        </div>
+
                         <div>
                             <div class="order-meta-label">Distancia de Ruta</div>
                             <div class="order-meta-val">${logData.distancia_km || logData.distanceKm || 1.5} Km</div>
@@ -2297,6 +2545,37 @@ function renderRiderActiveOrderPanel() {
     
     const clientEl = document.getElementById('riderActiveOrderClient');
     if (clientEl) clientEl.innerHTML = `<strong>Cliente:</strong> ${escapeHtml(activeOrder.cliente_nombre || 'Cliente')}`;
+
+    // Desglose oficial de Direcciones (Recogida en Tienda + Entrega a Cliente)
+    const addrEl = document.getElementById('riderActiveOrderAddress');
+    if (addrEl) {
+        const storeInfo = activeOrder.tienda_recogida || STORE_COORDS;
+        const dirCli = activeOrder.direccion_entrega || 'Ubicación seleccionada en mapa';
+        const refCli = activeOrder.referencia_entrega ? `(${escapeHtml(activeOrder.referencia_entrega)})` : '';
+        const telCli = activeOrder.telefono_contacto || activeOrder.cliente_telefono || '';
+        const telStore = storeInfo.telefono || STORE_COORDS.telefono || '';
+
+        addrEl.innerHTML = `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.6rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.82rem;">
+                    <span style="background: #f97316; color: #fff; padding: 0.2rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;">RECOGIDA</span>
+                    <div>
+                        <strong style="color: #fff;">${escapeHtml(storeInfo.nombre || STORE_COORDS.nombre)}</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 0.78rem;">📍 ${escapeHtml(storeInfo.direccion || STORE_COORDS.direccion)}</span>
+                        ${telStore ? `<br><span style="color: var(--accent-green); font-size: 0.76rem;">📞 Tel Cocina: <a href="tel:${escapeHtml(telStore)}" style="color:var(--accent-green); font-weight:700;">${escapeHtml(telStore)}</a></span>` : ''}
+                    </div>
+                </div>
+                <div style="border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 0.5rem; display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.82rem;">
+                    <span style="background: #38bdf8; color: #0f172a; padding: 0.2rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;">ENTREGA</span>
+                    <div>
+                        <strong style="color: #fff;">${escapeHtml(activeOrder.cliente_nombre || 'Cliente')}</strong><br>
+                        <span style="color: var(--text-secondary); font-size: 0.78rem;">🏠 ${escapeHtml(dirCli)} ${refCli}</span>
+                        ${telCli ? `<br><span style="color: var(--accent-green); font-size: 0.76rem;">📞 Cel Cliente: <a href="tel:${escapeHtml(telCli)}" style="color:var(--accent-green); font-weight:700;">${escapeHtml(telCli)}</a></span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
     
     const details = activeOrder.items || [];
     const detailsText = details.map(d => `${d.cantidad}x ${d.nombre || 'Producto'}`).join(', ');
@@ -2347,17 +2626,23 @@ function renderRiderActiveOrderPanel() {
 
             riderTrackingMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: createStorePinIcon()
-            }).addTo(riderTrackingMapInstance).bindPopup("<b>Burger 24/7 - Central Sopocachi</b><br>Av. 20 de Octubre #2150 (Cocina)");
+            }).addTo(riderTrackingMapInstance).bindPopup(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)}<br>📞 ${escapeHtml(STORE_COORDS.telefono || '')}`);
         } else {
             riderTrackingMapInstance.invalidateSize();
+            if (riderTrackingMarkerStore) {
+                riderTrackingMarkerStore.setLatLng([STORE_COORDS.lat, STORE_COORDS.lon]);
+                riderTrackingMarkerStore.setPopupContent(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)}<br>📞 ${escapeHtml(STORE_COORDS.telefono || '')}`);
+            }
         }
 
+        const clientPopupText = `<b>${escapeHtml(activeOrder.cliente_nombre || 'Cliente')}</b><br>🏠 ${escapeHtml(activeOrder.direccion_entrega || 'Dirección de Entrega')}${activeOrder.telefono_contacto ? '<br>📞 ' + escapeHtml(activeOrder.telefono_contacto) : ''}`;
         if (riderTrackingMarkerClient) {
             riderTrackingMarkerClient.setLatLng([latCliente, lonCliente]);
+            riderTrackingMarkerClient.setPopupContent(clientPopupText);
         } else {
             riderTrackingMarkerClient = L.marker([latCliente, lonCliente], {
                 icon: createClientPinIcon("Dirección del Cliente")
-            }).addTo(riderTrackingMapInstance).bindPopup("<b>Dirección del Cliente</b>");
+            }).addTo(riderTrackingMapInstance).bindPopup(clientPopupText);
         }
 
         renderDeliveryRoute(
@@ -3068,6 +3353,12 @@ window.openUserProfile = async function() {
                 memberSinceEl.innerText = fullUser.created_at ? fullUser.created_at.substring(0, 10) : 'Activo';
             }
 
+            // Población de Dirección habitual y Teléfono de contacto
+            const inputDir = document.getElementById('profileInputDireccion');
+            const inputTel = document.getElementById('profileInputTelefono');
+            if (inputDir) inputDir.value = fullUser.direccion || (currentSession.currentUser ? currentSession.currentUser.direccion : '') || '';
+            if (inputTel) inputTel.value = fullUser.telefono || (currentSession.currentUser ? currentSession.currentUser.telefono : '') || '';
+
             // Actualizar botones de CI con datos del perfil real
             if (btnViewCI) {
                 btnViewCI.onclick = () => window.openFileViewer(fullUser.ci_url || '', `C.I. Anverso - ${cleanUserName}`, 'ci', fullUser.id);
@@ -3196,6 +3487,55 @@ window.closeUserProfile = function() {
     if (modal) modal.classList.remove('active');
 };
 
+window.handleSaveProfileContact = async function(event) {
+    if (event) event.preventDefault();
+
+    const dirEl = document.getElementById('profileInputDireccion');
+    const telEl = document.getElementById('profileInputTelefono');
+    const direccion = dirEl ? dirEl.value.trim() : '';
+    const telefono = telEl ? telEl.value.trim() : '';
+
+    const btn = document.getElementById('btnSaveProfileContact');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Guardando...';
+    }
+
+    try {
+        const res = await apiPut('/Auth/profile.php', { direccion, telefono });
+        if (!res.ok) {
+            showToast(`Error: ${res.error || 'No se pudo actualizar los datos de contacto.'}`, 'danger');
+            return;
+        }
+
+        if (currentSession.currentUser) {
+            currentSession.currentUser.direccion = direccion;
+            currentSession.currentUser.telefono = telefono;
+        }
+        if (currentSession.cliente) {
+            currentSession.cliente.direccion = direccion;
+            currentSession.cliente.telefono = telefono;
+        }
+
+        // Si el checkout está abierto o tiene campos vacíos, auto-completarlos también
+        const checkDir = document.getElementById('txtCheckoutDireccion');
+        const checkTel = document.getElementById('txtCheckoutTelefono');
+        if (checkDir && !checkDir.value) checkDir.value = direccion;
+        if (checkTel && !checkTel.value) checkTel.value = telefono;
+
+        showToast('¡Tus datos de dirección y teléfono se guardaron exitosamente!', 'success');
+    } catch (e) {
+        console.error('Error guardando perfil:', e);
+        showToast('Error de red al actualizar datos de contacto.', 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save"></i> Guardar Mis Datos';
+            initLucide();
+        }
+    }
+};
+
 // =======================================================
 // ⚖️ SISTEMA DE APELACIÓN DE RECHAZO (CLIENTES Y RIDERS)
 // =======================================================
@@ -3288,6 +3628,23 @@ window.openReceiptModal = async function(orderId) {
             if (lblPayment) lblPayment.innerText = isContra ? 'CONTRAENTREGA (EFECTIVO)' : 'PAGO QR ELECTRÓNICO';
             if (lblStatus) lblStatus.innerText = (r.estado_pedido || 'PENDIENTE').toUpperCase();
             if (lblRider) lblRider.innerText = r.rider ? cleanText(r.rider.nombre) : 'Asignando repartidor...';
+
+            const lblStoreName = document.getElementById('lblReceiptStoreName');
+            const lblStoreAddress = document.getElementById('lblReceiptStoreAddress');
+            const lblStorePhone = document.getElementById('lblReceiptStorePhone');
+            const lblAddress = document.getElementById('lblReceiptAddress');
+
+            if (r.tienda) {
+                if (lblStoreName) lblStoreName.innerText = r.tienda.nombre_tienda || 'BURGER 24/7 S.R.L.';
+                if (lblStoreAddress) lblStoreAddress.innerText = r.tienda.direccion || 'Av. 20 de Octubre #2150, Sopocachi - La Paz';
+                if (lblStorePhone) lblStorePhone.innerText = `Tlf: ${r.tienda.telefono || '+591 71523481'}`;
+            }
+
+            if (lblAddress) {
+                const telStr = r.telefono_contacto ? ` (Tel: ${r.telefono_contacto})` : '';
+                const refStr = r.referencia_entrega ? ` - Ref: ${r.referencia_entrega}` : '';
+                lblAddress.innerText = `${r.direccion_entrega || 'Ubicación GPS'}${refStr}${telStr}`;
+            }
 
             if (tbody) {
                 const items = Array.isArray(r.detalles) ? r.detalles : [];
@@ -4038,7 +4395,12 @@ function initAdminMonitoringMap(orderId, ordersList = null) {
 
             adminMonitoringMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: createStorePinIcon()
-            }).addTo(adminMonitoringMapInstance).bindPopup("<b>Burger 24/7 Central Sopocachi</b><br>Cocina & Despacho");
+            }).addTo(adminMonitoringMapInstance).bindPopup(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (Cocina Central)`);
+        } else {
+            if (adminMonitoringMarkerStore) {
+                adminMonitoringMarkerStore.setLatLng([STORE_COORDS.lat, STORE_COORDS.lon]);
+                adminMonitoringMarkerStore.setPopupContent(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (Cocina Central)`);
+            }
         }
 
         adminMonitoringMapInstance.invalidateSize();

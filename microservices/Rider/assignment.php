@@ -91,14 +91,25 @@ try {
     // ACCIÓN: Listar Pedidos Pendientes Disponibles (GET)
     // =========================================================================
     if ($method === 'GET' || $action === 'list_pending') {
-        // Coordenadas fijas de la tienda central Burger 24/7 (Sopocachi, La Paz)
-        $latTienda = -16.5050;
-        $lonTienda = -68.1290;
+        // Consultar ubicación y datos oficiales del restaurante desde MySQL
+        $stmtStore = $db->query("SELECT nombre_tienda, direccion, zona, latitud, longitud, telefono FROM configuracion_tienda WHERE id = 1");
+        $storeData = $stmtStore ? $stmtStore->fetch(PDO::FETCH_ASSOC) : null;
+
+        $latTienda = $storeData ? floatval($storeData['latitud']) : -16.5050;
+        $lonTienda = $storeData ? floatval($storeData['longitud']) : -68.1290;
+        $storeObj = [
+            'nombre' => $storeData['nombre_tienda'] ?? 'Burger 24/7 - Central Sopocachi',
+            'direccion' => $storeData['direccion'] ?? 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
+            'zona' => $storeData['zona'] ?? 'Sopocachi',
+            'latitud' => $latTienda,
+            'longitud' => $lonTienda,
+            'telefono' => $storeData['telefono'] ?? '+591 71523481'
+        ];
 
         $stmt = $db->query("
             SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
-                   p.latitud, p.longitud, p.created_at,
-                   u.nombre AS cliente_nombre, u.email AS cliente_email
+                   p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto, p.created_at,
+                   u.nombre AS cliente_nombre, u.email AS cliente_email, u.telefono AS cliente_telefono_user
             FROM pedidos p
             LEFT JOIN users u ON p.cliente_id = u.id
             WHERE p.estado_pedido = 'pendiente' 
@@ -131,6 +142,10 @@ try {
                 'cliente_id' => (int)$p['cliente_id'],
                 'cliente_nombre' => $p['cliente_nombre'] ?? 'Cliente',
                 'cliente_email' => $p['cliente_email'] ?? '',
+                'cliente_telefono' => $p['telefono_contacto'] ?: ($p['cliente_telefono_user'] ?? ''),
+                'direccion_entrega' => $p['direccion_entrega'] ?: 'Dirección marcada en mapa',
+                'referencia_entrega' => $p['referencia_entrega'] ?: '',
+                'tienda' => $storeObj,
                 'total' => floatval($p['total']),
                 'estado_pago' => $p['estado_pago'],
                 'estado_pedido' => $p['estado_pedido'],
@@ -155,8 +170,8 @@ try {
         $pedidoActivo = null;
         $stmtActive = $db->prepare("
             SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
-                   p.latitud, p.longitud, p.created_at,
-                   u.nombre AS cliente_nombre, u.email AS cliente_email
+                   p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto, p.created_at,
+                   u.nombre AS cliente_nombre, u.email AS cliente_email, u.telefono AS cliente_telefono_user
             FROM pedidos p
             LEFT JOIN users u ON p.cliente_id = u.id
             WHERE p.rider_id = ? AND p.estado_pedido IN ('asignado', 'en_camino')
@@ -186,6 +201,10 @@ try {
                 'cliente_id' => (int)$activeRow['cliente_id'],
                 'cliente_nombre' => $activeRow['cliente_nombre'] ?? 'Cliente',
                 'cliente_email' => $activeRow['cliente_email'] ?? '',
+                'cliente_telefono' => $activeRow['telefono_contacto'] ?: ($activeRow['cliente_telefono_user'] ?? ''),
+                'direccion_entrega' => $activeRow['direccion_entrega'] ?: 'Dirección marcada en mapa',
+                'referencia_entrega' => $activeRow['referencia_entrega'] ?: '',
+                'tienda' => $storeObj,
                 'total' => floatval($activeRow['total']),
                 'estado_pago' => $activeRow['estado_pago'],
                 'estado_pedido' => $activeRow['estado_pedido'],
@@ -252,6 +271,7 @@ try {
         }
 
         echo formatResponse("success", [
+            "tienda" => $storeObj,
             "pedidos_disponibles" => $disponibles,
             "pedido_activo" => $pedidoActivo,
             "historial_pedidos" => $historial,

@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS users (
     ci_reverso_url VARCHAR(255),
     foto_url VARCHAR(255),
     ci_status ENUM('pending', 'verified', 'rejected') DEFAULT 'pending',
+    direccion VARCHAR(255) DEFAULT NULL,
+    telefono VARCHAR(50) DEFAULT NULL,
     motivo_rechazo TEXT,
     apelacion_motivo TEXT,
     apelacion_estado ENUM('ninguna', 'pendiente', 'resuelta') DEFAULT 'ninguna',
@@ -62,6 +64,9 @@ CREATE TABLE IF NOT EXISTS pedidos (
     total DECIMAL(10, 2) NOT NULL,
     latitud DECIMAL(10, 8),
     longitud DECIMAL(11, 8),
+    direccion_entrega VARCHAR(255) DEFAULT NULL,
+    referencia_entrega VARCHAR(255) DEFAULT NULL,
+    telefono_contacto VARCHAR(50) DEFAULT NULL,
     qr_comprobante_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -247,3 +252,20 @@ VALUES (1, 'Banco Unión', 'Burger 24/7 S.R.L. (Admin Central)', '100000482910',
 ON DUPLICATE KEY UPDATE banco = VALUES(banco);
 
 SET FOREIGN_KEY_CHECKS = 1;
+-- Tabla de Configuración de Tienda y Restaurante
+CREATE TABLE IF NOT EXISTS configuracion_tienda (
+    id INT PRIMARY KEY DEFAULT 1,
+    nombre_tienda VARCHAR(150) NOT NULL DEFAULT 'Burger 24/7 - Central Sopocachi',
+    direccion VARCHAR(255) NOT NULL DEFAULT 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
+    zona VARCHAR(100) NOT NULL DEFAULT 'Sopocachi',
+    latitud DECIMAL(10, 8) NOT NULL DEFAULT -16.5050,
+    longitud DECIMAL(11, 8) NOT NULL DEFAULT -68.1290,
+    telefono VARCHAR(50) NOT NULL DEFAULT '+591 71523481',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by INT,
+    FOREIGN KEY (updated_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO configuracion_tienda (id, nombre_tienda, direccion, zona, latitud, longitud, telefono)
+VALUES (1, 'Burger 24/7 - Central Sopocachi', 'Av. 20 de Octubre #2150, Sopocachi, La Paz', 'Sopocachi', -16.5050, -68.1290, '+591 71523481')
+ON DUPLICATE KEY UPDATE id=1;

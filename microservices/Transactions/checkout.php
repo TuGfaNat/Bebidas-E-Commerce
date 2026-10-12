@@ -137,8 +137,9 @@ try {
         if ($orderIdParam) {
             $stmtSingle = $db->prepare("
                 SELECT p.id, p.cliente_id, p.rider_id, p.estado_pago, p.estado_pedido,
-                       p.total, p.latitud, p.longitud, p.qr_comprobante_url, p.created_at, p.updated_at,
-                       u.nombre as cliente_nombre, u.email as cliente_email,
+                       p.total, p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto,
+                       p.qr_comprobante_url, p.created_at, p.updated_at,
+                       u.nombre as cliente_nombre, u.email as cliente_email, u.telefono as cliente_telefono_user,
                        r.nombre as rider_nombre
                 FROM pedidos p
                 LEFT JOIN users u ON p.cliente_id = u.id
@@ -170,6 +171,10 @@ try {
             $totalVal = floatval($ord['total']);
             $envioCalc = max(0, round($totalVal - $subtotalCalc, 2));
 
+            // Consultar datos de tienda
+            $stmtStore = $db->query("SELECT nombre_tienda, direccion, zona, latitud, longitud, telefono FROM configuracion_tienda WHERE id = 1");
+            $tienda = $stmtStore ? $stmtStore->fetch(PDO::FETCH_ASSOC) : null;
+
             $recibo = [
                 'id' => (int)$ord['id'],
                 'pedido_id' => (int)$ord['id'],
@@ -177,12 +182,17 @@ try {
                 'cliente' => [
                     'id' => (int)$ord['cliente_id'],
                     'nombre' => $ord['cliente_nombre'],
-                    'email' => $ord['cliente_email']
+                    'email' => $ord['cliente_email'],
+                    'telefono' => $ord['telefono_contacto'] ?: ($ord['cliente_telefono_user'] ?? '')
                 ],
                 'rider' => $ord['rider_id'] ? [
                     'id' => (int)$ord['rider_id'],
                     'nombre' => $ord['rider_nombre']
                 ] : null,
+                'tienda' => $tienda,
+                'direccion_entrega' => $ord['direccion_entrega'] ?: 'Dirección no especificada',
+                'referencia_entrega' => $ord['referencia_entrega'] ?: '',
+                'telefono_contacto' => $ord['telefono_contacto'] ?: ($ord['cliente_telefono_user'] ?? ''),
                 'estado_pago' => $ord['estado_pago'],
                 'estado_pedido' => $ord['estado_pedido'],
                 'subtotal' => round($subtotalCalc, 2),
@@ -203,7 +213,8 @@ try {
 
         $stmt = $db->prepare("
             SELECT p.id, p.cliente_id, p.rider_id, p.estado_pago, p.estado_pedido,
-                   p.total, p.latitud, p.longitud, p.qr_comprobante_url, p.created_at, p.updated_at
+                   p.total, p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto,
+                   p.qr_comprobante_url, p.created_at, p.updated_at
             FROM pedidos p
             WHERE p.cliente_id = ?
             ORDER BY p.id DESC
@@ -234,6 +245,9 @@ try {
                 'total' => floatval($ord['total']),
                 'latitud' => floatval($ord['latitud'] ?? -16.5050),
                 'longitud' => floatval($ord['longitud'] ?? -68.1290),
+                'direccion_entrega' => $ord['direccion_entrega'] ?: '',
+                'referencia_entrega' => $ord['referencia_entrega'] ?: '',
+                'telefono_contacto' => $ord['telefono_contacto'] ?: '',
                 'qr_comprobante_url' => $ord['qr_comprobante_url'],
                 'created_at' => $ord['created_at'],
                 'updated_at' => $ord['updated_at'],
@@ -392,9 +406,15 @@ try {
         $metodoPago = $input['metodo_pago'] ?? 'contraentrega'; // 'contraentrega' o 'qr'
         $qrUrl      = $input['qr_comprobante_url'] ?? null;
 
-        // Tienda Burger 24/7 (Sopocachi, La Paz)
-        $storeLat = -16.5050;
-        $storeLon = -68.1290;
+        // Cargar ubicación oficial de la tienda desde MySQL (o fallback Sopocachi)
+        $stmtStore = $db->query("SELECT nombre_tienda, direccion, latitud, longitud, telefono FROM configuracion_tienda WHERE id = 1");
+        $storeConfig = $stmtStore ? $stmtStore->fetch(PDO::FETCH_ASSOC) : null;
+        $storeLat = $storeConfig ? floatval($storeConfig['latitud']) : -16.5050;
+        $storeLon = $storeConfig ? floatval($storeConfig['longitud']) : -68.1290;
+
+        $direccionEntrega = trim($input['direccion_entrega'] ?? ($input['direccion'] ?? ''));
+        $referenciaEntrega = trim($input['referencia_entrega'] ?? ($input['referencia'] ?? ''));
+        $telefonoContacto = trim($input['telefono_contacto'] ?? ($input['telefono'] ?? ''));
 
         // Distancia geodésica cliente - tienda
         $distanciaKm = isset($input['distancia_km']) ? floatval($input['distancia_km']) : calculateHaversine($storeLat, $storeLon, $latCliente, $lonCliente);
@@ -512,14 +532,32 @@ try {
             ];
         }
 
-        // Crear pedido en la base de datos
+        // Crear pedido en la base de datos con dirección, referencia y teléfono
         $stmtOrder = $db->prepare("
             INSERT INTO pedidos 
-            (cliente_id, estado_pago, estado_pedido, total, latitud, longitud, qr_comprobante_url, created_by, updated_by)
-            VALUES (?, ?, 'pendiente', ?, ?, ?, ?, ?, ?)
+            (cliente_id, estado_pago, estado_pedido, total, latitud, longitud, direccion_entrega, referencia_entrega, telefono_contacto, qr_comprobante_url, created_by, updated_by)
+            VALUES (?, ?, 'pendiente', ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmtOrder->execute([$userId, $estadoPago, $total, $latCliente, $lonCliente, $qrUrl, $userId, $userId]);
+        $stmtOrder->execute([
+            $userId,
+            $estadoPago,
+            $total,
+            $latCliente,
+            $lonCliente,
+            $direccionEntrega ?: 'Dirección en mapa seleccionada',
+            $referenciaEntrega ?: null,
+            $telefonoContacto ?: null,
+            $qrUrl,
+            $userId,
+            $userId
+        ]);
         $orderId = (int)$db->lastInsertId();
+
+        // Actualizar datos de contacto habituales del cliente si no los tenía
+        if (!empty($direccionEntrega) || !empty($telefonoContacto)) {
+            $stmtUpUser = $db->prepare("UPDATE users SET direccion = COALESCE(NULLIF(?, ''), direccion), telefono = COALESCE(NULLIF(?, ''), telefono) WHERE id = ?");
+            $stmtUpUser->execute([$direccionEntrega, $telefonoContacto, $userId]);
+        }
 
         // Insertar cada producto en pedido_detalles
         $stmtDetail = $db->prepare("

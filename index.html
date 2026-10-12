@@ -303,6 +303,7 @@
                 <button class="admin-tab-btn" data-tab="monitoring" id="tabBtnMonitoring">Monitoreo & Caja Central</button>
                 <button class="admin-tab-btn" data-tab="reports" id="tabBtnReports">Reporte de Ventas & Riders</button>
                 <button class="admin-tab-btn" data-tab="qrconfig" id="tabBtnQrConfig">Configuración Pago QR</button>
+                <button class="admin-tab-btn" data-tab="storeconfig" id="tabBtnStoreConfig">Sede & Ubicación Tienda</button>
             </div>
 
             <!-- TAB 1: Approvals Panel -->
@@ -653,6 +654,104 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TAB: Sede y Dirección del Restaurante / Cocina (Super Admin) -->
+            <div class="admin-subpanel" id="subpanelStoreconfig" style="display: none;">
+                <!-- CARD: CONFIGURACIÓN DE LA TIENDA / RESTAURANTE (SUPER ADMIN) -->
+                <div class="glass-card" style="border: 1px solid rgba(249, 115, 22, 0.35); background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, rgba(30, 41, 59, 0.7) 100%);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem; color: #f97316;">
+                                <i data-lucide="store"></i> Configuración de Sede y Dirección del Restaurante
+                            </h3>
+                            <p style="margin: 0.35rem 0 0 0; font-size: 0.82rem; color: var(--text-secondary);">
+                                Define el nombre oficial, la dirección física de tu cocina y su ubicación GPS para que los clientes y repartidores sepan exactamente dónde está la sede central.
+                            </p>
+                        </div>
+                        <span class="badge" style="background: rgba(249, 115, 22, 0.15); color: #f97316; border: 1px solid #f97316; padding: 0.35rem 0.75rem; border-radius: 9999px; font-weight: 700; font-size: 0.78rem;">
+                            <i data-lucide="map-pin" style="width: 13px; height: 13px; vertical-align: middle;"></i> Sede Central Operativa
+                        </span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem;" class="admin-store-grid">
+                        <!-- Formulario -->
+                        <form id="formAdminStoreConfig" onsubmit="handleSaveAdminStoreConfig(event)">
+                            <div class="form-group" style="margin-bottom: 0.85rem;">
+                                <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                                    Nombre del Restaurante / Sucursal:
+                                </label>
+                                <input type="text" id="adminStoreNombre" class="input-styled" placeholder="Ej: Burger 24/7 - Central Sopocachi" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0.85rem;">
+                                <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                                    Dirección Física Completa (Calle, Número, Edificio):
+                                </label>
+                                <input type="text" id="adminStoreDireccion" class="input-styled" placeholder="Ej: Av. 20 de Octubre #2150, Sopocachi, La Paz" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+                                <div class="form-group">
+                                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                                        Zona / Barrio (La Paz):
+                                    </label>
+                                    <select id="adminStoreZonaSelect" class="form-control" onchange="handleAdminStoreZoneChange(this.value)" style="width: 100%; font-size: 0.8rem; padding: 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #1e293b; color: #fff;">
+                                        <option value="Sopocachi|-16.5050|-68.1290">Sopocachi (Av. 20 de Octubre)</option>
+                                        <option value="Centro / Prado|-16.4985|-68.1335">Centro / El Prado</option>
+                                        <option value="Miraflores|-16.5045|-68.1205">Miraflores (Estadio Siles)</option>
+                                        <option value="San Pedro|-16.5015|-68.1375">San Pedro (Plaza Sucre)</option>
+                                        <option value="Calacoto|-16.5410|-68.0860">Calacoto (Zona Sur)</option>
+                                        <option value="San Jorge|-16.5125|-68.1245">San Jorge (Av. Arce)</option>
+                                        <option value="Obrajes|-16.5280|-68.1120">Obrajes (Calle 17)</option>
+                                        <option value="personalizado">Coordenadas Personalizadas</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                                        Teléfono de Atención / Cocina:
+                                    </label>
+                                    <input type="text" id="adminStoreTelefono" class="input-styled" placeholder="Ej: +591 71523481" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
+                                <div class="form-group">
+                                    <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Latitud GPS:</label>
+                                    <input type="number" step="0.000001" id="adminStoreLat" class="input-styled" required style="width: 100%; padding: 0.5rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: #fff; border-radius: var(--radius-sm);">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">Longitud GPS:</label>
+                                    <input type="number" step="0.000001" id="adminStoreLon" class="input-styled" required style="width: 100%; padding: 0.5rem; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: #fff; border-radius: var(--radius-sm);">
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btnSaveAdminStore" class="btn btn-primary" style="background: #f97316; border: none; padding: 0.7rem 1.4rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <i data-lucide="save"></i> Guardar Ubicación del Restaurante
+                            </button>
+                        </form>
+
+                        <!-- Preview Tienda -->
+                        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <h4 style="margin-top: 0; font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                                    <i data-lucide="map"></i> Ficha Oficial Vista por Clientes y Repartidores
+                                </h4>
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.82rem; line-height: 1.6;">
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Nombre:</span> <strong id="previewAdminStoreNombre" style="color: #fff;">Burger 24/7 - Central Sopocachi</strong></p>
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Dirección:</span> <strong id="previewAdminStoreDireccion" style="color: #f97316;">Av. 20 de Octubre #2150, Sopocachi, La Paz</strong></p>
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Zona:</span> <strong id="previewAdminStoreZona" style="color: #38bdf8;">Sopocachi</strong></p>
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Teléfono Cocina:</span> <strong id="previewAdminStoreTelefono" style="color: var(--accent-green);">+591 71523481</strong></p>
+                                    <p style="margin: 0;"><span class="text-secondary">GPS:</span> <strong id="previewAdminStoreCoords" style="color: #cbd5e1;">-16.5050, -68.1290</strong></p>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1rem; padding: 0.65rem; background: rgba(249, 115, 22, 0.08); border-radius: 6px; font-size: 0.75rem; color: #fdba74;">
+                                <i data-lucide="info" style="width: 13px; height: 13px; vertical-align: middle; margin-right: 3px;"></i>
+                                Esta es la dirección que verá el repartidor (Rider) para recoger los pedidos y el punto de partida en el mapa GPS.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -729,8 +828,30 @@
                             <div id="gpsSelectorMap" style="width: 100%; height: 100%;"></div>
                         </div>
                         <button type="button" class="btn btn-secondary btn-sm" id="btnUseDefaultLocation" style="width: 100%; margin-top: 0.4rem; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
-                            <i data-lucide="map-pin"></i> Centrar en Sopocachi Central (Sede Cocina)
+                            <i data-lucide="map-pin"></i> Centrar en Sede de la Cocina Central
                         </button>
+
+                        <div style="margin-top: 0.65rem; display: flex; flex-direction: column; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                            <div>
+                                <label for="txtCheckoutDireccion" style="font-size: 0.75rem; color: #f8fafc; display: block; margin-bottom: 0.2rem; font-weight: 700;">
+                                    🏠 Dirección Exacta de Entrega (Calle, Nro, Edificio, Depto) <span style="color:#ef4444;">*</span>:
+                                </label>
+                                <input type="text" id="txtCheckoutDireccion" class="form-control" placeholder="Ej: Av. 20 de Octubre #1940, Edif. Illimani, Piso 3 Depto 302" required style="width: 100%; font-size: 0.8rem; padding: 0.45rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #1e293b; color: #fff;">
+                            </div>
+                            <div>
+                                <label for="txtCheckoutReferencia" style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-bottom: 0.2rem; font-weight: 600;">
+                                    🧭 Referencia para el Repartidor (Opcional):
+                                </label>
+                                <input type="text" id="txtCheckoutReferencia" class="form-control" placeholder="Ej: Portón café frente a la farmacia, timbrar al 3B" style="width: 100%; font-size: 0.8rem; padding: 0.45rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #1e293b; color: #fff;">
+                            </div>
+                            <div>
+                                <label for="txtCheckoutTelefono" style="font-size: 0.75rem; color: #f8fafc; display: block; margin-bottom: 0.2rem; font-weight: 700;">
+                                    📞 Teléfono / Celular de Contacto <span style="color:#ef4444;">*</span>:
+                                </label>
+                                <input type="tel" id="txtCheckoutTelefono" class="form-control" placeholder="Ej: +591 71234567" required style="width: 100%; font-size: 0.8rem; padding: 0.45rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #1e293b; color: #fff;">
+                            </div>
+                        </div>
+
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-top: 0.6rem; font-size: 0.85rem;" id="logisticsResults">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
                                 <span class="text-secondary">Distancia:</span>
@@ -936,6 +1057,32 @@
                     </div>
                 </div>
 
+                <!-- Sección: Mi Dirección Habitual y Teléfono de Contacto -->
+                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 1rem 1.2rem;">
+                    <h4 style="font-size: 0.82rem; text-transform: uppercase; color: #38bdf8; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700;">
+                        <i data-lucide="map-pin" style="width: 15px; height: 15px;"></i>
+                        <span>Mi Dirección Habitual y Teléfono de Contacto</span>
+                    </h4>
+                    <p style="font-size: 0.76rem; color: var(--text-secondary); margin: 0 0 0.65rem 0;">
+                        Configura tu domicilio habitual para que tus pedidos se despachen automáticamente a tu puerta sin tener que escribirlo cada vez.
+                    </p>
+                    <form id="formProfileContact" onsubmit="handleSaveProfileContact(event)" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                        <div>
+                            <label for="profileInputDireccion" style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-bottom: 0.2rem; font-weight: 600;">Dirección de Domicilio / Oficina:</label>
+                            <input type="text" id="profileInputDireccion" class="form-control" placeholder="Ej: Av. 20 de Octubre #1940, Edif. Illimani, Piso 3 Depto 302" style="width: 100%; font-size: 0.8rem; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #0f172a; color: #fff;">
+                        </div>
+                        <div>
+                            <label for="profileInputTelefono" style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-bottom: 0.2rem; font-weight: 600;">Teléfono / WhatsApp de Contacto:</label>
+                            <input type="tel" id="profileInputTelefono" class="form-control" placeholder="Ej: +591 71234567" style="width: 100%; font-size: 0.8rem; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: #0f172a; color: #fff;">
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 0.25rem;">
+                            <button type="submit" id="btnSaveProfileContact" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; background: #0284c7; border: none; padding: 0.45rem 0.95rem; font-weight: 700; cursor: pointer;">
+                                <i data-lucide="save" style="width: 13px; height: 13px;"></i> Guardar Mis Datos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
                 <!-- Sección Específica Rider (Expediente Vehicular & Liquidaciones) -->
                 <div id="profileRiderSection" style="display: none; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 1rem 1.2rem;">
                     <h4 style="font-size: 0.82rem; text-transform: uppercase; color: #3b82f6; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700;">
@@ -1007,9 +1154,9 @@
             <div class="receipt-printable-body" id="receiptPrintableArea" style="padding: 1.25rem 1.4rem; overflow-y: auto; background: #ffffff; color: #1e293b; font-family: 'Courier New', Courier, monospace;">
                 <!-- Header del Comercio -->
                 <div style="text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.65rem; margin-bottom: 0.65rem;">
-                    <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; letter-spacing: 0.05em;">BURGER 24/7 S.R.L.</h2>
-                    <p style="margin: 0.15rem 0; font-size: 0.72rem; color: #475569;">Av. 20 de Octubre #2150, Sopocachi - La Paz</p>
-                    <p style="margin: 0.15rem 0; font-size: 0.7rem; color: #475569;">NIT: 1029384756 · Tlf: +591 2 244-1234</p>
+                    <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; letter-spacing: 0.05em;" id="lblReceiptStoreName">BURGER 24/7 S.R.L.</h2>
+                    <p style="margin: 0.15rem 0; font-size: 0.72rem; color: #475569;" id="lblReceiptStoreAddress">Av. 20 de Octubre #2150, Sopocachi - La Paz</p>
+                    <p style="margin: 0.15rem 0; font-size: 0.7rem; color: #475569;" id="lblReceiptStorePhone">Tlf: +591 71523481</p>
                     <span style="display: inline-block; margin-top: 0.35rem; padding: 0.15rem 0.55rem; background: #f1f5f9; border-radius: 4px; font-weight: 700; font-size: 0.75rem; color: #0f172a;" id="lblReceiptNumber">REC-000001</span>
                 </div>
 
@@ -1034,6 +1181,10 @@
                     <div style="display: flex; justify-content: space-between;">
                         <span><strong>ESTADO:</strong></span>
                         <span id="lblReceiptStatus" style="font-weight: 700;">-</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;" id="receiptDeliveryRow">
+                        <span><strong>ENTREGA:</strong></span>
+                        <span id="lblReceiptAddress" style="max-width: 65%; text-align: right;">-</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;" id="receiptRiderRow">
                         <span><strong>REPARTIDOR:</strong></span>

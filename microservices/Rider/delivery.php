@@ -89,6 +89,7 @@ try {
 
         $stmtHist = $db->prepare("
             SELECT p.id, p.cliente_id, p.estado_pedido, p.estado_pago, p.total, p.created_at, p.updated_at,
+                   p.recepcion_confirmada, p.fecha_recepcion_cliente,
                    u.nombre as cliente_nombre,
                    cp.calificacion_entrega, cp.comentario_entrega, cp.calificacion_comida
             FROM pedidos p

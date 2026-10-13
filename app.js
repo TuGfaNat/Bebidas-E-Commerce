@@ -1270,6 +1270,46 @@ function setupEventListeners() {
 
     initStarPickers();
 
+    // Modal Historial de Pedidos del Cliente Listeners
+    const btnClientHistClose = document.getElementById('btnCloseClientOrdersHistory');
+    if (btnClientHistClose) {
+        btnClientHistClose.addEventListener('click', () => {
+            if (window.closeClientOrdersHistoryModal) window.closeClientOrdersHistoryModal();
+        });
+    }
+    const btnClientHistCloseBtn = document.getElementById('btnCloseClientOrdersHistoryBtn');
+    if (btnClientHistCloseBtn) {
+        btnClientHistCloseBtn.addEventListener('click', () => {
+            if (window.closeClientOrdersHistoryModal) window.closeClientOrdersHistoryModal();
+        });
+    }
+    const clientHistModal = document.getElementById('clientOrdersHistoryModal');
+    if (clientHistModal) {
+        clientHistModal.addEventListener('click', (e) => {
+            if (e.target === clientHistModal && window.closeClientOrdersHistoryModal) window.closeClientOrdersHistoryModal();
+        });
+    }
+
+    // Modal Historial de Pedidos por Usuario (Admin) Listeners
+    const btnAdminUserHistClose = document.getElementById('btnCloseAdminUserHistory');
+    if (btnAdminUserHistClose) {
+        btnAdminUserHistClose.addEventListener('click', () => {
+            if (window.closeAdminUserHistoryModal) window.closeAdminUserHistoryModal();
+        });
+    }
+    const btnAdminUserHistCloseBtn = document.getElementById('btnCloseAdminUserHistoryBtn');
+    if (btnAdminUserHistCloseBtn) {
+        btnAdminUserHistCloseBtn.addEventListener('click', () => {
+            if (window.closeAdminUserHistoryModal) window.closeAdminUserHistoryModal();
+        });
+    }
+    const adminUserHistModal = document.getElementById('adminUserHistoryModal');
+    if (adminUserHistModal) {
+        adminUserHistModal.addEventListener('click', (e) => {
+            if (e.target === adminUserHistModal && window.closeAdminUserHistoryModal) window.closeAdminUserHistoryModal();
+        });
+    }
+
     // Modal Apelación de Rechazo Listeners
     const btnAppClose = document.getElementById('btnAppealModalClose');
     if (btnAppClose) {
@@ -1372,22 +1412,27 @@ function getActiveCategory() {
 }
 
 function updateUIForCurrentRole() {
+    const btnHeaderOrders = document.getElementById('btnHeaderOrders');
     if (currentSession.cliente) {
+        if (btnHeaderOrders) btnHeaderOrders.style.display = 'inline-flex';
         renderClienteAccountInfo();
         renderProducts();
         renderClienteActiveOrderTracker();
         updateCartBadge();
-    } else if (currentSession.rider) {
-        renderRiderProfile();
-        renderRiderOrderQueue();
-        renderRiderActiveOrderPanel();
-        renderRiderOrderHistory();
-    } else if (currentSession.admin) {
-        renderAdminPendingApprovals();
-        renderAdminProductsTable();
-        renderAdminReports();
-        renderAdminMonitoring();
-        syncProductsFromBackend();
+    } else {
+        if (btnHeaderOrders) btnHeaderOrders.style.display = 'none';
+        if (currentSession.rider) {
+            renderRiderProfile();
+            renderRiderOrderQueue();
+            renderRiderActiveOrderPanel();
+            renderRiderOrderHistory();
+        } else if (currentSession.admin) {
+            renderAdminPendingApprovals();
+            renderAdminProductsTable();
+            renderAdminReports();
+            renderAdminMonitoring();
+            syncProductsFromBackend();
+        }
     }
 }
 
@@ -3465,7 +3510,7 @@ async function renderRiderOrderHistory(filter = 'all') {
     setupRiderHistoryFilterListeners();
 }
 
-function renderFilteredRiderHistory(filter = 'all') {
+function renderFilteredRiderHistory(filter = 'all', searchQuery = '') {
     const listEl = document.getElementById('riderHistoryList');
     if (!listEl) return;
     const all = window._riderOrderHistory || [];
@@ -3479,9 +3524,19 @@ function renderFilteredRiderHistory(filter = 'all') {
         filtered = all.filter(o => o.estado_pedido === 'rechazado' || o.estado_pedido === 'cancelado');
     }
 
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(o => {
+            const itemsStr = (o.items || []).map(i => i.nombre || '').join(' ').toLowerCase();
+            return (o.cliente_nombre || '').toLowerCase().includes(q) ||
+                   String(o.pedido_id).includes(q) ||
+                   itemsStr.includes(q);
+        });
+    }
+
     if (!filtered.length) {
         listEl.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem; font-size: 0.9rem;">
-            No tienes pedidos registrados en la categoría seleccionada (${filter}).
+            No tienes pedidos registrados en la categoría seleccionada (${filter}) ${searchQuery ? `con término "${escapeHtml(searchQuery)}"` : ''}.
         </div>`;
         return;
     }
@@ -3520,8 +3575,20 @@ function renderFilteredRiderHistory(filter = 'all') {
                </div>`
             : '';
 
+        const receptionHtml = o.recepcion_confirmada
+            ? `<div style="margin-top: 0.45rem; padding: 0.35rem 0.65rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); font-size: 0.78rem; color: #10b981; display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="package-check" style="width:13px;height:13px;"></i>
+                <span><strong>Comida Recibida por el Cliente</strong>${o.fecha_recepcion_cliente ? ` (${new Date(o.fecha_recepcion_cliente).toLocaleString('es-BO')})` : ''}</span>
+               </div>`
+            : (o.estado_pedido === 'entregado'
+                ? `<div style="margin-top: 0.45rem; padding: 0.35rem 0.65rem; background: rgba(234, 179, 8, 0.08); border: 1px solid rgba(234, 179, 8, 0.25); border-radius: var(--radius-sm); font-size: 0.78rem; color: #facc15; display: flex; align-items: center; gap: 0.4rem;">
+                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
+                    <span>Esperando confirmación de recepción del cliente</span>
+                   </div>`
+                : '');
+
         const ratingHtml = o.calificacion_entrega
-            ? `<div style="margin-top: 0.5rem; padding: 0.45rem 0.75rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-sm); font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            ? `<div style="margin-top: 0.45rem; padding: 0.45rem 0.75rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-sm); font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                 <span>⭐ <strong>Calificación del Cliente:</strong> <span style="color:#f59e0b; font-weight:700;">${'★'.repeat(o.calificacion_entrega)}${'☆'.repeat(5 - o.calificacion_entrega)}</span> (${o.calificacion_entrega}/5)</span>
                 ${o.comentario_entrega ? `<span style="color:var(--text-secondary); font-style:italic;">“${escapeHtml(o.comentario_entrega)}”</span>` : ''}
                </div>`
@@ -3555,6 +3622,7 @@ function renderFilteredRiderHistory(filter = 'all') {
                     </div>
                 </div>
                 ${motivoHtml}
+                ${receptionHtml}
                 ${ratingHtml}
             </div>
         `;
@@ -3567,9 +3635,18 @@ function setupRiderHistoryFilterListeners() {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.rider-filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            renderFilteredRiderHistory(btn.dataset.filter);
+            const searchVal = document.getElementById('txtRiderHistorySearch')?.value || '';
+            renderFilteredRiderHistory(btn.dataset.filter, searchVal);
         });
     });
+
+    const searchInput = document.getElementById('txtRiderHistorySearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const activeFilter = document.querySelector('.rider-filter-btn.active')?.dataset.filter || 'all';
+            renderFilteredRiderHistory(activeFilter, e.target.value);
+        });
+    }
 }
 
 window.rejectRiderAvailableOrder = async function(orderId) {
@@ -4566,6 +4643,552 @@ window.submitOrderRating = async function() {
 };
 
 // -------------------------------------------------------
+// HISTORIAL DE PEDIDOS Y CALIFICACIONES DEL CLIENTE
+// -------------------------------------------------------
+window.openClientOrdersHistoryModal = async function(filter = 'all') {
+    const modal = document.getElementById('clientOrdersHistoryModal');
+    if (!modal) return;
+
+    if (!currentSession.cliente) {
+        showToast('Inicia sesión como cliente para ver tu historial de pedidos.', 'info');
+        openAuthModal();
+        return;
+    }
+
+    modal.style.display = 'flex';
+    initLucide();
+
+    // Resetear botones de filtro y buscador
+    document.querySelectorAll('.client-hist-filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === filter);
+    });
+    const searchInput = document.getElementById('txtClientOrdersSearch');
+    if (searchInput) searchInput.value = '';
+
+    const listEl = document.getElementById('clientOrdersHistoryContainer');
+    if (listEl) {
+        listEl.innerHTML = '<div style="text-align:center; padding:2.5rem; color:var(--text-secondary);"><i data-lucide="loader-2" class="spin" style="width:28px;height:28px;margin-bottom:0.5rem;color:#38bdf8;"></i><br>Cargando tus pedidos...</div>';
+        initLucide();
+    }
+
+    try {
+        const res = await apiGet('/Transactions/checkout.php');
+        if (!res.ok) {
+            if (listEl) {
+                listEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> No se pudo cargar el historial</h4><p>${escapeHtml(res.error || 'Error al conectar con el servidor')}</p></div>`;
+                initLucide();
+            }
+            return;
+        }
+
+        window._clientAllOrders = (res.data && res.data.pedidos) ? res.data.pedidos : [];
+        renderClientOrdersHistoryList(filter, '');
+        setupClientOrdersHistoryListeners();
+    } catch (err) {
+        console.error('Error cargando historial de pedidos del cliente:', err);
+        if (listEl) {
+            listEl.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Error de conexión</h4><p>No se pudo conectar con el servidor.</p></div>`;
+            initLucide();
+        }
+    }
+};
+
+window.closeClientOrdersHistoryModal = function() {
+    const modal = document.getElementById('clientOrdersHistoryModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.renderClientOrdersHistoryList = function(filter = 'all', searchQuery = '') {
+    const container = document.getElementById('clientOrdersHistoryContainer');
+    if (!container) return;
+
+    const all = window._clientAllOrders || [];
+    let filtered = all;
+
+    if (filter === 'entregado') {
+        filtered = all.filter(o => o.estado_pedido === 'entregado');
+    } else if (filter === 'en_camino') {
+        filtered = all.filter(o => ['en_camino', 'asignado', 'preparando', 'buscando_rider'].includes(o.estado_pedido));
+    } else if (filter === 'pendiente') {
+        filtered = all.filter(o => o.estado_pedido === 'pendiente');
+    }
+
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(o => {
+            const itemsStr = (o.detalles || []).map(d => d.nombre || '').join(' ').toLowerCase();
+            return String(o.id).includes(q) ||
+                   itemsStr.includes(q) ||
+                   (o.rider_nombre || '').toLowerCase().includes(q) ||
+                   (o.direccion_entrega || '').toLowerCase().includes(q);
+        });
+    }
+
+    if (!filtered.length) {
+        container.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary); padding: 3rem 1.5rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.08);">
+                <i data-lucide="shopping-bag" style="width: 42px; height: 42px; color: #64748b; margin-bottom: 0.75rem;"></i>
+                <h4 style="margin: 0 0 0.35rem 0; color: #cbd5e1;">No se encontraron pedidos</h4>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-muted);">
+                    ${searchQuery ? `No hay resultados para "${escapeHtml(searchQuery)}"` : 'Aún no tienes pedidos registrados en esta categoría.'}
+                </p>
+            </div>
+        `;
+        initLucide();
+        return;
+    }
+
+    container.innerHTML = filtered.map(o => {
+        let statusBadge = '';
+        if (o.estado_pedido === 'entregado') {
+            statusBadge = '<span class="badge badge-verified"><i data-lucide="check-check"></i> Entregado</span>';
+        } else if (o.estado_pedido === 'en_camino') {
+            statusBadge = '<span class="badge badge-pending" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);"><i data-lucide="bike"></i> En Camino</span>';
+        } else if (o.estado_pedido === 'cancelado') {
+            statusBadge = '<span class="badge badge-rejected"><i data-lucide="x-circle"></i> Cancelado</span>';
+        } else {
+            statusBadge = `<span class="badge badge-pending"><i data-lucide="clock"></i> ${escapeHtml(o.estado_pedido || 'Pendiente')}</span>`;
+        }
+
+        let receptionBadge = '';
+        if (o.recepcion_confirmada) {
+            const dateFmt = o.fecha_recepcion_cliente ? ` (${new Date(o.fecha_recepcion_cliente).toLocaleString('es-BO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})` : '';
+            receptionBadge = `<span class="history-reception-badge confirmed"><i data-lucide="package-check" style="width:13px;height:13px;"></i> Comida recibida en tu puerta${dateFmt}</span>`;
+        } else if (o.estado_pedido === 'entregado') {
+            receptionBadge = `<span class="history-reception-badge pending" style="background: rgba(234, 179, 8, 0.1); color: #facc15; border-color: rgba(234, 179, 8, 0.25);"><i data-lucide="clock" style="width:13px;height:13px;"></i> Entregado por rider (Pendiente tu confirmación)</span>`;
+        } else {
+            receptionBadge = `<span class="history-reception-badge pending"><i data-lucide="truck" style="width:13px;height:13px;"></i> En proceso de entrega</span>`;
+        }
+
+        let ratingHtml = '';
+        if (o.calificacion && (o.calificacion.calificacion_entrega || o.calificacion.calificacion_comida)) {
+            const c = o.calificacion;
+            ratingHtml = `
+                <div class="history-rating-stars-box" style="margin-top: 0.6rem; padding: 0.6rem 0.85rem; background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); font-size: 0.8rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; margin-bottom: 0.35rem;">
+                        <span style="font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="star" style="width:14px;height:14px;"></i> Tus Calificaciones
+                        </span>
+                        <button class="btn btn-secondary btn-sm" onclick="closeClientOrdersHistoryModal(); openOrderRatingModal(${o.id});" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b;">
+                            <i data-lucide="edit-3" style="width:11px;height:11px;"></i> Editar
+                        </button>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem;">
+                        ${c.calificacion_entrega ? `
+                            <div style="background: rgba(0,0,0,0.2); padding: 0.4rem 0.6rem; border-radius: 4px;">
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Entrega (Rider):</div>
+                                <div style="color: #f59e0b; font-weight: 700; font-size: 0.9rem;">
+                                    ${'★'.repeat(c.calificacion_entrega)}${'☆'.repeat(5 - c.calificacion_entrega)} <span style="font-size: 0.75rem; color: var(--text-secondary);">(${c.calificacion_entrega}/5)</span>
+                                </div>
+                                ${c.comentario_entrega ? `<div style="font-style: italic; color: #cbd5e1; font-size: 0.75rem; margin-top: 0.2rem;">"${escapeHtml(c.comentario_entrega)}"</div>` : ''}
+                            </div>
+                        ` : ''}
+                        ${c.calificacion_comida ? `
+                            <div style="background: rgba(0,0,0,0.2); padding: 0.4rem 0.6rem; border-radius: 4px;">
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Comida:</div>
+                                <div style="color: #f59e0b; font-weight: 700; font-size: 0.9rem;">
+                                    ${'★'.repeat(c.calificacion_comida)}${'☆'.repeat(5 - c.calificacion_comida)} <span style="font-size: 0.75rem; color: var(--text-secondary);">(${c.calificacion_comida}/5)</span>
+                                </div>
+                                ${c.comentario_comida ? `<div style="font-style: italic; color: #cbd5e1; font-size: 0.75rem; margin-top: 0.2rem;">"${escapeHtml(c.comentario_comida)}"</div>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        } else if (o.estado_pedido === 'entregado') {
+            ratingHtml = `
+                <div style="margin-top: 0.55rem; padding: 0.55rem 0.85rem; background: rgba(56, 189, 248, 0.05); border: 1px dashed rgba(56, 189, 248, 0.25); border-radius: var(--radius-sm); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                    <span style="font-size: 0.8rem; color: #94a3b8;">¡Pedido recibido! ¿Cómo fue tu experiencia?</span>
+                    <button class="btn btn-primary btn-sm" onclick="closeClientOrdersHistoryModal(); openOrderRatingModal(${o.id});" style="font-size: 0.75rem; padding: 0.3rem 0.75rem; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; font-weight: 700; color: #0f172a;">
+                        <i data-lucide="star" style="width:13px;height:13px;"></i> Calificar Entrega y Comida
+                    </button>
+                </div>
+            `;
+        }
+
+        const itemsList = (o.detalles || []).map(d => `${d.cantidad}x ${escapeHtml(d.nombre || 'Item')}`).join(', ') || 'Productos varios';
+        let dateStr = 'Reciente';
+        if (o.created_at) {
+            try {
+                dateStr = new Date(o.created_at).toLocaleString('es-BO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch(e) {}
+        }
+
+        return `
+            <div class="history-order-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <strong style="color:#f8fafc; font-size:1rem;">Pedido #${o.id}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${dateStr}</span>
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.2rem;">
+                            ${o.rider_nombre ? `<span style="color:#38bdf8;">🛵 Repartidor: ${escapeHtml(o.rider_nombre)}</span>` : '<span style="color:var(--text-muted);">Sin repartidor asignado</span>'}
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${o.id})" style="font-size:0.73rem; padding:0.25rem 0.6rem;">
+                            <i data-lucide="receipt" style="width:12px;height:12px;"></i> Recibo
+                        </button>
+                        ${statusBadge}
+                    </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.25); border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; margin-bottom: 0.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                    <div style="font-size: 0.83rem; color: #e2e8f0; flex: 1; min-width: 200px;">
+                        <i data-lucide="package" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;color:var(--text-muted);"></i>
+                        ${itemsList}
+                    </div>
+                    <div style="font-weight: 800; font-size: 0.95rem; color: var(--accent-green); white-space: nowrap;">
+                        ${Number(o.total).toFixed(2)} Bs
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; font-size:0.78rem;">
+                    <div>${receptionBadge}</div>
+                    ${o.direccion_entrega ? `<div style="color:var(--text-muted); max-width: 320px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${escapeHtml(o.direccion_entrega)}">📍 ${escapeHtml(o.direccion_entrega)}</div>` : ''}
+                </div>
+
+                ${ratingHtml}
+            </div>
+        `;
+    }).join('');
+
+    initLucide();
+};
+
+window.setupClientOrdersHistoryListeners = function() {
+    document.querySelectorAll('.client-hist-filter-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.client-hist-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const searchVal = document.getElementById('txtClientOrdersSearch')?.value || '';
+            renderClientOrdersHistoryList(btn.dataset.filter, searchVal);
+        };
+    });
+
+    const searchInput = document.getElementById('txtClientOrdersSearch');
+    if (searchInput) {
+        searchInput.oninput = (e) => {
+            const activeFilter = document.querySelector('.client-hist-filter-btn.active')?.dataset.filter || 'all';
+            renderClientOrdersHistoryList(activeFilter, e.target.value);
+        };
+    }
+};
+
+// -------------------------------------------------------
+// ADMIN: HISTORIAL DE PEDIDOS Y CALIFICACIONES POR USUARIO (CLIENTE O RIDER)
+// -------------------------------------------------------
+window.openAdminUserOrderHistory = async function(userId, role, userName) {
+    const modal = document.getElementById('adminUserHistoryModal');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+
+    // Set Avatar & Info header
+    const avatarCircle = document.getElementById('adminUserHistAvatarCircle');
+    const nameEl = document.getElementById('adminUserHistName');
+    const roleBadge = document.getElementById('adminUserHistRoleBadge');
+    const emailEl = document.getElementById('adminUserHistEmail');
+
+    if (nameEl) nameEl.textContent = userName || `Usuario #${userId}`;
+    if (emailEl) emailEl.textContent = 'Cargando datos de usuario...';
+
+    if (role === 'rider') {
+        if (avatarCircle) {
+            avatarCircle.innerHTML = '🛵';
+            avatarCircle.style.background = 'rgba(139, 92, 246, 0.2)';
+            avatarCircle.style.borderColor = 'var(--accent-purple)';
+            avatarCircle.style.color = 'var(--accent-purple)';
+        }
+        if (roleBadge) {
+            roleBadge.textContent = 'Repartidor / Rider';
+            roleBadge.style.background = 'rgba(139, 92, 246, 0.2)';
+            roleBadge.style.color = 'var(--accent-purple)';
+        }
+    } else {
+        if (avatarCircle) {
+            avatarCircle.innerHTML = '👤';
+            avatarCircle.style.background = 'rgba(56, 189, 248, 0.2)';
+            avatarCircle.style.borderColor = '#38bdf8';
+            avatarCircle.style.color = '#38bdf8';
+        }
+        if (roleBadge) {
+            roleBadge.textContent = 'Cliente Comprador';
+            roleBadge.style.background = 'rgba(56, 189, 248, 0.2)';
+            roleBadge.style.color = '#38bdf8';
+        }
+    }
+
+    // Reset filtros
+    document.querySelectorAll('.admin-hist-filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === 'all');
+    });
+    const searchInput = document.getElementById('txtAdminUserHistSearch');
+    if (searchInput) searchInput.value = '';
+
+    const statsBar = document.getElementById('adminUserHistStatsBar');
+    if (statsBar) statsBar.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem;">Calculando métricas del historial...</span>';
+
+    const ordersList = document.getElementById('adminUserHistOrdersList');
+    if (ordersList) {
+        ordersList.innerHTML = '<div style="text-align:center; padding:2.5rem; color:var(--text-secondary);"><i data-lucide="loader-2" class="spin" style="width:28px;height:28px;margin-bottom:0.5rem;color:var(--accent-purple);"></i><br>Cargando pedidos asociados...</div>';
+        initLucide();
+    }
+
+    try {
+        const queryParam = role === 'rider' ? `rider_id=${userId}` : `cliente_id=${userId}`;
+        const res = await apiGet(`/Transactions/checkout.php?${queryParam}`);
+
+        if (!res.ok) {
+            if (ordersList) {
+                ordersList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="alert-triangle"></i> Error al consultar historial</h4><p>${escapeHtml(res.error || 'No se pudo obtener la información del servidor.')}</p></div>`;
+                initLucide();
+            }
+            return;
+        }
+
+        const data = res.data || {};
+        const targetUser = data.target_user || {};
+        const orders = data.pedidos || [];
+
+        if (emailEl) {
+            emailEl.textContent = targetUser.email || (orders[0] ? (role === 'rider' ? '' : orders[0].cliente_email) : 'Sin correo registrado');
+        }
+
+        window._adminCurrentUserHistory = {
+            userId,
+            role,
+            userName,
+            user: targetUser,
+            orders: orders
+        };
+
+        // Render Stats Bar
+        const totalCount = orders.length;
+        const deliveredCount = orders.filter(o => o.estado_pedido === 'entregado').length;
+        const totalMoney = orders.reduce((acc, o) => acc + (parseFloat(o.total) || 0), 0);
+        const receptionCount = orders.filter(o => o.recepcion_confirmada).length;
+
+        // Ratings
+        const ratingField = role === 'rider' ? 'calificacion_entrega' : 'calificacion_comida';
+        const ratedOrders = orders.filter(o => o.calificacion && o.calificacion[ratingField]);
+        const avgRating = ratedOrders.length
+            ? (ratedOrders.reduce((sum, o) => sum + o.calificacion[ratingField], 0) / ratedOrders.length).toFixed(1)
+            : 'N/A';
+
+        if (statsBar) {
+            statsBar.innerHTML = `
+                <div style="display:flex; flex-direction:column; min-width:110px;">
+                    <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">${role === 'rider' ? 'Total Entregas' : 'Total Pedidos'}</span>
+                    <strong style="font-size:1.15rem; color:#f8fafc;">${totalCount} <span style="font-size:0.75rem; color:#10b981;">(${deliveredCount} completados)</span></strong>
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:110px;">
+                    <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">${role === 'rider' ? 'Volumen Generado' : 'Total Gastado'}</span>
+                    <strong style="font-size:1.15rem; color:var(--accent-green);">${totalMoney.toFixed(2)} Bs</strong>
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:110px;">
+                    <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">${role === 'rider' ? 'Promedio Servicio Rider' : 'Promedio Comida Recibida'}</span>
+                    <strong style="font-size:1.15rem; color:#f59e0b;">⭐ ${avgRating} ${avgRating !== 'N/A' ? `<span style="font-size:0.75rem; color:var(--text-secondary);">(${ratedOrders.length} votos)</span>` : ''}</strong>
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:110px;">
+                    <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">Recepción Confirmada</span>
+                    <strong style="font-size:1.15rem; color:#38bdf8;">${receptionCount} <span style="font-size:0.75rem; color:var(--text-secondary);">en puerta</span></strong>
+                </div>
+            `;
+        }
+
+        renderAdminUserHistoryOrdersList('all', '');
+        setupAdminUserHistoryListeners();
+    } catch (err) {
+        console.error('Error cargando historial del usuario en admin:', err);
+        if (ordersList) {
+            ordersList.innerHTML = `<div class="api-error-card"><h4><i data-lucide="wifi-off"></i> Error de conexión</h4><p>No se pudo conectar con el servidor.</p></div>`;
+            initLucide();
+        }
+    }
+};
+
+window.closeAdminUserHistoryModal = function() {
+    const modal = document.getElementById('adminUserHistoryModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.renderAdminUserHistoryOrdersList = function(filter = 'all', searchQuery = '') {
+    const container = document.getElementById('adminUserHistOrdersList');
+    if (!container) return;
+
+    const hist = window._adminCurrentUserHistory || { orders: [] };
+    const all = hist.orders || [];
+    let filtered = all;
+
+    if (filter === 'entregado') {
+        filtered = all.filter(o => o.estado_pedido === 'entregado');
+    } else if (filter === 'en_camino') {
+        filtered = all.filter(o => ['en_camino', 'asignado', 'preparando', 'buscando_rider'].includes(o.estado_pedido));
+    } else if (filter === 'cancelado') {
+        filtered = all.filter(o => ['cancelado', 'rechazado'].includes(o.estado_pedido));
+    }
+
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(o => {
+            const itemsStr = (o.detalles || []).map(d => d.nombre || '').join(' ').toLowerCase();
+            return String(o.id).includes(q) ||
+                   itemsStr.includes(q) ||
+                   (o.cliente_nombre || '').toLowerCase().includes(q) ||
+                   (o.cliente_email || '').toLowerCase().includes(q) ||
+                   (o.rider_nombre || '').toLowerCase().includes(q) ||
+                   (o.direccion_entrega || '').toLowerCase().includes(q);
+        });
+    }
+
+    if (!filtered.length) {
+        container.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary); padding: 3rem 1.5rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px dashed rgba(255,255,255,0.08);">
+                <i data-lucide="inbox" style="width: 42px; height: 42px; color: #64748b; margin-bottom: 0.75rem;"></i>
+                <h4 style="margin: 0 0 0.35rem 0; color: #cbd5e1;">Sin pedidos que mostrar</h4>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-muted);">
+                    ${searchQuery ? `No hay resultados para "${escapeHtml(searchQuery)}"` : 'Este usuario no tiene pedidos registrados en este estado.'}
+                </p>
+            </div>
+        `;
+        initLucide();
+        return;
+    }
+
+    container.innerHTML = filtered.map(o => {
+        let statusBadge = '';
+        if (o.estado_pedido === 'entregado') {
+            statusBadge = '<span class="badge badge-verified"><i data-lucide="check-check"></i> Entregado</span>';
+        } else if (o.estado_pedido === 'en_camino') {
+            statusBadge = '<span class="badge badge-pending" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);"><i data-lucide="bike"></i> En Camino</span>';
+        } else if (o.estado_pedido === 'cancelado' || o.estado_pedido === 'rechazado') {
+            statusBadge = '<span class="badge badge-rejected"><i data-lucide="x-circle"></i> Cancelado</span>';
+        } else {
+            statusBadge = `<span class="badge badge-pending"><i data-lucide="clock"></i> ${escapeHtml(o.estado_pedido || 'Pendiente')}</span>`;
+        }
+
+        let receptionBadge = '';
+        if (o.recepcion_confirmada) {
+            const dateFmt = o.fecha_recepcion_cliente ? ` (${new Date(o.fecha_recepcion_cliente).toLocaleString('es-BO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })})` : '';
+            receptionBadge = `<span class="history-reception-badge confirmed"><i data-lucide="package-check" style="width:13px;height:13px;"></i> Confirmado recibido en puerta${dateFmt}</span>`;
+        } else if (o.estado_pedido === 'entregado') {
+            receptionBadge = `<span class="history-reception-badge pending" style="background: rgba(234, 179, 8, 0.1); color: #facc15; border-color: rgba(234, 179, 8, 0.25);"><i data-lucide="clock" style="width:13px;height:13px;"></i> Entregado por rider (Pendiente confirmación cliente)</span>`;
+        } else {
+            receptionBadge = `<span class="history-reception-badge pending"><i data-lucide="truck" style="width:13px;height:13px;"></i> En tránsito de entrega</span>`;
+        }
+
+        let ratingBox = '';
+        if (o.calificacion && (o.calificacion.calificacion_entrega || o.calificacion.calificacion_comida)) {
+            const c = o.calificacion;
+            ratingBox = `
+                <div class="history-rating-stars-box" style="margin-top: 0.6rem; padding: 0.6rem 0.85rem; background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); font-size: 0.8rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.35rem;">
+                        <span style="font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 0.35rem;">
+                            <i data-lucide="star" style="width:13px;height:13px;"></i> Calificación Registrada
+                        </span>
+                        ${c.fecha ? `<span style="font-size: 0.72rem; color: var(--text-muted);">${new Date(c.fecha).toLocaleString('es-BO')}</span>` : ''}
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem;">
+                        ${c.calificacion_entrega ? `
+                            <div style="background: rgba(0,0,0,0.25); padding: 0.4rem 0.6rem; border-radius: 4px;">
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Entrega (Servicio Rider):</div>
+                                <div style="color: #f59e0b; font-weight: 700; font-size: 0.85rem;">
+                                    ${'★'.repeat(c.calificacion_entrega)}${'☆'.repeat(5 - c.calificacion_entrega)} (${c.calificacion_entrega}/5)
+                                </div>
+                                ${c.comentario_entrega ? `<div style="font-style: italic; color: #cbd5e1; font-size: 0.75rem; margin-top: 0.2rem;">"${escapeHtml(c.comentario_entrega)}"</div>` : ''}
+                            </div>
+                        ` : ''}
+                        ${c.calificacion_comida ? `
+                            <div style="background: rgba(0,0,0,0.25); padding: 0.4rem 0.6rem; border-radius: 4px;">
+                                <div style="color: var(--text-muted); font-size: 0.72rem;">Calidad de la Comida:</div>
+                                <div style="color: #f59e0b; font-weight: 700; font-size: 0.85rem;">
+                                    ${'★'.repeat(c.calificacion_comida)}${'☆'.repeat(5 - c.calificacion_comida)} (${c.calificacion_comida}/5)
+                                </div>
+                                ${c.comentario_comida ? `<div style="font-style: italic; color: #cbd5e1; font-size: 0.75rem; margin-top: 0.2rem;">"${escapeHtml(c.comentario_comida)}"</div>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        const itemsList = (o.detalles || []).map(d => `${d.cantidad}x ${escapeHtml(d.nombre || 'Item')}`).join(', ') || 'Productos varios';
+        let dateStr = 'Reciente';
+        if (o.created_at) {
+            try {
+                dateStr = new Date(o.created_at).toLocaleString('es-BO', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch(e) {}
+        }
+
+        const partyInfo = hist.role === 'rider'
+            ? `<span style="color:#38bdf8;">👤 Cliente: <strong>${escapeHtml(o.cliente_nombre || 'Cliente')}</strong> ${o.cliente_email ? `(${escapeHtml(o.cliente_email)})` : ''}</span>`
+            : `<span style="color:var(--accent-purple);">🛵 Repartidor: <strong>${escapeHtml(o.rider_nombre || 'Sin asignar')}</strong></span>`;
+
+        return `
+            <div class="history-order-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.6rem;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <strong style="color:#f8fafc; font-size:1rem;">Pedido #${o.id}</strong>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${dateStr}</span>
+                        </div>
+                        <div style="font-size:0.8rem; margin-top:0.25rem;">
+                            ${partyInfo}
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                        <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${o.id})" style="font-size:0.73rem; padding:0.25rem 0.6rem;">
+                            <i data-lucide="receipt" style="width:12px;height:12px;"></i> Recibo Digital
+                        </button>
+                        ${statusBadge}
+                    </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.25); border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; margin-bottom: 0.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+                    <div style="font-size: 0.83rem; color: #e2e8f0; flex: 1; min-width: 200px;">
+                        <i data-lucide="package" style="width:13px;height:13px;display:inline-block;vertical-align:middle;margin-right:4px;color:var(--text-muted);"></i>
+                        ${itemsList}
+                    </div>
+                    <div style="font-weight: 800; font-size: 0.95rem; color: var(--accent-green); white-space: nowrap;">
+                        ${Number(o.total).toFixed(2)} Bs
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem; font-size:0.78rem;">
+                    <div>${receptionBadge}</div>
+                    ${o.direccion_entrega ? `<div style="color:var(--text-muted); max-width: 340px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${escapeHtml(o.direccion_entrega)}">📍 ${escapeHtml(o.direccion_entrega)}</div>` : ''}
+                </div>
+
+                ${ratingBox}
+            </div>
+        `;
+    }).join('');
+
+    initLucide();
+};
+
+window.setupAdminUserHistoryListeners = function() {
+    document.querySelectorAll('.admin-hist-filter-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.admin-hist-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const searchVal = document.getElementById('txtAdminUserHistSearch')?.value || '';
+            renderAdminUserHistoryOrdersList(btn.dataset.filter, searchVal);
+        };
+    });
+
+    const searchInput = document.getElementById('txtAdminUserHistSearch');
+    if (searchInput) {
+        searchInput.oninput = (e) => {
+            const activeFilter = document.querySelector('.admin-hist-filter-btn.active')?.dataset.filter || 'all';
+            renderAdminUserHistoryOrdersList(activeFilter, e.target.value);
+        };
+    }
+};
+
+// -------------------------------------------------------
 // ADMIN: GESTIÓN COMPLETA DE USUARIOS (todos los estados)
 // -------------------------------------------------------
 async function renderAdminAllUsers() {
@@ -4621,14 +5244,26 @@ function getStatusBadge(status, isRider = false) {
     return '<span class="badge badge-pending">Pendiente</span>';
 }
 
-function renderCompradoresList(filter) {
+function renderCompradoresList(filter = 'all', searchQuery = '') {
     const el = document.getElementById('compradoresList');
     if (!el) return;
     const all = window._adminAllCompradores || [];
-    const filtered = filter === 'all' ? all : all.filter(u => u.ci_status === filter);
+    let filtered = filter === 'all' ? all : all.filter(u => u.ci_status === filter);
+
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(u => 
+            (u.nombre || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q) ||
+            String(u.id).includes(q) ||
+            (u.telefono || '').includes(q)
+        );
+    }
 
     if (!filtered.length) {
-        el.innerHTML = '<div style="color:var(--text-secondary);font-size:0.9rem;padding:0.5rem;">No hay clientes en este estado.</div>';
+        el.innerHTML = `<div style="color:var(--text-secondary);font-size:0.9rem;padding:0.75rem;text-align:center;">
+            No se encontraron clientes ${searchQuery ? `que coincidan con "${escapeHtml(searchQuery)}"` : 'en este estado'}.
+        </div>`;
         return;
     }
 
@@ -4663,10 +5298,13 @@ function renderCompradoresList(filter) {
                     <a class="file-view-trigger" onclick="openFileViewer('${u.ci_url || ''}', 'C.I. Anverso - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> C.I. Anverso</a>
                     ${u.ci_reverso_url ? `<a class="file-view-trigger" onclick="openFileViewer('${u.ci_reverso_url}', 'C.I. Reverso - ${escapeHtml(u.nombre)}', 'ci', ${u.id})"><i data-lucide="eye" style="width:14px;height:14px;"></i> C.I. Reverso</a>` : ''}
                 </div>
-                <div class="approval-actions">
+                <div class="approval-actions" style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                    <button class="btn btn-secondary btn-sm" onclick="openAdminUserOrderHistory(${u.id}, 'cliente', '${escapeHtml(u.nombre)}')" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; padding:0.3rem 0.6rem; border:1px solid rgba(56,189,248,0.3); color:#38bdf8;" title="Ver historial de pedidos y calificaciones">
+                        <i data-lucide="history" style="width:13px;height:13px;"></i> Ver Historial
+                    </button>
                     ${canReject ? `<button class="btn btn-danger btn-sm" onclick="adminUpdateUser(${u.id},'cliente','rejected')">Rechazar</button>` : ''}
                     ${canEnable ? `<button class="btn btn-success btn-sm" onclick="adminUpdateUser(${u.id},'cliente','verified')">Habilitar</button>` : ''}
-                    ${!canReject && !canEnable ? '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin cambios posibles</span>' : ''}
+                    ${!canReject && !canEnable ? '<span style="color:var(--text-secondary);font-size:0.8rem;">Sin cambios</span>' : ''}
                 </div>
             </div>
         </div>`;
@@ -4674,14 +5312,26 @@ function renderCompradoresList(filter) {
     initLucide();
 }
 
-function renderRidersList(filter) {
+function renderRidersList(filter = 'all', searchQuery = '') {
     const el = document.getElementById('ridersList');
     if (!el) return;
     const all = window._adminAllRiders || [];
-    const filtered = filter === 'all' ? all : all.filter(r => r.estado_aprobacion === filter);
+    let filtered = filter === 'all' ? all : all.filter(r => r.estado_aprobacion === filter);
+
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(r => 
+            (r.nombre || '').toLowerCase().includes(q) ||
+            (r.email || '').toLowerCase().includes(q) ||
+            String(r.rider_id).includes(q) ||
+            (r.telefono || '').includes(q)
+        );
+    }
 
     if (!filtered.length) {
-        el.innerHTML = '<div style="color:var(--text-secondary);font-size:0.9rem;padding:0.5rem;">No hay riders en este estado.</div>';
+        el.innerHTML = `<div style="color:var(--text-secondary);font-size:0.9rem;padding:0.75rem;text-align:center;">
+            No se encontraron riders ${searchQuery ? `que coincidan con "${escapeHtml(searchQuery)}"` : 'en este estado'}.
+        </div>`;
         return;
     }
 
@@ -4718,12 +5368,15 @@ function renderRidersList(filter) {
                 </div>
                 ${r.ci_url ? `<div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
                     <a class="file-view-trigger" onclick="openFileViewer('${r.ci_url}','C.I. Anverso - ${escapeHtml(r.nombre)}','ci',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> C.I. Anverso</a>
-                    ${r.ci_reverso_url ? `<a class="file-view-trigger" onclick="openFileViewer('${r.ci_reverso_url}','C.I. Reverso - ${escapeHtml(r.nombre)}','ci',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> C.I. Reverso</a>` : ''}
+                    ${r.ci_reverso_url ? `<a class="file-view-trigger" onclick="openFileViewer('${r.ci_reverso_url}', 'C.I. Reverso - ${escapeHtml(r.nombre)}','ci',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> C.I. Reverso</a>` : ''}
                 </div>` : ''}
                 <a class="file-view-trigger" onclick="openFileViewer('${r.seguro_url}','Seguro SOAT - ${escapeHtml(r.nombre)}','seguro',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Seguro SOAT</a>
                 <a class="file-view-trigger" onclick="openFileViewer('${r.cv_url}','Currículum Vitae - ${escapeHtml(r.nombre)}','cv',${r.rider_id})"><i data-lucide="file-text" style="width:14px;height:14px;"></i> Curriculum Vitae</a>
             </div>
-            <div class="approval-actions" style="justify-content:flex-end; margin-top:0.5rem;">
+            <div class="approval-actions" style="justify-content:flex-end; margin-top:0.5rem; display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm" onclick="openAdminUserOrderHistory(${r.rider_id}, 'rider', '${escapeHtml(r.nombre)}')" style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; padding:0.3rem 0.6rem; border:1px solid rgba(139,92,246,0.3); color:var(--accent-purple);" title="Ver historial de entregas y calificaciones">
+                    <i data-lucide="history" style="width:13px;height:13px;"></i> Ver Historial
+                </button>
                 ${canReject ? `<button class="btn btn-danger btn-sm" onclick="adminUpdateUser(${r.rider_id},'rider','rechazado')">Rechazar</button>` : ''}
                 ${canApprove ? `<button class="btn btn-success btn-sm" onclick="adminUpdateUser(${r.rider_id},'rider','aprobado')">Habilitar Rider</button>` : ''}
             </div>
@@ -4737,13 +5390,24 @@ function setupUsersFilterButtons() {
         btn.addEventListener('click', () => {
             const target = btn.dataset.target;
             const filter = btn.dataset.filter;
-            // Update active class for this target's buttons
             document.querySelectorAll(`.users-filter-btn[data-target="${target}"]`).forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if (target === 'compradores') renderCompradoresList(filter);
-            else if (target === 'riders') renderRidersList(filter);
+            const searchVal = document.getElementById('txtAdminUserSearch')?.value || '';
+            if (target === 'compradores') renderCompradoresList(filter, searchVal);
+            else if (target === 'riders') renderRidersList(filter, searchVal);
         });
     });
+
+    const userSearchInput = document.getElementById('txtAdminUserSearch');
+    if (userSearchInput) {
+        userSearchInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            const compFilter = document.querySelector('.users-filter-btn[data-target="compradores"].active')?.dataset.filter || 'all';
+            const riderFilter = document.querySelector('.users-filter-btn[data-target="riders"].active')?.dataset.filter || 'all';
+            renderCompradoresList(compFilter, val);
+            renderRidersList(riderFilter, val);
+        });
+    }
 }
 
 window.adminUpdateUser = async function(targetId, tipo, estado) {

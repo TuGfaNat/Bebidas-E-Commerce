@@ -65,6 +65,11 @@
                     <i data-lucide="shopping-cart" style="width: 14px; height: 14px;"></i>
                     <span>Mi Carrito (<span id="headerCartCount">0</span>)</span>
                 </button>
+                <!-- Botón Mis Pedidos para el Cliente -->
+                <button class="btn btn-secondary btn-sm" id="btnHeaderOrders" style="display: none; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; font-weight: 600; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);" onclick="openClientOrdersHistoryModal()" title="Mis Pedidos y Calificaciones">
+                    <i data-lucide="history" style="width: 14px; height: 14px; color: #38bdf8;"></i>
+                    <span>Mis Pedidos</span>
+                </button>
                 <button class="btn btn-secondary btn-sm" id="btnHeaderProfile" style="padding: 0.25rem 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer; border-radius: 9999px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12);" title="Ver Mi Perfil">
                     <img id="headerUserAvatarImg" src="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none;" />
                     <i id="headerUserDefaultIcon" data-lucide="user" style="width: 14px; height: 14px; color: #f97316;"></i>
@@ -106,6 +111,11 @@
                         <button class="btn btn-primary btn-sm" id="btnSidebarCart" style="width: 100%; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; background: var(--accent-purple); border: none; padding: 0.55rem;">
                             <i data-lucide="shopping-bag" style="width: 15px; height: 15px;"></i>
                             <span>Ver Mi Carrito (<span id="sidebarCartCount">0</span>)</span>
+                        </button>
+                        <!-- Botón de Historial de Pedidos -->
+                        <button class="btn btn-secondary btn-sm" id="btnSidebarOrdersHistory" onclick="openClientOrdersHistoryModal()" style="width: 100%; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; padding: 0.55rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #f8fafc;" title="Ver todos mis pedidos y calificaciones">
+                            <i data-lucide="history" style="width: 15px; height: 15px; color: #38bdf8;"></i>
+                            <span>Mis Pedidos e Historial</span>
                         </button>
                     </div>
 
@@ -287,6 +297,11 @@
                                 <button class="btn btn-secondary btn-sm rider-filter-btn" data-filter="rechazado">❌ Rechazados / Cancelados</button>
                             </div>
                         </div>
+                        <!-- Buscador en tiempo real del historial del Rider -->
+                        <div style="position: relative; margin-bottom: 0.85rem;">
+                            <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-muted);"></i>
+                            <input type="text" id="txtRiderHistorySearch" class="form-control" placeholder="Buscar en mi historial por cliente, pedido # o productos..." style="padding-left: 2.2rem; font-size: 0.82rem;">
+                        </div>
                         <div id="riderHistoryList" style="display: flex; flex-direction: column; gap: 0.75rem;">
                             <!-- Populated dynamically via JS -->
                         </div>
@@ -329,7 +344,20 @@
 
             <!-- TAB: Gestión de Usuarios -->
             <div class="admin-subpanel" id="subpanelUsers">
-                <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Buscador Unificado de Clientes y Riders para Consultar Historial -->
+                    <div class="glass-card" style="padding: 1rem 1.25rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 280px; position: relative;">
+                                <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+                                <input type="text" id="txtAdminUserSearch" class="form-control" placeholder="Buscar cliente o rider por nombre, email o ID para ver su historial..." style="padding-left: 2.3rem;">
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);"><i data-lucide="info" style="width:13px;height:13px;vertical-align:middle;color:#38bdf8;"></i> Toca <strong>"Ver Historial"</strong> en cualquier usuario para consultar sus pedidos, confirmación de recepción y calificaciones.</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Compradores Section -->
                     <div class="glass-card">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
@@ -1061,6 +1089,92 @@
                 <button type="button" class="btn btn-primary btn-submit-rating" id="btnSubmitOrderRating">
                     <i data-lucide="send"></i> Confirmar y Enviar Calificación
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: HISTORIAL DE PEDIDOS DEL CLIENTE -->
+    <div class="file-view-modal" id="clientOrdersHistoryModal">
+        <div class="glass-card" style="width: 100%; max-width: 780px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
+            <div style="padding: 1.1rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.7);">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: center; color: #38bdf8;">
+                        <i data-lucide="history"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #f8fafc;">Mis Pedidos y Calificaciones</h3>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Historial de compras, confirmación de recepción y reseñas</span>
+                    </div>
+                </div>
+                <button class="close-drawer" id="btnCloseClientOrdersHistory" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.2rem 0.5rem;" title="Cerrar">&times;</button>
+            </div>
+
+            <!-- Filtros rápidos y buscador -->
+            <div style="padding: 0.75rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: rgba(15, 23, 42, 0.4);">
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="clientOrdersHistoryFilters">
+                    <button class="btn btn-secondary btn-sm client-hist-filter-btn active" data-filter="all">Todos</button>
+                    <button class="btn btn-secondary btn-sm client-hist-filter-btn" data-filter="entregado">✅ Entregados</button>
+                    <button class="btn btn-secondary btn-sm client-hist-filter-btn" data-filter="en_camino">🚀 En Tránsito</button>
+                    <button class="btn btn-secondary btn-sm client-hist-filter-btn" data-filter="pendiente">⏳ Pendientes</button>
+                </div>
+                <div style="position: relative; flex: 1; max-width: 250px;">
+                    <input type="text" id="txtClientOrdersSearch" class="form-control" placeholder="Buscar por producto o #..." style="font-size: 0.78rem; padding: 0.35rem 0.65rem;">
+                </div>
+            </div>
+
+            <div id="clientOrdersHistoryContainer" style="padding: 1.25rem 1.4rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                <!-- Poblado dinámicamente -->
+            </div>
+            
+            <div style="padding: 0.8rem 1.4rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; background: rgba(30, 41, 59, 0.4);">
+                <button class="btn btn-secondary btn-sm" id="btnCloseClientOrdersHistoryBtn" style="padding: 0.4rem 1.2rem;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: HISTORIAL DE PEDIDOS POR USUARIO (ADMIN) -->
+    <div class="file-view-modal" id="adminUserHistoryModal">
+        <div class="glass-card" style="width: 100%; max-width: 860px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.6); overflow: hidden; display: flex; flex-direction: column; max-height: 92vh;">
+            <div style="padding: 1.1rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.7);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div id="adminUserHistAvatarCircle" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(139, 92, 246, 0.2); border: 1.5px solid var(--accent-purple); display: flex; align-items: center; justify-content: center; color: var(--accent-purple); font-weight: 700; font-size: 1.1rem;">
+                        👤
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #f8fafc;" id="adminUserHistName">Usuario</h3>
+                            <span class="badge" id="adminUserHistRoleBadge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Cliente</span>
+                        </div>
+                        <span style="font-size: 0.78rem; color: var(--text-muted);" id="adminUserHistEmail">email@example.com</span>
+                    </div>
+                </div>
+                <button class="close-drawer" id="btnCloseAdminUserHistory" style="background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.2rem 0.5rem;" title="Cerrar">&times;</button>
+            </div>
+
+            <!-- Resumen de Métricas del Usuario -->
+            <div id="adminUserHistStatsBar" style="padding: 0.85rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(255, 255, 255, 0.02); display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                <!-- Dinámico -->
+            </div>
+
+            <!-- Filtros rápidos de estado y buscador -->
+            <div style="padding: 0.65rem 1.4rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; background: rgba(15, 23, 42, 0.4);">
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="adminUserHistFilters">
+                    <button class="btn btn-secondary btn-sm admin-hist-filter-btn active" data-filter="all">Todos</button>
+                    <button class="btn btn-secondary btn-sm admin-hist-filter-btn" data-filter="entregado">✅ Entregados</button>
+                    <button class="btn btn-secondary btn-sm admin-hist-filter-btn" data-filter="en_camino">🚀 En Curso</button>
+                    <button class="btn btn-secondary btn-sm admin-hist-filter-btn" data-filter="cancelado">❌ Cancelados</button>
+                </div>
+                <div style="position: relative; flex: 1; max-width: 260px;">
+                    <input type="text" id="txtAdminUserHistSearch" class="form-control" placeholder="Buscar por pedido #, dirección..." style="font-size: 0.78rem; padding: 0.35rem 0.65rem;">
+                </div>
+            </div>
+
+            <div id="adminUserHistOrdersList" style="padding: 1.25rem 1.4rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; flex: 1;">
+                <!-- Poblado dinámicamente -->
+            </div>
+
+            <div style="padding: 0.8rem 1.4rem; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: flex-end; background: rgba(30, 41, 59, 0.4);">
+                <button class="btn btn-secondary btn-sm" id="btnCloseAdminUserHistoryBtn" style="padding: 0.4rem 1.2rem;">Cerrar Historial</button>
             </div>
         </div>
     </div>

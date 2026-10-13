@@ -230,7 +230,7 @@ try {
         // 4. Consultar historial de pedidos entregados/atendidos por el rider
         $stmtHist = $db->prepare("
             SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
-                   p.created_at, p.updated_at,
+                   p.created_at, p.updated_at, p.recepcion_confirmada, p.fecha_recepcion_cliente,
                    u.nombre AS cliente_nombre, u.email AS cliente_email,
                    cp.calificacion_entrega, cp.comentario_entrega, cp.calificacion_comida
             FROM pedidos p
@@ -260,6 +260,8 @@ try {
                 'total' => floatval($h['total']),
                 'estado_pago' => $h['estado_pago'],
                 'estado_pedido' => $h['estado_pedido'],
+                'recepcion_confirmada' => (int)($h['recepcion_confirmada'] ?? 0) === 1,
+                'fecha_recepcion_cliente' => $h['fecha_recepcion_cliente'] ?? null,
                 'fecha_creacion' => $h['created_at'],
                 'fecha_actualizacion' => $h['updated_at'],
                 'calificacion_entrega' => isset($h['calificacion_entrega']) && $h['calificacion_entrega'] !== null ? (int)$h['calificacion_entrega'] : null,

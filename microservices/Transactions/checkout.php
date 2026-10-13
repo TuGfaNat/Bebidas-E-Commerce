@@ -221,20 +221,52 @@ try {
             exit;
         }
 
+        $whereClause = "p.cliente_id = ?";
+        $params = [$userId];
+        $targetUser = null;
+
+        if (in_array($userRole, ['super_usuario', 'admin'], true)) {
+            $targetClienteId = isset($_GET['cliente_id']) ? (int)$_GET['cliente_id'] : null;
+            $targetRiderId = isset($_GET['rider_id']) ? (int)$_GET['rider_id'] : null;
+            $searchParam = isset($_GET['search']) ? trim($_GET['search']) : null;
+
+            if ($targetClienteId) {
+                $whereClause = "p.cliente_id = ?";
+                $params = [$targetClienteId];
+                $stmtU = $db->prepare("SELECT id, nombre, email, telefono, role, direccion FROM users WHERE id = ?");
+                $stmtU->execute([$targetClienteId]);
+                $targetUser = $stmtU->fetch(PDO::FETCH_ASSOC) ?: null;
+            } elseif ($targetRiderId) {
+                $whereClause = "p.rider_id = ?";
+                $params = [$targetRiderId];
+                $stmtU = $db->prepare("SELECT id, nombre, email, telefono, role, direccion FROM users WHERE id = ?");
+                $stmtU->execute([$targetRiderId]);
+                $targetUser = $stmtU->fetch(PDO::FETCH_ASSOC) ?: null;
+            } elseif ($searchParam !== null && $searchParam !== '') {
+                $whereClause = "(u.nombre LIKE ? OR u.email LIKE ? OR r.nombre LIKE ? OR p.id = ?)";
+                $params = ["%$searchParam%", "%$searchParam%", "%$searchParam%", (int)$searchParam];
+            } elseif (!empty($_GET['all_orders'])) {
+                $whereClause = "1=1";
+                $params = [];
+            }
+        }
+
         $stmt = $db->prepare("
             SELECT p.id, p.cliente_id, p.rider_id, p.estado_pago, p.estado_pedido,
                    p.total, p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto,
                    p.qr_comprobante_url, p.recepcion_confirmada, p.fecha_recepcion_cliente, p.created_at, p.updated_at,
+                   u.nombre as cliente_nombre, u.email as cliente_email,
                    r.nombre as rider_nombre,
                    cp.id as calificacion_id, cp.calificacion_entrega, cp.comentario_entrega,
                    cp.calificacion_comida, cp.comentario_comida, cp.created_at as calificacion_fecha
             FROM pedidos p
+            LEFT JOIN users u ON p.cliente_id = u.id
             LEFT JOIN users r ON p.rider_id = r.id
             LEFT JOIN calificaciones_pedidos cp ON p.id = cp.pedido_id
-            WHERE p.cliente_id = ?
+            WHERE $whereClause
             ORDER BY p.id DESC
         ");
-        $stmt->execute([$userId]);
+        $stmt->execute($params);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $pedidoActivo = null;
@@ -266,6 +298,8 @@ try {
                 'id' => (int)$ord['id'],
                 'pedido_id' => (int)$ord['id'],
                 'cliente_id' => (int)$ord['cliente_id'],
+                'cliente_nombre' => $ord['cliente_nombre'] ?: 'Cliente',
+                'cliente_email' => $ord['cliente_email'] ?: '',
                 'rider_id' => $ord['rider_id'] ? (int)$ord['rider_id'] : null,
                 'rider_nombre' => $ord['rider_nombre'] ?: 'Rider Burger 24/7',
                 'estado_pago' => $ord['estado_pago'],
@@ -297,6 +331,7 @@ try {
         }
 
         echo formatResponse("success", [
+            "target_user" => $targetUser,
             "pedido_activo" => $pedidoActivo,
             "pedidos" => $formattedOrders,
             "total" => count($formattedOrders)

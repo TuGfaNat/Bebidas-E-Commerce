@@ -231,9 +231,11 @@ try {
         $stmtHist = $db->prepare("
             SELECT p.id, p.cliente_id, p.total, p.estado_pago, p.estado_pedido, 
                    p.created_at, p.updated_at,
-                   u.nombre AS cliente_nombre, u.email AS cliente_email
+                   u.nombre AS cliente_nombre, u.email AS cliente_email,
+                   cp.calificacion_entrega, cp.comentario_entrega, cp.calificacion_comida
             FROM pedidos p
             LEFT JOIN users u ON p.cliente_id = u.id
+            LEFT JOIN calificaciones_pedidos cp ON p.id = cp.pedido_id
             WHERE p.rider_id = ?
             ORDER BY p.id DESC
         ");
@@ -260,6 +262,9 @@ try {
                 'estado_pedido' => $h['estado_pedido'],
                 'fecha_creacion' => $h['created_at'],
                 'fecha_actualizacion' => $h['updated_at'],
+                'calificacion_entrega' => isset($h['calificacion_entrega']) && $h['calificacion_entrega'] !== null ? (int)$h['calificacion_entrega'] : null,
+                'comentario_entrega' => $h['comentario_entrega'] ?? null,
+                'calificacion_comida' => isset($h['calificacion_comida']) && $h['calificacion_comida'] !== null ? (int)$h['calificacion_comida'] : null,
                 'items' => array_map(function($d) {
                     return [
                         'producto_id' => (int)$d['producto_id'],

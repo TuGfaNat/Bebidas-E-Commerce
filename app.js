@@ -1246,6 +1246,30 @@ function setupEventListeners() {
         });
     }
 
+    // Modal Calificación de Entrega y Comida Listeners
+    const btnRateClose = document.getElementById('btnCloseRatingModal');
+    if (btnRateClose) {
+        btnRateClose.addEventListener('click', () => {
+            if (window.closeOrderRatingModal) window.closeOrderRatingModal();
+        });
+    }
+
+    const rateModal = document.getElementById('orderRatingModal');
+    if (rateModal) {
+        rateModal.addEventListener('click', (e) => {
+            if (e.target === rateModal && window.closeOrderRatingModal) window.closeOrderRatingModal();
+        });
+    }
+
+    const btnRateSubmit = document.getElementById('btnSubmitOrderRating');
+    if (btnRateSubmit) {
+        btnRateSubmit.addEventListener('click', () => {
+            if (window.submitOrderRating) window.submitOrderRating();
+        });
+    }
+
+    initStarPickers();
+
     // Modal Apelación de Rechazo Listeners
     const btnAppClose = document.getElementById('btnAppealModalClose');
     if (btnAppClose) {
@@ -2538,6 +2562,7 @@ async function renderClienteActiveOrderTracker() {
     }
 
     if (box) box.style.display = 'block';
+    window._clientActiveOrder = activeOrder;
 
     const states = ['pendiente', 'asignado', 'en_camino', 'entregado'];
     const activeIdx = states.indexOf(activeOrder.estado_pedido);
@@ -2589,8 +2614,60 @@ async function renderClienteActiveOrderTracker() {
 
     const receiptBtn = ` <button class="btn btn-secondary btn-sm" onclick="openReceiptModal(${activeOrder.id})" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; margin-left: 0.4rem; vertical-align: middle;"><i data-lucide="receipt" style="width:12px;height:12px;"></i> Recibo Digital</button>`;
 
+    const rateBtn = ['en_camino', 'entregado'].includes(activeOrder.estado_pedido)
+        ? ` <button class="btn btn-warning btn-sm" onclick="openOrderRatingModal(${activeOrder.id})" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; margin-left: 0.4rem; vertical-align: middle; background: #f59e0b; color: #0f172a; font-weight: 700; border: none; border-radius: var(--radius-sm);"><i data-lucide="star" style="width:12px;height:12px;vertical-align:middle;"></i> ${activeOrder.calificacion ? 'Mi Calificación' : 'Calificar'}</button>`
+        : '';
+
     const totalEl = document.getElementById('clientActiveOrderTotal');
-    if (totalEl) totalEl.innerHTML = `<strong>Total a pagar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs ${receiptBtn} ${cancelBtn}`;
+    if (totalEl) totalEl.innerHTML = `<strong>Total a pagar:</strong> ${Number(activeOrder.total).toFixed(2)} Bs ${receiptBtn} ${rateBtn} ${cancelBtn}`;
+
+    // Renderizar Card de Validación de Recepción y Calificación
+    const feedbackBox = document.getElementById('clientOrderFeedbackCard');
+    if (feedbackBox) {
+        if (activeOrder.estado_pedido === 'en_camino' || activeOrder.estado_pedido === 'entregado') {
+            feedbackBox.style.display = 'block';
+            if (activeOrder.calificacion) {
+                const c = activeOrder.calificacion;
+                const starStr = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+                feedbackBox.innerHTML = `
+                    <div class="order-rated-badge-card">
+                        <div class="rated-header">
+                            <i data-lucide="check-circle-2" style="width: 17px; height: 17px; color: #10b981;"></i>
+                            <strong>¡Pedido Recibido y Calificado! Muchas gracias</strong>
+                        </div>
+                        <div class="rated-stars-summary">
+                            <span>🛵 <strong>Entrega / Rider:</strong> <span style="color:#f59e0b; letter-spacing:1px;">${starStr(c.calificacion_entrega)}</span> (${c.calificacion_entrega}/5)</span>
+                            <span>🍔 <strong>Comida / Sabor:</strong> <span style="color:#f59e0b; letter-spacing:1px;">${starStr(c.calificacion_comida)}</span> (${c.calificacion_comida}/5)</span>
+                        </div>
+                        ${c.comentario_comida ? `<p class="rated-quote">“${escapeHtml(c.comentario_comida)}”</p>` : ''}
+                        <button class="btn btn-outline btn-sm" onclick="openOrderRatingModal(${activeOrder.id})" style="margin-top: 0.5rem; font-size: 0.73rem; padding: 0.25rem 0.6rem; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.18); border-radius: var(--radius-sm); cursor: pointer; background: rgba(255,255,255,0.03);">
+                            <i data-lucide="edit-3" style="width:12px;height:12px;vertical-align:middle;"></i> Ver o Editar Calificación
+                        </button>
+                    </div>
+                `;
+            } else {
+                const isEntregado = activeOrder.estado_pedido === 'entregado';
+                feedbackBox.innerHTML = `
+                    <div class="order-reception-action-card">
+                        <div class="action-card-text">
+                            <div class="action-icon">
+                                <i data-lucide="${isEntregado ? 'package-check' : 'bell-ring'}"></i>
+                            </div>
+                            <div>
+                                <strong>${isEntregado ? '¡Tu comida ha sido entregada!' : '¿Ya llegó tu repartidor a tu puerta?'}</strong>
+                                <p>Confirma que recibiste tu pedido y califica la entrega y la comida con estrellitas.</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-rate-action" onclick="openOrderRatingModal(${activeOrder.id})">
+                            <i data-lucide="star" style="width:14px;height:14px;"></i> Confirmar y Calificar
+                        </button>
+                    </div>
+                `;
+            }
+        } else {
+            feedbackBox.style.display = 'none';
+        }
+    }
     initLucide();
 
     const latCliente = activeOrder.latitud || -16.5090;
@@ -3443,6 +3520,13 @@ function renderFilteredRiderHistory(filter = 'all') {
                </div>`
             : '';
 
+        const ratingHtml = o.calificacion_entrega
+            ? `<div style="margin-top: 0.5rem; padding: 0.45rem 0.75rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-sm); font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <span>⭐ <strong>Calificación del Cliente:</strong> <span style="color:#f59e0b; font-weight:700;">${'★'.repeat(o.calificacion_entrega)}${'☆'.repeat(5 - o.calificacion_entrega)}</span> (${o.calificacion_entrega}/5)</span>
+                ${o.comentario_entrega ? `<span style="color:var(--text-secondary); font-style:italic;">“${escapeHtml(o.comentario_entrega)}”</span>` : ''}
+               </div>`
+            : '';
+
         return `
             <div class="order-card" style="border-left: 3px solid ${o.estado_pedido === 'entregado' ? '#10b981' : (o.estado_pedido === 'rechazado' || o.estado_pedido === 'cancelado' ? '#ef4444' : '#f97316')};">
                 <div class="order-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
@@ -3471,6 +3555,7 @@ function renderFilteredRiderHistory(filter = 'all') {
                     </div>
                 </div>
                 ${motivoHtml}
+                ${ratingHtml}
             </div>
         `;
     }).join('');
@@ -4277,6 +4362,207 @@ window.openReceiptModal = async function(orderId) {
 window.closeReceiptModal = function() {
     const modal = document.getElementById('orderReceiptModal');
     if (modal) modal.classList.remove('active');
+};
+
+// ----------------------------------------------------
+// CALIFICACIÓN DE ENTREGA, RIDER Y COMIDA (FRONTEND)
+// ----------------------------------------------------
+const DELIVERY_STAR_LABELS = {
+    1: 'Mala entrega o paquete dañado ⚠️',
+    2: 'Entrega regular o con retraso ⏳',
+    3: 'Entrega aceptable 👍',
+    4: 'Muy buena entrega y puntual 🛵',
+    5: '¡Excelente entrega y trato! 🚀'
+};
+
+const FOOD_STAR_LABELS = {
+    1: 'No me gustó la comida ❌',
+    2: 'Comida regular o fría 😕',
+    3: 'Comida buena y aceptable 🍔',
+    4: '¡Muy rica y sabrosa! 😋',
+    5: '¡Exquisita, hamburguesa insuperable! 🍔🔥'
+};
+
+function setStarPickerValue(type, value) {
+    const val = Math.max(1, Math.min(5, parseInt(value, 10) || 5));
+    const container = document.getElementById(type === 'delivery' ? 'starPickerDelivery' : 'starPickerFood');
+    const input = document.getElementById(type === 'delivery' ? 'valRatingDelivery' : 'valRatingFood');
+    const label = document.getElementById(type === 'delivery' ? 'lblDeliveryStarFeedback' : 'lblFoodStarFeedback');
+    const labelsMap = type === 'delivery' ? DELIVERY_STAR_LABELS : FOOD_STAR_LABELS;
+
+    if (input) input.value = val;
+    if (label) label.innerText = labelsMap[val] || `${val} estrellas`;
+
+    if (container) {
+        container.querySelectorAll('.star-btn').forEach(btn => {
+            const btnVal = parseInt(btn.dataset.value, 10);
+            if (btnVal <= val) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    }
+}
+
+function initStarPickers() {
+    ['delivery', 'food'].forEach(type => {
+        const container = document.getElementById(type === 'delivery' ? 'starPickerDelivery' : 'starPickerFood');
+        const labelsMap = type === 'delivery' ? DELIVERY_STAR_LABELS : FOOD_STAR_LABELS;
+        const label = document.getElementById(type === 'delivery' ? 'lblDeliveryStarFeedback' : 'lblFoodStarFeedback');
+        const input = document.getElementById(type === 'delivery' ? 'valRatingDelivery' : 'valRatingFood');
+
+        if (!container) return;
+
+        container.querySelectorAll('.star-btn').forEach(btn => {
+            const btnVal = parseInt(btn.dataset.value, 10);
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                setStarPickerValue(type, btnVal);
+            });
+
+            btn.addEventListener('mouseenter', () => {
+                container.querySelectorAll('.star-btn').forEach(b => {
+                    const bVal = parseInt(b.dataset.value, 10);
+                    if (bVal <= btnVal) {
+                        b.classList.add('hovered');
+                    } else {
+                        b.classList.remove('hovered');
+                    }
+                });
+                if (label) label.innerText = labelsMap[btnVal] || `${btnVal} estrellas`;
+            });
+        });
+
+        container.addEventListener('mouseleave', () => {
+            container.querySelectorAll('.star-btn').forEach(b => b.classList.remove('hovered'));
+            const currentVal = parseInt(input ? input.value : 5, 10) || 5;
+            setStarPickerValue(type, currentVal);
+        });
+    });
+}
+
+window.openOrderRatingModal = async function(orderId) {
+    const modal = document.getElementById('orderRatingModal');
+    if (!modal) return;
+
+    const orderIdInput = document.getElementById('ratingOrderId');
+    const orderTitle = document.getElementById('ratingOrderTitle');
+    const orderSubtitle = document.getElementById('ratingOrderSubtitle');
+    const chkReceived = document.getElementById('chkRatingConfirmReceived');
+    const txtDeliv = document.getElementById('txtDeliveryComment');
+    const txtFood = document.getElementById('txtFoodComment');
+
+    if (orderIdInput) orderIdInput.value = orderId;
+    if (orderTitle) orderTitle.innerText = `Pedido #${orderId}`;
+
+    // Valores por defecto: 5 estrellas, comentarios limpios, confirmación marcada
+    setStarPickerValue('delivery', 5);
+    setStarPickerValue('food', 5);
+    if (txtDeliv) txtDeliv.value = '';
+    if (txtFood) txtFood.value = '';
+    if (chkReceived) chkReceived.checked = true;
+
+    let active = window._clientActiveOrder;
+    if (active && String(active.id) === String(orderId)) {
+        if (orderSubtitle) {
+            const rName = active.rider_nombre ? `Repartidor: ${cleanText(active.rider_nombre)}` : 'Tu repartidor asignado';
+            orderSubtitle.innerText = `${rName} · Confirma la entrega y cuéntanos tu experiencia`;
+        }
+        if (active.calificacion) {
+            const c = active.calificacion;
+            setStarPickerValue('delivery', c.calificacion_entrega || 5);
+            setStarPickerValue('food', c.calificacion_comida || 5);
+            if (txtDeliv) txtDeliv.value = c.comentario_entrega || '';
+            if (txtFood) txtFood.value = c.comentario_comida || '';
+        }
+    } else {
+        try {
+            const res = await apiGet('/Transactions/rating.php', { order_id: orderId });
+            if (res.ok && res.data && res.data.calificacion) {
+                const c = res.data.calificacion;
+                setStarPickerValue('delivery', c.calificacion_entrega || 5);
+                setStarPickerValue('food', c.calificacion_comida || 5);
+                if (txtDeliv) txtDeliv.value = c.comentario_entrega || '';
+                if (txtFood) txtFood.value = c.comentario_comida || '';
+            }
+        } catch (e) {
+            console.warn('No se pudo precargar calificación previa:', e);
+        }
+    }
+
+    modal.classList.add('active');
+    initLucide();
+};
+
+window.closeOrderRatingModal = function() {
+    const modal = document.getElementById('orderRatingModal');
+    if (modal) modal.classList.remove('active');
+};
+
+window.submitOrderRating = async function() {
+    const orderIdInput = document.getElementById('ratingOrderId');
+    const chkReceived = document.getElementById('chkRatingConfirmReceived');
+    const inputDeliv = document.getElementById('valRatingDelivery');
+    const inputFood = document.getElementById('valRatingFood');
+    const txtDeliv = document.getElementById('txtDeliveryComment');
+    const txtFood = document.getElementById('txtFoodComment');
+    const btnSubmit = document.getElementById('btnSubmitOrderRating');
+
+    const orderId = orderIdInput ? parseInt(orderIdInput.value, 10) : null;
+    if (!orderId) {
+        showToast('ID de pedido inválido para calificar.', 'danger');
+        return;
+    }
+
+    if (chkReceived && !chkReceived.checked) {
+        showToast('Por favor confirma que ya recibiste tu comida marcando la casilla correspondiente.', 'warning');
+        chkReceived.focus();
+        return;
+    }
+
+    const califEntrega = parseInt(inputDeliv ? inputDeliv.value : 5, 10) || 5;
+    const califComida = parseInt(inputFood ? inputFood.value : 5, 10) || 5;
+    const commentEntrega = txtDeliv ? txtDeliv.value.trim() : '';
+    const commentComida = txtFood ? txtFood.value.trim() : '';
+
+    const payload = {
+        order_id: orderId,
+        calificacion_entrega: califEntrega,
+        comentario_entrega: commentEntrega,
+        calificacion_comida: califComida,
+        comentario_comida: commentComida,
+        confirmar_recepcion: chkReceived && chkReceived.checked ? 1 : 0
+    };
+
+    const originalBtnText = btnSubmit ? btnSubmit.innerHTML : 'Confirmar y Enviar Calificación';
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spin">⏳</span> Guardando calificación...';
+    }
+
+    try {
+        const res = await apiPost('/Transactions/rating.php', payload);
+        if (res.ok) {
+            showToast('⭐ ¡Muchas gracias! Tu calificación y recepción fueron registradas con éxito.', 'success');
+            window.closeOrderRatingModal();
+            if (typeof renderClienteActiveOrderTracker === 'function') {
+                await renderClienteActiveOrderTracker();
+            }
+        } else {
+            showToast(res.error || 'No se pudo guardar la calificación en el servidor.', 'danger');
+        }
+    } catch (err) {
+        console.error('Error al calificar pedido:', err);
+        showToast('Error de conexión al enviar la calificación: ' + (err.message || ''), 'danger');
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalBtnText;
+            initLucide();
+        }
+    }
 };
 
 // -------------------------------------------------------

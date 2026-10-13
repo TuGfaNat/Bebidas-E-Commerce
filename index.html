@@ -177,6 +177,9 @@
                                 <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; text-align: right;" id="clientActiveOrderEta"></p>
                             </div>
                         </div>
+
+                        <!-- Banner / Card de Validación de Recepción y Calificación -->
+                        <div id="clientOrderFeedbackCard" style="display: none;"></div>
                     </div>
 
                     <!-- Search and filters -->
@@ -959,6 +962,105 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CALIFICACIÓN DE ENTREGA Y COMIDA -->
+    <div class="modal" id="orderRatingModal">
+        <div class="modal-content modal-rating-content">
+            <div class="modal-header">
+                <h3><i data-lucide="star" style="color: #f59e0b;"></i> Calificar Entrega y Comida</h3>
+                <button class="btn-modal-close" id="btnCloseRatingModal" title="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body rating-modal-body">
+                <input type="hidden" id="ratingOrderId" value="">
+
+                <!-- Cabecera de Confirmación de Recepción -->
+                <div class="rating-reception-badge-box">
+                    <div class="reception-icon-circle">
+                        <i data-lucide="package-check"></i>
+                    </div>
+                    <div>
+                        <h4 id="ratingOrderTitle">Pedido #00</h4>
+                        <p id="ratingOrderSubtitle">Confirma la entrega de tu comida y cuéntanos tu experiencia</p>
+                    </div>
+                </div>
+
+                <!-- Checkbox de confirmación de recepción -->
+                <div class="reception-check-row">
+                    <label class="custom-checkbox-label">
+                        <input type="checkbox" id="chkRatingConfirmReceived" checked>
+                        <span class="reception-label-text">
+                            <strong>Confirmo que ya recibí mi comida</strong> en mi puerta y en buen estado.
+                        </span>
+                    </label>
+                </div>
+
+                <!-- SECCIÓN 1: Calificación de la Entrega y Repartidor -->
+                <div class="rating-section-card">
+                    <div class="rating-section-header">
+                        <div class="rating-section-icon delivery-icon">
+                            <i data-lucide="bike"></i>
+                        </div>
+                        <div>
+                            <h5>1. Calidad de la Entrega y Repartidor</h5>
+                            <span class="rating-hint-text">Puntualidad, trato del repartidor y cuidado del paquete</span>
+                        </div>
+                    </div>
+
+                    <div class="star-rating-container" id="deliveryStarGroup">
+                        <div class="star-picker" id="starPickerDelivery" data-target="delivery">
+                            <button type="button" class="star-btn selected" data-value="1" title="1 estrella">★</button>
+                            <button type="button" class="star-btn selected" data-value="2" title="2 estrellas">★</button>
+                            <button type="button" class="star-btn selected" data-value="3" title="3 estrellas">★</button>
+                            <button type="button" class="star-btn selected" data-value="4" title="4 estrellas">★</button>
+                            <button type="button" class="star-btn selected" data-value="5" title="5 estrellas">★</button>
+                        </div>
+                        <span class="star-feedback-lbl" id="lblDeliveryStarFeedback">¡Excelente entrega y trato! 🚀</span>
+                        <input type="hidden" id="valRatingDelivery" value="5">
+                    </div>
+
+                    <div class="rating-comment-box">
+                        <label for="txtDeliveryComment">Comentarios sobre la entrega (opcional):</label>
+                        <textarea id="txtDeliveryComment" class="form-control rating-textarea" rows="2" placeholder="Ej: ¡El repartidor fue muy amable y llegó súper rápido!"></textarea>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: Calificación de la Comida -->
+                <div class="rating-section-card">
+                    <div class="rating-section-header">
+                        <div class="rating-section-icon food-icon">
+                            <i data-lucide="utensils"></i>
+                        </div>
+                        <div>
+                            <h5>2. Calidad de la Comida y Sabor</h5>
+                            <span class="rating-hint-text">Sabor, temperatura, crocancia de papas y presentación</span>
+                        </div>
+                    </div>
+
+                    <div class="star-rating-container" id="foodStarGroup">
+                        <div class="star-picker" id="starPickerFood" data-target="food">
+                            <button type="button" class="star-btn selected" data-value="1" title="1 estrella">★</button>
+                            <button type="button" class="star-btn selected" data-value="2" title="2 estrellas">★</button>
+                            <button type="button" class="star-btn selected" data-value="3" title="3 estrellas">★</button>
+                            <button type="button" class="star-btn selected" data-value="4" title="4 estrellas">★</button>
+                            <button type="button" class="star-btn selected" data-value="5" title="5 estrellas">★</button>
+                        </div>
+                        <span class="star-feedback-lbl" id="lblFoodStarFeedback">¡Exquisita, hamburguesa insuperable! 🍔🔥</span>
+                        <input type="hidden" id="valRatingFood" value="5">
+                    </div>
+
+                    <div class="rating-comment-box">
+                        <label for="txtFoodComment">Comentarios sobre la comida (opcional):</label>
+                        <textarea id="txtFoodComment" class="form-control rating-textarea" rows="2" placeholder="Ej: ¡Carne jugosa, pan suave y papas bien crujientes!"></textarea>
+                    </div>
+                </div>
+
+                <!-- Botón de Envío -->
+                <button type="button" class="btn btn-primary btn-submit-rating" id="btnSubmitOrderRating">
+                    <i data-lucide="send"></i> Confirmar y Enviar Calificación
+                </button>
             </div>
         </div>
     </div>

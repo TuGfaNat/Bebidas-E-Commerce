@@ -89,9 +89,11 @@ try {
 
         $stmtHist = $db->prepare("
             SELECT p.id, p.cliente_id, p.estado_pedido, p.estado_pago, p.total, p.created_at, p.updated_at,
-                   u.nombre as cliente_nombre
+                   u.nombre as cliente_nombre,
+                   cp.calificacion_entrega, cp.comentario_entrega, cp.calificacion_comida
             FROM pedidos p
             LEFT JOIN users u ON p.cliente_id = u.id
+            LEFT JOIN calificaciones_pedidos cp ON p.id = cp.pedido_id
             WHERE p.rider_id = ? AND p.estado_pedido = 'entregado'
             ORDER BY p.id DESC
         ");

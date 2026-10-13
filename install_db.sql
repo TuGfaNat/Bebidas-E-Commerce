@@ -14,6 +14,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- Limpieza de tablas previas obsoletas para asegurar esquema integro y evitar error #1054
 DROP TABLE IF EXISTS auditoria_logs;
+DROP TABLE IF EXISTS calificaciones_pedidos;
 DROP TABLE IF EXISTS pedido_detalles;
 DROP TABLE IF EXISTS pedidos;
 DROP TABLE IF EXISTS documentacion_rider;
@@ -74,6 +75,8 @@ CREATE TABLE IF NOT EXISTS pedidos (
     referencia_entrega VARCHAR(255) DEFAULT NULL,
     telefono_contacto VARCHAR(50) DEFAULT NULL,
     qr_comprobante_url VARCHAR(255),
+    recepcion_confirmada TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_recepcion_cliente TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_by INT DEFAULT NULL,
@@ -114,6 +117,25 @@ CREATE TABLE IF NOT EXISTS documentacion_rider (
     created_by INT DEFAULT NULL,
     updated_by INT DEFAULT NULL,
     FOREIGN KEY (rider_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. Tabla de Calificaciones y Reseñas de Pedidos (calificaciones_pedidos)
+CREATE TABLE IF NOT EXISTS calificaciones_pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pedido_id INT NOT NULL UNIQUE,
+    cliente_id INT NOT NULL,
+    rider_id INT DEFAULT NULL,
+    calificacion_entrega INT NOT NULL,
+    comentario_entrega TEXT DEFAULT NULL,
+    calificacion_comida INT NOT NULL,
+    comentario_comida TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by INT DEFAULT NULL,
+    updated_by INT DEFAULT NULL,
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
+    FOREIGN KEY (cliente_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (rider_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

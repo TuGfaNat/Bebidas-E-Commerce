@@ -224,8 +224,13 @@ try {
         $stmt = $db->prepare("
             SELECT p.id, p.cliente_id, p.rider_id, p.estado_pago, p.estado_pedido,
                    p.total, p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto,
-                   p.qr_comprobante_url, p.created_at, p.updated_at
+                   p.qr_comprobante_url, p.recepcion_confirmada, p.fecha_recepcion_cliente, p.created_at, p.updated_at,
+                   r.nombre as rider_nombre,
+                   cp.id as calificacion_id, cp.calificacion_entrega, cp.comentario_entrega,
+                   cp.calificacion_comida, cp.comentario_comida, cp.created_at as calificacion_fecha
             FROM pedidos p
+            LEFT JOIN users r ON p.rider_id = r.id
+            LEFT JOIN calificaciones_pedidos cp ON p.id = cp.pedido_id
             WHERE p.cliente_id = ?
             ORDER BY p.id DESC
         ");
@@ -245,11 +250,24 @@ try {
             $stmtDet->execute([$ord['id']]);
             $detalles = $stmtDet->fetchAll(PDO::FETCH_ASSOC);
 
+            $calificacion = null;
+            if (!empty($ord['calificacion_id'])) {
+                $calificacion = [
+                    'id' => (int)$ord['calificacion_id'],
+                    'calificacion_entrega' => (int)$ord['calificacion_entrega'],
+                    'comentario_entrega' => $ord['comentario_entrega'],
+                    'calificacion_comida' => (int)$ord['calificacion_comida'],
+                    'comentario_comida' => $ord['comentario_comida'],
+                    'fecha' => $ord['calificacion_fecha']
+                ];
+            }
+
             $formatted = [
                 'id' => (int)$ord['id'],
                 'pedido_id' => (int)$ord['id'],
                 'cliente_id' => (int)$ord['cliente_id'],
                 'rider_id' => $ord['rider_id'] ? (int)$ord['rider_id'] : null,
+                'rider_nombre' => $ord['rider_nombre'] ?: 'Rider Burger 24/7',
                 'estado_pago' => $ord['estado_pago'],
                 'estado_pedido' => $ord['estado_pedido'],
                 'total' => floatval($ord['total']),
@@ -259,13 +277,20 @@ try {
                 'referencia_entrega' => $ord['referencia_entrega'] ?: '',
                 'telefono_contacto' => $ord['telefono_contacto'] ?: '',
                 'qr_comprobante_url' => $ord['qr_comprobante_url'],
+                'recepcion_confirmada' => (int)($ord['recepcion_confirmada'] ?? 0) === 1,
+                'fecha_recepcion_cliente' => $ord['fecha_recepcion_cliente'],
+                'calificacion' => $calificacion,
                 'created_at' => $ord['created_at'],
                 'updated_at' => $ord['updated_at'],
                 'detalles' => $detalles
             ];
 
-            if (!$pedidoActivo && !in_array($ord['estado_pedido'], ['entregado', 'cancelado'], true)) {
-                $pedidoActivo = $formatted;
+            if (!$pedidoActivo) {
+                if (!in_array($ord['estado_pedido'], ['entregado', 'cancelado'], true)) {
+                    $pedidoActivo = $formatted;
+                } elseif ($ord['estado_pedido'] === 'entregado' && !$calificacion) {
+                    $pedidoActivo = $formatted;
+                }
             }
 
             $formattedOrders[] = $formatted;

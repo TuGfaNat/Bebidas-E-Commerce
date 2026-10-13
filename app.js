@@ -2283,7 +2283,7 @@ function initCheckoutMap() {
 
             checkoutMarkerStore = L.marker([STORE_COORDS.lat, STORE_COORDS.lon], {
                 icon: createStorePinIcon()
-            }).addTo(checkoutMapInstance).bindPopup(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (La Paz)`).openPopup();
+            }).addTo(checkoutMapInstance).bindPopup(`<b>${escapeHtml(STORE_COORDS.nombre)}</b><br>${escapeHtml(STORE_COORDS.direccion)} (La Paz)`);
 
             checkoutMapInstance.on('click', async (e) => {
                 const lat = e.latlng.lat;

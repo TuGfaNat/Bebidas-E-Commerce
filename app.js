@@ -54,7 +54,8 @@ let cart = [];
 const STORE_COORDS = {
     lat: -16.5050,
     lon: -68.1290,
-    nombre: 'Burger 24/7 - Central Sopocachi',
+    nombre: 'Burger 24/7',
+    sucursal: 'Central Sopocachi',
     direccion: 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
     zona: 'Sopocachi',
     telefono: '+591 71523481'
@@ -67,7 +68,8 @@ async function syncStoreConfigFromBackend() {
             const t = res.data.tienda;
             STORE_COORDS.lat = parseFloat(t.latitud) || -16.5050;
             STORE_COORDS.lon = parseFloat(t.longitud) || -68.1290;
-            STORE_COORDS.nombre = t.nombre_tienda || 'Burger 24/7 - Central Sopocachi';
+            STORE_COORDS.nombre = t.nombre_tienda || 'Burger 24/7';
+            STORE_COORDS.sucursal = t.sucursal || 'Central Sopocachi';
             STORE_COORDS.direccion = t.direccion || 'Av. 20 de Octubre #2150, Sopocachi, La Paz';
             STORE_COORDS.zona = t.zona || 'Sopocachi';
             STORE_COORDS.telefono = t.telefono || '+591 71523481';
@@ -80,18 +82,21 @@ async function syncStoreConfigFromBackend() {
 
 function updateAdminStorePreview() {
     const pNom = document.getElementById('previewAdminStoreNombre');
+    const pSuc = document.getElementById('previewAdminStoreSucursal');
     const pDir = document.getElementById('previewAdminStoreDireccion');
     const pZon = document.getElementById('previewAdminStoreZona');
     const pTel = document.getElementById('previewAdminStoreTelefono');
     const pCoo = document.getElementById('previewAdminStoreCoords');
 
     if (pNom) pNom.innerText = STORE_COORDS.nombre;
+    if (pSuc) pSuc.innerText = STORE_COORDS.sucursal;
     if (pDir) pDir.innerText = STORE_COORDS.direccion;
     if (pZon) pZon.innerText = STORE_COORDS.zona;
     if (pTel) pTel.innerText = STORE_COORDS.telefono;
     if (pCoo) pCoo.innerText = `${STORE_COORDS.lat.toFixed(4)}, ${STORE_COORDS.lon.toFixed(4)}`;
 
     const inNom = document.getElementById('adminStoreNombre');
+    const inSuc = document.getElementById('adminStoreSucursal');
     const inDir = document.getElementById('adminStoreDireccion');
     const inZon = document.getElementById('adminStoreZona');
     const inTel = document.getElementById('adminStoreTelefono');
@@ -99,6 +104,7 @@ function updateAdminStorePreview() {
     const inLon = document.getElementById('adminStoreLon');
 
     if (inNom && !inNom.value) inNom.value = STORE_COORDS.nombre;
+    if (inSuc && !inSuc.value) inSuc.value = STORE_COORDS.sucursal;
     if (inDir && !inDir.value) inDir.value = STORE_COORDS.direccion;
     if (inZon && !inZon.value) inZon.value = STORE_COORDS.zona;
     if (inTel && !inTel.value) inTel.value = STORE_COORDS.telefono;
@@ -129,6 +135,7 @@ window.handleAdminStoreZoneChange = function(val) {
 window.renderAdminStoreConfig = async function() {
     await syncStoreConfigFromBackend();
     const inNom = document.getElementById('adminStoreNombre');
+    const inSuc = document.getElementById('adminStoreSucursal');
     const inDir = document.getElementById('adminStoreDireccion');
     const inZon = document.getElementById('adminStoreZona');
     const inTel = document.getElementById('adminStoreTelefono');
@@ -136,6 +143,7 @@ window.renderAdminStoreConfig = async function() {
     const inLon = document.getElementById('adminStoreLon');
 
     if (inNom) inNom.value = STORE_COORDS.nombre;
+    if (inSuc) inSuc.value = STORE_COORDS.sucursal;
     if (inDir) inDir.value = STORE_COORDS.direccion;
     if (inZon) inZon.value = STORE_COORDS.zona;
     if (inTel) inTel.value = STORE_COORDS.telefono;
@@ -149,6 +157,7 @@ window.handleSaveAdminStoreConfig = async function(event) {
     if (event) event.preventDefault();
 
     const nombreEl = document.getElementById('adminStoreNombre');
+    const sucursalEl = document.getElementById('adminStoreSucursal');
     const dirEl = document.getElementById('adminStoreDireccion');
     const zonaEl = document.getElementById('adminStoreZona');
     const telEl = document.getElementById('adminStoreTelefono');
@@ -156,6 +165,7 @@ window.handleSaveAdminStoreConfig = async function(event) {
     const lonEl = document.getElementById('adminStoreLon');
 
     const nombre = nombreEl ? nombreEl.value.trim() : '';
+    const sucursal = (sucursalEl && sucursalEl.value.trim()) ? sucursalEl.value.trim() : (STORE_COORDS.sucursal || 'Central Sopocachi');
     const direccion = dirEl ? dirEl.value.trim() : '';
     const zona = (zonaEl && zonaEl.value.trim()) ? zonaEl.value.trim() : (STORE_COORDS.zona || 'Sopocachi');
     const telefono = telEl ? telEl.value.trim() : '';
@@ -182,6 +192,7 @@ window.handleSaveAdminStoreConfig = async function(event) {
     try {
         const res = await apiPost('/Transactions/store_config.php', {
             nombre_tienda: nombre,
+            sucursal: sucursal,
             direccion: direccion,
             zona: zona,
             latitud: lat,
@@ -195,6 +206,7 @@ window.handleSaveAdminStoreConfig = async function(event) {
         }
 
         STORE_COORDS.nombre = nombre;
+        STORE_COORDS.sucursal = sucursal;
         STORE_COORDS.direccion = direccion;
         STORE_COORDS.zona = zona;
         STORE_COORDS.lat = lat;
@@ -4384,20 +4396,37 @@ window.openReceiptModal = async function(orderId) {
             if (lblRider) lblRider.innerText = r.rider ? cleanText(r.rider.nombre) : 'Asignando repartidor...';
 
             const lblStoreName = document.getElementById('lblReceiptStoreName');
+            const lblStoreBranch = document.getElementById('lblReceiptStoreBranch');
             const lblStoreAddress = document.getElementById('lblReceiptStoreAddress');
             const lblStorePhone = document.getElementById('lblReceiptStorePhone');
             const lblAddress = document.getElementById('lblReceiptAddress');
 
             if (r.tienda) {
-                if (lblStoreName) lblStoreName.innerText = r.tienda.nombre_tienda || 'BURGER 24/7 S.R.L.';
-                if (lblStoreAddress) lblStoreAddress.innerText = r.tienda.direccion || 'Av. 20 de Octubre #2150, Sopocachi - La Paz';
+                let storeName = r.tienda.nombre_tienda || 'BURGER 24/7';
+                let branchName = r.tienda.sucursal || '';
+                if (!branchName && storeName.includes(' - ')) {
+                    const parts = storeName.split(' - ');
+                    storeName = parts[0].trim();
+                    branchName = parts[1].trim();
+                }
+                if (lblStoreName) lblStoreName.innerText = storeName.toUpperCase();
+                if (lblStoreBranch) {
+                    if (branchName) {
+                        lblStoreBranch.innerText = branchName.toLowerCase().startsWith('sucursal') ? branchName : `Sucursal ${branchName}`;
+                        lblStoreBranch.style.display = 'block';
+                    } else {
+                        lblStoreBranch.style.display = 'none';
+                    }
+                }
+                if (lblStoreAddress) lblStoreAddress.innerText = r.tienda.direccion || 'Av. 20 de Octubre #2150, Sopocachi, La Paz';
                 if (lblStorePhone) lblStorePhone.innerText = `Tlf: ${r.tienda.telefono || '+591 71523481'}`;
             }
 
             if (lblAddress) {
                 const telStr = r.telefono_contacto ? ` (Tel: ${r.telefono_contacto})` : '';
                 const refStr = r.referencia_entrega ? ` - Ref: ${r.referencia_entrega}` : '';
-                lblAddress.innerText = `${r.direccion_entrega || 'Ubicación GPS'}${refStr}${telStr}`;
+                const baseAddr = r.direccion_entrega || 'Ubicación GPS registrada (La Paz)';
+                lblAddress.innerText = `${baseAddr}${refStr}${telStr}`;
             }
 
             if (tbody) {

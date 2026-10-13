@@ -40,11 +40,12 @@ function formatResponse($status, $data, $userId = null, $errorDetails = null, $a
 try {
     $db = DatabaseConnection::getInstance()->getConnection();
 
-    // Asegurar tabla configuracion_tienda
+    // Asegurar tabla configuracion_tienda con campo sucursal
     $db->exec("
         CREATE TABLE IF NOT EXISTS configuracion_tienda (
             id INT PRIMARY KEY DEFAULT 1,
-            nombre_tienda VARCHAR(150) NOT NULL DEFAULT 'Burger 24/7 - Central Sopocachi',
+            nombre_tienda VARCHAR(150) NOT NULL DEFAULT 'Burger 24/7',
+            sucursal VARCHAR(100) DEFAULT 'Central Sopocachi',
             direccion VARCHAR(255) NOT NULL DEFAULT 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
             zona VARCHAR(100) NOT NULL DEFAULT 'Sopocachi',
             latitud DECIMAL(10, 8) NOT NULL DEFAULT -16.5050,
@@ -56,19 +57,26 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
 
+    try {
+        $db->exec("ALTER TABLE configuracion_tienda ADD COLUMN sucursal VARCHAR(100) DEFAULT 'Central Sopocachi' AFTER nombre_tienda");
+    } catch (Exception $colEx) {
+        // Columna ya existe
+    }
+
     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
     // =========================================================================
     // GET: Consultar configuración actual de la tienda (Disponible para todos)
     // =========================================================================
     if ($method === 'GET') {
-        $stmt = $db->query("SELECT id, nombre_tienda, direccion, zona, latitud, longitud, telefono, updated_at FROM configuracion_tienda WHERE id = 1");
+        $stmt = $db->query("SELECT id, nombre_tienda, sucursal, direccion, zona, latitud, longitud, telefono, updated_at FROM configuracion_tienda WHERE id = 1");
         $store = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$store) {
             $defaultStore = [
                 'id' => 1,
-                'nombre_tienda' => 'Burger 24/7 - Central Sopocachi',
+                'nombre_tienda' => 'Burger 24/7',
+                'sucursal' => 'Central Sopocachi',
                 'direccion' => 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
                 'zona' => 'Sopocachi',
                 'latitud' => -16.5050,
@@ -76,9 +84,18 @@ try {
                 'telefono' => '+591 71523481',
                 'updated_at' => date('Y-m-d H:i:s')
             ];
-            $stmtIns = $db->prepare("INSERT INTO configuracion_tienda (id, nombre_tienda, direccion, zona, latitud, longitud, telefono) VALUES (1, ?, ?, ?, ?, ?, ?)");
-            $stmtIns->execute([$defaultStore['nombre_tienda'], $defaultStore['direccion'], $defaultStore['zona'], $defaultStore['latitud'], $defaultStore['longitud'], $defaultStore['telefono']]);
+            $stmtIns = $db->prepare("INSERT INTO configuracion_tienda (id, nombre_tienda, sucursal, direccion, zona, latitud, longitud, telefono) VALUES (1, ?, ?, ?, ?, ?, ?, ?)");
+            $stmtIns->execute([$defaultStore['nombre_tienda'], $defaultStore['sucursal'], $defaultStore['direccion'], $defaultStore['zona'], $defaultStore['latitud'], $defaultStore['longitud'], $defaultStore['telefono']]);
             $store = $defaultStore;
+        }
+
+        // Si la sucursal viene vacía o el nombre_tienda incluye ' - ', desglosar limpiamente
+        if (empty($store['sucursal']) && strpos($store['nombre_tienda'], ' - ') !== false) {
+            $parts = explode(' - ', $store['nombre_tienda'], 2);
+            $store['nombre_tienda'] = trim($parts[0]);
+            $store['sucursal'] = trim($parts[1]);
+        } elseif (empty($store['sucursal'])) {
+            $store['sucursal'] = 'Central Sopocachi';
         }
 
         $store['latitud'] = (float)$store['latitud'];
@@ -102,11 +119,22 @@ try {
         }
 
         $nombre = trim($input['nombre_tienda'] ?? '');
+        $sucursal = trim($input['sucursal'] ?? '');
         $direccion = trim($input['direccion'] ?? '');
         $zona = trim($input['zona'] ?? '');
         $lat = isset($input['latitud']) ? floatval($input['latitud']) : null;
         $lon = isset($input['longitud']) ? floatval($input['longitud']) : null;
         $telefono = trim($input['telefono'] ?? '');
+
+        // Si no se envió sucursal separada pero nombre contiene ' - '
+        if (empty($sucursal) && strpos($nombre, ' - ') !== false) {
+            $parts = explode(' - ', $nombre, 2);
+            $nombre = trim($parts[0]);
+            $sucursal = trim($parts[1]);
+        }
+        if (empty($sucursal)) {
+            $sucursal = 'Central Sopocachi';
+        }
 
         if (empty($nombre) || empty($direccion)) {
             http_response_code(400);
@@ -126,10 +154,11 @@ try {
         $old = $stmtOld->fetch(PDO::FETCH_ASSOC);
 
         $stmtUp = $db->prepare("
-            INSERT INTO configuracion_tienda (id, nombre_tienda, direccion, zona, latitud, longitud, telefono, updated_by, updated_at)
-            VALUES (1, ?, ?, ?, ?, ?, ?, ?, NOW())
+            INSERT INTO configuracion_tienda (id, nombre_tienda, sucursal, direccion, zona, latitud, longitud, telefono, updated_by, updated_at)
+            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE
                 nombre_tienda = VALUES(nombre_tienda),
+                sucursal = VALUES(sucursal),
                 direccion = VALUES(direccion),
                 zona = VALUES(zona),
                 latitud = VALUES(latitud),
@@ -138,10 +167,11 @@ try {
                 updated_by = VALUES(updated_by),
                 updated_at = NOW()
         ");
-        $stmtUp->execute([$nombre, $direccion, $zona ?: 'La Paz', $lat, $lon, $telefono ?: '+591 71523481', $adminId]);
+        $stmtUp->execute([$nombre, $sucursal, $direccion, $zona ?: 'La Paz', $lat, $lon, $telefono ?: '+591 71523481', $adminId]);
 
         logAudit($db, 'configuracion_tienda', 1, 'UPDATE', $old, [
             'nombre_tienda' => $nombre,
+            'sucursal' => $sucursal,
             'direccion' => $direccion,
             'zona' => $zona,
             'latitud' => $lat,
@@ -154,6 +184,7 @@ try {
         $updated = [
             'id' => 1,
             'nombre_tienda' => $nombre,
+            'sucursal' => $sucursal,
             'direccion' => $direccion,
             'zona' => $zona ?: 'La Paz',
             'latitud' => $lat,

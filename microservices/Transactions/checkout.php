@@ -140,6 +140,7 @@ try {
                        p.total, p.latitud, p.longitud, p.direccion_entrega, p.referencia_entrega, p.telefono_contacto,
                        p.qr_comprobante_url, p.created_at, p.updated_at,
                        u.nombre as cliente_nombre, u.email as cliente_email, u.telefono as cliente_telefono_user,
+                       u.direccion as cliente_direccion_user,
                        r.nombre as rider_nombre
                 FROM pedidos p
                 LEFT JOIN users u ON p.cliente_id = u.id
@@ -171,18 +172,28 @@ try {
             $totalVal = floatval($ord['total']);
             $envioCalc = max(0, round($totalVal - $subtotalCalc, 2));
 
-            // Consultar datos de tienda
-            $stmtStore = $db->query("SELECT nombre_tienda, direccion, zona, latitud, longitud, telefono FROM configuracion_tienda WHERE id = 1");
+            // Consultar datos de tienda con soporte de sucursal
+            $stmtStore = $db->query("SELECT nombre_tienda, sucursal, direccion, zona, latitud, longitud, telefono FROM configuracion_tienda WHERE id = 1");
             $tienda = $stmtStore ? $stmtStore->fetch(PDO::FETCH_ASSOC) : null;
             if (!$tienda) {
                 $tienda = [
-                    'nombre_tienda' => 'Burger 24/7 - Central Sopocachi',
+                    'nombre_tienda' => 'Burger 24/7',
+                    'sucursal' => 'Central Sopocachi',
                     'direccion' => 'Av. 20 de Octubre #2150, Sopocachi, La Paz',
                     'zona' => 'Sopocachi',
                     'latitud' => -16.5050,
                     'longitud' => -68.1290,
                     'telefono' => '+591 71523481'
                 ];
+            } else {
+                // Separar limpiamente si nombre_tienda trae " - "
+                if (empty($tienda['sucursal']) && strpos($tienda['nombre_tienda'], ' - ') !== false) {
+                    $parts = explode(' - ', $tienda['nombre_tienda'], 2);
+                    $tienda['nombre_tienda'] = trim($parts[0]);
+                    $tienda['sucursal'] = trim($parts[1]);
+                } elseif (empty($tienda['sucursal'])) {
+                    $tienda['sucursal'] = 'Central Sopocachi';
+                }
             }
 
             $recibo = [
@@ -200,7 +211,7 @@ try {
                     'nombre' => $ord['rider_nombre']
                 ] : null,
                 'tienda' => $tienda,
-                'direccion_entrega' => $ord['direccion_entrega'] ?: 'Dirección no especificada',
+                'direccion_entrega' => $ord['direccion_entrega'] ?: ($ord['cliente_direccion_user'] ?: 'Ubicación GPS registrada (La Paz)'),
                 'referencia_entrega' => $ord['referencia_entrega'] ?: '',
                 'telefono_contacto' => $ord['telefono_contacto'] ?: ($ord['cliente_telefono_user'] ?? ''),
                 'estado_pago' => $ord['estado_pago'],

@@ -707,11 +707,19 @@
                     <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem;" class="admin-store-grid">
                         <!-- Formulario -->
                         <form id="formAdminStoreConfig" onsubmit="handleSaveAdminStoreConfig(event)">
-                            <div class="form-group" style="margin-bottom: 0.85rem;">
-                                <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
-                                    Nombre del Restaurante / Sucursal:
-                                </label>
-                                <input type="text" id="adminStoreNombre" class="input-styled" placeholder="Ej: Burger 24/7 - Central Sopocachi" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+                                <div class="form-group">
+                                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                                        Nombre de la Hamburguesería (Marca):
+                                    </label>
+                                    <input type="text" id="adminStoreNombre" class="input-styled" placeholder="Ej: Burger 24/7" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.35rem;">
+                                        Sucursal / Sede:
+                                    </label>
+                                    <input type="text" id="adminStoreSucursal" class="input-styled" placeholder="Ej: Central Sopocachi" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: rgba(0,0,0,0.25); color: #fff;">
+                                </div>
                             </div>
 
                             <div class="form-group places-search-box-wrapper" style="margin-bottom: 0.85rem;">
@@ -757,9 +765,10 @@
                                     <i data-lucide="map"></i> Ficha Oficial Vista por Clientes y Repartidores
                                 </h4>
                                 <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 0.85rem; font-size: 0.82rem; line-height: 1.6;">
-                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Nombre:</span> <strong id="previewAdminStoreNombre" style="color: #fff;">Burger 24/7 - Central Sopocachi</strong></p>
-                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Dirección:</span> <strong id="previewAdminStoreDireccion" style="color: #f97316;">Av. 20 de Octubre #2150, Sopocachi, La Paz</strong></p>
-                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Zona:</span> <strong id="previewAdminStoreZona" style="color: #38bdf8;">Sopocachi</strong></p>
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Hamburguesería:</span> <strong id="previewAdminStoreNombre" style="color: #fff;">Burger 24/7</strong></p>
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Sucursal:</span> <strong id="previewAdminStoreSucursal" style="color: #38bdf8;">Central Sopocachi</strong></p>
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Dirección Implantada:</span> <strong id="previewAdminStoreDireccion" style="color: #f97316;">Av. 20 de Octubre #2150, Sopocachi, La Paz</strong></p>
+                                    <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Zona:</span> <strong id="previewAdminStoreZona" style="color: #cbd5e1;">Sopocachi</strong></p>
                                     <p style="margin: 0 0 0.4rem 0;"><span class="text-secondary">Teléfono Cocina:</span> <strong id="previewAdminStoreTelefono" style="color: var(--accent-green);">+591 71523481</strong></p>
                                     <p style="margin: 0;"><span class="text-secondary">GPS:</span> <strong id="previewAdminStoreCoords" style="color: #cbd5e1;">-16.5050, -68.1290</strong></p>
                                 </div>
@@ -1387,7 +1396,8 @@
             <div class="receipt-printable-body" id="receiptPrintableArea" style="padding: 1.25rem 1.4rem; overflow-y: auto; background: #ffffff; color: #1e293b; font-family: 'Courier New', Courier, monospace;">
                 <!-- Header del Comercio -->
                 <div style="text-align: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.65rem; margin-bottom: 0.65rem;">
-                    <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a; letter-spacing: 0.05em;" id="lblReceiptStoreName">BURGER 24/7 S.R.L.</h2>
+                    <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0f172a; letter-spacing: 0.05em; text-transform: uppercase;" id="lblReceiptStoreName">BURGER 24/7</h2>
+                    <div style="margin: 0.2rem 0; font-size: 0.78rem; font-weight: 700; color: #334155;" id="lblReceiptStoreBranch">Sucursal Central Sopocachi</div>
                     <p style="margin: 0.15rem 0; font-size: 0.72rem; color: #475569;" id="lblReceiptStoreAddress">Av. 20 de Octubre #2150, Sopocachi - La Paz</p>
                     <p style="margin: 0.15rem 0; font-size: 0.7rem; color: #475569;" id="lblReceiptStorePhone">Tlf: +591 71523481</p>
                     <span style="display: inline-block; margin-top: 0.35rem; padding: 0.15rem 0.55rem; background: #f1f5f9; border-radius: 4px; font-weight: 700; font-size: 0.75rem; color: #0f172a;" id="lblReceiptNumber">REC-000001</span>
